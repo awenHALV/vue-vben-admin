@@ -23,6 +23,7 @@
     "@vben/locales": "workspace:*",
     "@vben/utils": "workspace:*",
     "axios": "catalog:",
+    "json-bigint": "catalog:",
     "qs": "catalog:"
   },
   "devDependencies": {

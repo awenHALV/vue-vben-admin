@@ -8,6 +8,8 @@ import '@vben/styles';
 import '@vben/styles/antdv-next';
 
 import { useTitle } from '@vueuse/core';
+// 注册微前端
+import WujieVue from 'wujie-vue3';
 
 import { $t, setupI18n } from '#/locales';
 
@@ -33,6 +35,8 @@ async function bootstrap(namespace: string) {
   // });
 
   const app = createApp(App);
+
+  app.use(WujieVue);
 
   // 注册v-loading指令
   registerLoadingDirective(app, {

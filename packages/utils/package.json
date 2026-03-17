@@ -23,5 +23,8 @@
     "@vben-core/shared": "workspace:*",
     "@vben-core/typings": "workspace:*",
     "vue-router": "catalog:"
+  },
+  "devDependencies": {
+    "@types/js-cookie": "^3.0.6"
   }
 }
