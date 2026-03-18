@@ -35,15 +35,6 @@ const formSchema = computed((): VbenFormSchema[] => {
     {
       component: 'Input',
       componentProps: {
-        placeholder: '请输入租户编码',
-      },
-      fieldName: 'tenantId',
-      label: '租户编码',
-      rules: z.string().min(1, { message: '请输入租户编码' }),
-    },
-    {
-      component: 'Input',
-      componentProps: {
         placeholder: $t('authentication.usernameTip'),
       },
       fieldName: 'username',

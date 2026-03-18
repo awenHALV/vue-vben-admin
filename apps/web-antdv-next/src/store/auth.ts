@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router';
 import { LOGIN_PATH } from '@vben/constants';
 import { preferences } from '@vben/preferences';
 import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
-import { setCookie, TOKEN_KEY } from '@vben/utils';
+import { removeCookie, setCookie, TOKEN_KEY } from '@vben/utils';
 
 import { notification } from 'antdv-next';
 import { defineStore } from 'pinia';
@@ -95,6 +95,7 @@ export const useAuthStore = defineStore('auth', () => {
       // 不做任何处理
     }
     resetAllStores();
+    removeCookie(TOKEN_KEY);
     accessStore.setLoginExpired(false);
 
     // 回登录页带上当前路由地址
