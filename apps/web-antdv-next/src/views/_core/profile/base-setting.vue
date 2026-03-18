@@ -41,6 +41,7 @@ const formSchema = computed((): VbenFormSchema[] => {
     {
       fieldName: 'roles',
       component: 'Select',
+      disabled: true,
       componentProps: {
         mode: 'tags',
         options: MOCK_ROLES_OPTIONS,

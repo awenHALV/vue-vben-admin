@@ -6,7 +6,7 @@ import type { AnyFunction } from '@vben/types';
 import { computed, useTemplateRef, watch } from 'vue';
 
 import { useHoverToggle } from '@vben/hooks';
-import { LockKeyhole, LogOut } from '@vben/icons';
+import { LogOut } from '@vben/icons';
 import { $t } from '@vben/locales';
 import { preferences, usePreferences } from '@vben/preferences';
 import { useAccessStore } from '@vben/stores';
@@ -234,7 +234,7 @@ if (enableShortcutKey.value) {
           {{ menu.text }}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
+        <!-- <DropdownMenuItem
           v-if="preferences.widget.lockScreen"
           class="mx-1 flex cursor-pointer items-center rounded-sm py-1 leading-8"
           @click="handleOpenLock"
@@ -245,7 +245,7 @@ if (enableShortcutKey.value) {
             {{ altView }} L
           </DropdownMenuShortcut>
         </DropdownMenuItem>
-        <DropdownMenuSeparator v-if="preferences.widget.lockScreen" />
+        <DropdownMenuSeparator v-if="preferences.widget.lockScreen" /> -->
         <DropdownMenuItem
           class="mx-1 flex cursor-pointer items-center rounded-sm py-1 leading-8"
           @click="handleLogout"

@@ -59,9 +59,7 @@ export async function refreshTokenApi() {
  * 退出登录
  */
 export async function logoutApi() {
-  return requestClient.post('/de-base-system/external/public/auth/logout', {
-    withCredentials: true,
-  });
+  return requestClient.post('/de-base-system/external/public/auth/logout');
 }
 
 /**

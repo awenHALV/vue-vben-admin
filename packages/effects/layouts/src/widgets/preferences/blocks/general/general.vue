@@ -24,7 +24,7 @@ const appEnableCopyPreferences = defineModel<boolean>(
   <SelectItem v-model="appLocale" :items="SUPPORT_LANGUAGES">
     {{ $t('preferences.language') }}
   </SelectItem>
-  <SwitchItem v-model="appDynamicTitle">
+  <!-- <SwitchItem v-model="appDynamicTitle">
     {{ $t('preferences.dynamicTitle') }}
   </SwitchItem>
   <SwitchItem
@@ -49,5 +49,5 @@ const appEnableCopyPreferences = defineModel<boolean>(
   </SwitchItem>
   <SwitchItem v-model="appEnableCopyPreferences">
     {{ $t('preferences.enableCopyPreferences') }}
-  </SwitchItem>
+  </SwitchItem>-->
 </template>
