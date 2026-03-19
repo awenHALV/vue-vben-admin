@@ -94,7 +94,6 @@ const logoSrc = computed(() => {
             :alt="appName"
             :src="logoSrc"
             class="mr-2"
-            width="42"
           />
           <p v-if="appName" class="m-0 text-xl font-medium">
             {{ appName }}
@@ -125,12 +124,12 @@ const logoSrc = computed(() => {
             />
           </template>
           <SloganIcon v-else :alt="appName" class="h-64 w-2/5 animate-float" />
-          <div class="text-1xl mt-6 font-sans text-foreground lg:text-2xl">
+          <!-- <div class="text-1xl mt-6 font-sans text-foreground lg:text-2xl">
             {{ pageTitle }}
           </div>
           <div class="mt-2 dark:text-muted-foreground">
             {{ pageDescription }}
-          </div>
+          </div> -->
         </div>
       </div>
     </div>

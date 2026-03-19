@@ -1,5 +1,7 @@
 import type { Recordable, UserInfo } from '@vben/types';
 
+import type { AuthApi } from '#/api/core/auth';
+
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -11,7 +13,8 @@ import { removeCookie, setCookie, TOKEN_KEY } from '@vben/utils';
 import { notification } from 'antdv-next';
 import { defineStore } from 'pinia';
 
-import { getUserInfoApi, loginApi, logoutApi } from '#/api';
+import { getUserInfoApi, logoutApi } from '#/api';
+import { getTenantListApi, loginApi } from '#/api/core/auth';
 import { $t } from '#/locales';
 import { encryptByMd5 } from '#/utils/cipher';
 
@@ -37,17 +40,29 @@ export const useAuthStore = defineStore('auth', () => {
       loginLoading.value = true;
 
       // 对密码进行加密
-      const loginParams = {
+      const loginParams: AuthApi.LoginParams = {
         ...params,
         pwd: params.pwd ? encryptByMd5(params.pwd) : undefined,
       };
 
-      const { token } = await loginApi(loginParams);
+      const { token, multiTenant } = await loginApi(loginParams);
       console.log(token);
       // 如果成功获取到 token
       if (token) {
         accessStore.setAccessToken(token);
         setCookie(TOKEN_KEY, token);
+
+        if (multiTenant && !params.tenantId) {
+          // Fetch tenant list since it's not provided by loginApi directly
+          const tenantList = await getTenantListApi();
+
+          loginLoading.value = false;
+          return {
+            needTenantSelection: true,
+            tenantList,
+            loginParams,
+          };
+        }
         // 获取用户信息并存储到 accessStore 中
         // const [fetchUserInfoResult, accessCodes] = await Promise.all([
         //   fetchUserInfo(),
@@ -119,9 +134,15 @@ export const useAuthStore = defineStore('auth', () => {
     loginLoading.value = false;
   }
 
+  function clearToken() {
+    accessStore.setAccessToken(null);
+    removeCookie(TOKEN_KEY);
+  }
+
   return {
     $reset,
     authLogin,
+    clearToken,
     fetchUserInfo,
     loginLoading,
     logout,

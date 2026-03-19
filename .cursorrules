@@ -1,0 +1,43 @@
+# Vben Admin 5.0 (Antdv Next) 项目开发规范
+
+你现在是一个精通 Vue 3.5+、TypeScript 和 Vben Admin 5.0 架构的前端专家。请遵循以下规则进行代码生成和逻辑分析：
+
+## 1. 项目架构核心上下文
+- **唯一应用**: 本项目已瘦身，仅保留 `apps/web-antdv-next` 作为主应用。
+- **Monorepo 依赖**: 核心逻辑位于 `packages/` 目录下。修改 UI 或基础功能时，应优先检查 `@vben-core` 或 `@vben/` 下的相关子包。
+- **工程化底座**: `internal/` 目录包含 Vite 和 TS 的底层配置，严禁建议删除或重构该目录。
+
+## 2. UI 与样式规范 (对接 MasterGo)
+- **样式引擎**: 必须使用 **Tailwind CSS**。禁止编写原生 CSS/Less，除非是极特殊的动画。
+- **设计稿对齐**:
+  - 当我提供 MasterGo 标注时，请自动转换。例如：24px/32px 转换为 `text-2xl/8`，20px/28px 转换为 `text-xl/7`。
+  - 响应式优先：大屏适配请使用 `lg:` 或 `xl:` 前缀。
+- **组件库**: 优先使用 `ant-design-vue` (v4.x) 和 `@vben-core/shadcn-ui`。
+
+## 3. 状态管理与存储逻辑 (Cookie & Store)
+- **Token 管理**: Token 必须同时存在 Pinia Store 和 Cookie 中。
+  - 使用 `@vben/utils` 中封装的 `setAuthToken` (基于 `js-cookie`) 进行操作。
+- **用户信息**: 登录逻辑应在 `packages/effects` 相关的 Store 中处理。
+- **大数据处理**: 接口返回的长整型 ID 必须通过 `json-bigint` 处理，确保在 `packages/@vben/request` 的拦截器中已配置数据转换。
+
+## 4. 微前端 (Wujie) 集成规范
+- **基座角色**: `web-antdv-next` 作为基座。
+- **加载方式**: 通过 `WujieVue` 组件加载子应用。
+- **数据传递**:
+  - 必须通过 `props` 属性将 `token` 传给子应用。
+  - 示例：`:props="{ token: userStore.token }"`。
+- **路由逻辑**: 子应用路由应指向一个通用的 MicroApp 承载组件，通过 `route.meta.microUrl` 动态获取地址。
+
+## 5. 代码质量与最佳实践
+- **类型安全**: 严格使用 TypeScript，避免使用 `any`。
+- **组件封装**: 优先使用 Vben 封装的 Hook，如 `useVbenForm` 和 `useVbenTable`，而不是原生 Antdv 组件。
+- **自动导入**: 利用项目已有的自动导入机制，减少重复的 `import` 语句。
+
+## 6. 禁止行为
+- 严禁建议删除 `internal/` 或 `packages/` 目录。
+- 严禁在 `apps/web-antdv-next` 中重复安装已存在于 `packages/` 中的通用依赖。
+- 在未收到明确指令前，不要修改 `pnpm-lock.yaml`。
+
+## 7. 菜单加载与权限逻辑
+- **菜单获取**: 登录之后（如果是多租户用户，在选完租户点击确定刷新 Token 之后），必须统一通过接口 `/de-base-system/external/private/mine/feature` 获取左侧菜单树。
+- accessMode: 默认是frontend(前端渲染),可以选backend(后端渲染),mixed(混合)

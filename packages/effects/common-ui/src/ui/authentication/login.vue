@@ -5,7 +5,7 @@ import type { VbenFormSchema } from '@vben-core/form-ui';
 
 import type { AuthenticationProps } from './types';
 
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { $t } from '@vben/locales';
@@ -39,20 +39,24 @@ const props = withDefaults(defineProps<Props>(), {
   submitButtonText: '',
   subTitle: '',
   title: '',
+  loginType: 'account',
 });
 
 const emit = defineEmits<{
   submit: [Recordable<any>];
 }>();
 
+const loginType = defineModel<string>('loginType', { default: 'account' });
 const [Form, formApi] = useVbenForm(
   reactive({
     commonConfig: {
+      formItemClass: 'col-span-12',
       hideLabel: true,
       hideRequiredMark: true,
     },
     schema: computed(() => props.formSchema),
     showDefaultActions: false,
+    wrapperClass: 'grid-cols-12',
   }),
 );
 const router = useRouter();
@@ -85,6 +89,16 @@ onMounted(() => {
   }
 });
 
+function handleTabChange(type: string) {
+  if (loginType.value === type) return;
+  loginType.value = type;
+  if (type === 'account' && localUsername) {
+    nextTick(() => {
+      formApi.setFieldValue('username', localUsername, false);
+    });
+  }
+}
+
 defineExpose({
   getFormApi: () => formApi,
 });
@@ -107,7 +121,33 @@ defineExpose({
       </Title>
     </slot>
 
-    <Form />
+    <div class="mb-4 flex flex-row justify-center gap-10">
+      <div
+        class="cursor-pointer pb-2 text-sm font-medium transition-all"
+        :class="
+          loginType === 'account'
+            ? 'border-b-2 border-primary text-primary'
+            : 'text-muted-foreground hover:text-foreground'
+        "
+        @click="handleTabChange('account')"
+      >
+        {{ $t('authentication.accountLogin') }}
+      </div>
+      <div
+        v-if="showCodeLogin"
+        class="cursor-pointer pb-2 text-sm font-medium transition-all"
+        :class="
+          loginType === 'mobile'
+            ? 'border-b-2 border-primary text-primary'
+            : 'text-muted-foreground hover:text-foreground'
+        "
+        @click="handleTabChange('mobile')"
+      >
+        {{ $t('authentication.mobileLogin') }}
+      </div>
+    </div>
+
+    <Form :key="loginType" />
 
     <div
       v-if="showRememberMe || showForgetPassword"
@@ -142,28 +182,6 @@ defineExpose({
     >
       {{ submitButtonText || $t('common.login') }}
     </VbenButton>
-
-    <div
-      v-if="showCodeLogin || showQrcodeLogin"
-      class="mt-4 mb-2 flex items-center justify-between"
-    >
-      <VbenButton
-        v-if="showCodeLogin"
-        class="w-1/2"
-        variant="outline"
-        @click="handleGo(codeLoginPath)"
-      >
-        {{ $t('authentication.mobileLogin') }}
-      </VbenButton>
-      <VbenButton
-        v-if="showQrcodeLogin"
-        class="ml-4 w-1/2"
-        variant="outline"
-        @click="handleGo(qrCodeLoginPath)"
-      >
-        {{ $t('authentication.qrcodeLogin') }}
-      </VbenButton>
-    </div>
 
     <!-- 第三方登录 -->
     <!-- <slot name="third-party-login">

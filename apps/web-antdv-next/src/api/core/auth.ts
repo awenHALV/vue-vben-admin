@@ -13,6 +13,8 @@ export namespace AuthApi {
   /** 登录接口返回值 */
   export interface LoginResult {
     token: string;
+    multiTenant?: boolean;
+    tenantList?: Array<{ tenantId: string; tenantName: string }>;
   }
 
   export interface RefreshTokenResult {
@@ -24,6 +26,11 @@ export namespace AuthApi {
   export interface CaptchaResult {
     captchaId: string;
     captchaImg: string;
+  }
+
+  export interface TenantItem {
+    tenantId: string;
+    tenantName: string;
   }
 }
 
@@ -43,6 +50,25 @@ export async function loginApi(data: AuthApi.LoginParams) {
 export async function getCaptchaApi() {
   return requestClient.get<AuthApi.CaptchaResult>(
     '/de-base-system/external/public/auth/captcha',
+  );
+}
+
+/**
+ * 获取租户列表
+ */
+export async function getTenantListApi() {
+  return [
+    {
+      tenantId: '1',
+      tenantName: '租户1',
+    },
+    {
+      tenantId: '2',
+      tenantName: '租户2',
+    },
+  ];
+  return requestClient.get<AuthApi.TenantItem[]>(
+    '/de-base-system/external/public/auth/tenant/list',
   );
 }
 

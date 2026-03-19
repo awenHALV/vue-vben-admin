@@ -2,7 +2,10 @@ import { defineConfig } from '@vben/vite-config';
 
 export default defineConfig(async () => {
   return {
-    application: {},
+    application: {
+      // 登录之前的loading页
+      injectAppLoading: false,
+    },
     vite: {
       server: {
         proxy: {

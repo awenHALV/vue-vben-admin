@@ -33,16 +33,6 @@ withDefaults(defineProps<Props>(), {
     </a>
 
     <!-- Copyright Text -->
-    Copyright © {{ date }}
-
-    <!-- Company Link -->
-    <a
-      v-if="companyName"
-      :href="companySiteLink || 'javascript:void(0)'"
-      class="mx-1 hover:text-primary-hover"
-      target="_blank"
-    >
-      {{ companyName }}
-    </a>
+    Copyright © {{ date }} Inspur Energy Internet Platform
   </div>
 </template>
