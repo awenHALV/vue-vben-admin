@@ -289,16 +289,16 @@ watch(selectedDeptId, () => {
                   v-model:value="searchForm.roleName"
                   :placeholder="$t('system.role.roleNamePlaceholder')"
                   allow-clear
-                  style="width: 200px"
+                  style="width: 240px"
                 />
               </FormItem>
               <FormItem>
                 <Space>
-                  <Button type="primary" class="w-24" @click="handleSearch">
+                  <Button type="primary" class="w-21" @click="handleSearch">
                     <template #icon><IconifyIcon icon="lucide:search" /></template>
                     {{ $t('system.common.search') }}
                   </Button>
-                  <Button class="w-24" @click="handleReset">
+                  <Button class="w-21" @click="handleReset">
                     <template #icon><IconifyIcon icon="lucide:rotate-ccw" /></template>
                     {{ $t('system.common.reset') }}
                   </Button>
@@ -309,7 +309,7 @@ watch(selectedDeptId, () => {
 
           <!-- 操作按钮 -->
           <div class="mb-4">
-            <Button type="primary" class="w-24" @click="handleAdd">
+            <Button type="primary" class="w-21" @click="handleAdd">
               <template #icon><IconifyIcon icon="lucide:plus" /></template>
               {{ $t('system.common.add') }}
             </Button>

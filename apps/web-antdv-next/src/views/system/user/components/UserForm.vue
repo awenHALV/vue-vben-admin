@@ -205,14 +205,17 @@ const handleOk = async () => {
   try {
     await formRef.value?.validate();
     loading.value = true;
-
     if (isAdd.value) {
+      delete formData.value.password2;
       await createUserApi({
         ...formData.value,
         roleId: formData.value.roleId.join(','),
       });
       message.success($t('system.common.addSuccess'));
     } else if (isEdit.value) {
+      delete formData.value.password2;
+      delete formData.value.account;
+      delete formData.value.pwd;
       await updateUserApi({
         ...formData.value,
         roleId: formData.value.roleId.join(','),
@@ -222,7 +225,7 @@ const handleOk = async () => {
       await resetPasswordApi({
         id: formData.value.id,
         pwd: formData.value.pwd,
-        password2: formData.value.password2,
+        phone: formData.value.phone,
       });
       message.success($t('system.user.resetPassword') + $t('system.common.addSuccess'));
     }
@@ -260,7 +263,10 @@ const handleClose = () => {
 
 const handleDeptChange = (value: string) => {
   formData.value.roleId = [];
-  loadRoles(value);
+  if (value) {
+    loadRoles(value);
+  }
+  // 如果清空组织选择，不清空角色列表，让用户可以继续选择
 };
 
 // ==================== 监听 ====================
@@ -270,6 +276,7 @@ watch(
   (visible) => {
     if (visible) {
       loadDeptTree();
+      console.log('props.data', props.data)
       if (props.data) {
         formData.value = {
           id: props.data.id || '',
@@ -281,13 +288,14 @@ watch(
           email: props.data.email || '',
           deptId: props.data.deptId || '',
           roleId: props.data.roleId ? props.data.roleId.split(',') : [],
-          status: props.data.status || 1,
+          status: props.data.status == 1 ? 1 : 0,
         };
         if (props.data.deptId) {
           loadRoles(props.data.deptId);
         }
       }
     }
+    console.log('formData.value', formData.value)
   },
 );
 </script>

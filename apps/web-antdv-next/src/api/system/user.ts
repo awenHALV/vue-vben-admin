@@ -103,6 +103,11 @@ export interface RoleInfo {
   children?: RoleInfo[];
 }
 
+/** 用户消息 */
+export interface MessageTypeInfo {
+  acceptMessageType: string;
+  acceptMessageChannel: string;
+}
 // ==================== API 函数 ====================
 
 /**
@@ -120,6 +125,19 @@ export async function getUserPageApi(params: UserPageParams) {
  */
 export async function createUserApi(data: CreateUserParams) {
   return requestClient.post('/de-base-system/external/private/user/create', data);
+}
+
+/**
+ * 获取用户消息接收方式
+ */
+export async function getMessageTyperApi(id: string) {
+  return requestClient.get(`/de-base-system/external/private/user/${id}/messageType`);
+}
+/**
+ * 更新用户消息接收方式
+ */
+export async function updateMessageTyperApi(id: string,data: MessageTypeInfo) {
+  return requestClient.put(`/de-base-system/external/private/user/${id}/messageType`,data);
 }
 
 /**

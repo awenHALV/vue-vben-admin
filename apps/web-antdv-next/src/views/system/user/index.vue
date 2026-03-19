@@ -94,7 +94,7 @@ const columns: TableColumnsType = [
   },
   {
     title: $t('system.user.role'),
-    dataIndex: 'name',
+    dataIndex: 'roleName',
     width: 180,
     align: 'left',
   },
@@ -307,7 +307,7 @@ watch(selectedDeptId, () => {
                   v-model:value="searchForm.account"
                   :placeholder="$t('system.user.accountPlaceholder')"
                   allow-clear
-                  style="width: 200px"
+                  style="width: 240px"
                 />
               </FormItem>
               <FormItem :label="$t('system.user.name')">
@@ -315,16 +315,16 @@ watch(selectedDeptId, () => {
                   v-model:value="searchForm.name"
                   :placeholder="$t('system.user.namePlaceholder')"
                   allow-clear
-                  style="width: 200px"
+                  style="width: 240px"
                 />
               </FormItem>
               <FormItem>
                 <Space>
-                  <Button type="primary" class="w-24" @click="handleSearch">
+                  <Button type="primary" class="w-21" @click="handleSearch">
                     <template #icon><IconifyIcon icon="lucide:search" /></template>
                     {{ $t('system.common.search') }}
                   </Button>
-                  <Button class="w-24" @click="handleReset">
+                  <Button class="w-21" @click="handleReset">
                     <template #icon><IconifyIcon icon="lucide:rotate-ccw" /></template>
                     {{ $t('system.common.reset') }}
                   </Button>
@@ -336,7 +336,7 @@ watch(selectedDeptId, () => {
           <!-- 操作按钮 -->
           <div class="mb-4">
             <Space>
-              <Button type="primary" class="w-24" @click="handleAdd">
+              <Button type="primary" class="w-21" @click="handleAdd">
                 <template #icon><IconifyIcon icon="lucide:plus" /></template>
                 {{ $t('system.common.add') }}
               </Button>

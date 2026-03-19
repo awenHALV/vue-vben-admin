@@ -169,16 +169,16 @@ onMounted(() => {
               v-model:value="searchForm.deptName"
               :placeholder="$t('system.org.orgNamePlaceholder')"
               allow-clear
-              style="width: 200px"
+              style="width: 240px"
             />
           </FormItem>
           <FormItem>
             <Space>
-              <Button type="primary" class="w-24" @click="handleSearch">
+              <Button type="primary" class="w-21" @click="handleSearch">
                 <template #icon><IconifyIcon icon="lucide:search" /></template>
                 {{ $t('system.common.search') }}
               </Button>
-              <Button class="w-24" @click="handleReset">
+              <Button class="w-21" @click="handleReset">
                 <template #icon><IconifyIcon icon="lucide:rotate-ccw" /></template>
                 {{ $t('system.common.reset') }}
               </Button>
