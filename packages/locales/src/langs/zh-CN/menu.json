@@ -1,0 +1,64 @@
+{
+  "title": "菜单管理",
+  "list": {
+    "featureName": "功能名称",
+    "featureNameEn": "英文名称",
+    "featureCode": "功能编码",
+    "featureType": "功能类型",
+    "featureIcon": "功能图标",
+    "sort": "功能排序",
+    "routePath": "路由地址",
+    "action": "操作",
+    "total": "共 {0} 条",
+    "placeholder": "请输入菜单名称",
+    "clearKeyword": "清空关键词"
+  },
+  "placeholder": {
+    "select": "请选择{0}",
+    "input": "请输入{0}"
+  },
+  "type": {
+    "menu": "菜单",
+    "button": "按钮",
+    "api": "接口"
+  },
+  "form": {
+    "featureType": "功能类型",
+    "featureCode": "功能编码",
+    "featureName": "功能名称",
+    "featureNameEn": "英文名称",
+    "featureIcon": "功能图标",
+    "routePath": "路由地址",
+    "sort": "排序号",
+    "parentId": "父级菜单"
+  },
+  "formRules": {
+    "featureType": "请选择功能类型",
+    "featureCode": "请输入功能编码",
+    "featureName": "请输入功能名称",
+    "featureNameEn": "请输入英文名称",
+    "featureIcon": "请输入功能图标",
+    "routePath": "请输入路由地址",
+    "routePathStartWithSlash": "路由地址必须以 / 开头",
+    "routePathOnlyEnglish": "路由地址只能包含英文、数字、/、-、_",
+    "sort": "请输入排序号",
+    "parentId": "请选择父级菜单"
+  },
+  "action": {
+    "search": "查询",
+    "reset": "重置",
+    "查询d": "新增",
+    "edit": "编辑",
+    "delete": "删除",
+    "addChild": "新增子项",
+    "batchDelete": "批量删除"
+  },
+  "message": {
+    "fetchFailed": "获取菜单列表失败",
+    "deleteConfirm": "确定要删除菜单「{0}」吗？此操作不可撤销。",
+    "deleted": "已删除",
+    "selectFirst": "请先选择要删除的菜单",
+    "batchDeleteConfirm": "确定删除所选 {0} 项菜单？",
+    "batchDeleteSuccess": "批量删除成功"
+  }
+}

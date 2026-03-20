@@ -101,7 +101,18 @@ export async function vue(): Promise<Linter.Config[]> {
             svg: 'always',
           },
         ],
-        'vue/max-attributes-per-line': 'off',
+        // 强制 Vue 模板属性换行
+        'vue/max-attributes-per-line': [
+          'error',
+          {
+            singleline: {
+              max: 1, // 起步走：哪怕只有一个属性也换行（如果你想要极致垂直布局）
+            },
+            multiline: {
+              max: 1,
+            },
+          },
+        ],
         'vue/multi-word-component-names': 'off',
         'vue/multiline-html-element-content-newline': 'error',
         'vue/no-empty-pattern': 'error',

@@ -11,7 +11,7 @@ import { h } from 'vue';
 import {
   VbenButton,
   VbenCheckbox,
-  Input as VbenInput,
+  VbenInput,
   VbenInputPassword,
   VbenPinInput,
   VbenSelect,

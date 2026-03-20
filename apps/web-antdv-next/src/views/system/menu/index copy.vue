@@ -10,6 +10,14 @@ import { $t } from '@vben/locales';
 import { preferences } from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
+// shadcn 原子（按需）
+import {
+  Badge,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@vben-core/shadcn-ui';
+
 import { message, Modal, Space, Table } from 'antdv-next';
 
 import { deleteFeatureApi, getRawMenusApi } from '#/api/core/menu';
@@ -387,11 +395,16 @@ const columns = [
     fixed: 'right' as const,
   },
 ];
+
+const featureTypeMap: Record<string, { color: string; labelKey: string }> = {
+  BUTTON: { color: 'purple', labelKey: 'menu.type.button' },
+  MENU: { color: 'cyan', labelKey: 'menu.type.menu' },
+};
 </script>
 
 <template>
   <Page
-    :title="$t('menu.title')"
+    title="菜单管理"
     :auto-content-height="true"
     content-class="flex flex-col gap-3 p-4"
   >
@@ -423,90 +436,172 @@ const columns = [
           {{ $t('menu.action.search') }}
         </VbenButton>
       </Space>
-    </div>
+</div>
 
-    <!-- 表格卡片 -->
-    <div
-      class="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-background shadow-sm"
-    >
-      <!-- 操作栏 -->
+      <!-- 表格卡片 -->
       <div
-        class="flex items-center justify-end gap-2 border-b border-border px-4 py-3"
+        class="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-background shadow-sm"
       >
-        <VbenButton class="w-[84px]" size="sm" @click="() => handleAdd()">
-          <Plus class="mr-1 size-4" />
-          {{ $t('common.create') }}
-        </VbenButton>
-        <VbenButton
-          size="sm"
-          class="w-[84px]"
-          :disabled="selectedRowKeys.length === 0"
-          variant="outline-destructive"
-          @click="handleBatchDelete"
+        <!-- 操作栏 -->
+        <div
+          class="flex items-center justify-end gap-2 border-b border-border px-4 py-3"
         >
-          <Trash2 class="mr-1 size-4" />
-          {{ $t('common.delete') }}
-        </VbenButton>
+          <VbenButton class="w-[84px]" size="sm" @click="() => handleAdd()">
+            <Plus class="mr-1 size-4" />
+            {{ $t('common.create') }}
+          </VbenButton>
+          <VbenButton
+            size="sm"
+            class="w-[84px]"
+            :disabled="selectedRowKeys.length === 0"
+            variant="outline-destructive"
+            @click="handleBatchDelete"
+          >
+            <Trash2 class="mr-1 size-4" />
+            {{ $t('common.delete') }}
+          </VbenButton>
+        </div>
+
+        <!-- 树形表格 + 分页 -->
+        <Table
+          :columns="columns"
+          :data-source="tableData"
+          :loading="loading"
+          :pagination="{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showTotal: pagination.showTotal,
+            showSizeChanger: false,
+            onChange: handlePageChange,
+          }"
+          :row-key="(record) => String((record as BackendMenuItem).id)"
+          :row-selection="rowSelection"
+          :scroll="{ x: 1200 }"
+          child-row-key="children"
+          class="flex-1"
+          size="small"
+        >
+          <template #bodyCell="{ column, record }">
+            <!-- 功能名称 -->
+            <template v-if="column.key === 'featureName'">
+              <span class="font-medium">
+                {{ (record as BackendMenuItem).featureName }}
+              </span>
+            </template>
+
+            <!-- 英文名称 -->
+            <template v-else-if="column.key === 'featureNameEn'">
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <span class="text-muted-foreground">
+                    {{
+                      (record.featureNameEn ?? '-').length > 14
+                        ? `${record.featureNameEn!.slice(0, 14)}...`
+                        : (record.featureNameEn ?? '-')
+                    }}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {{ record.featureNameEn }}
+                </TooltipContent>
+              </Tooltip>
+            </template>
+
+            <!-- 功能编码 -->
+            <template v-else-if="column.key === 'featureCode'">
+              <Badge
+                variant="secondary"
+                class="bg-cyan-500/15 text-cyan-700 dark:text-cyan-400"
+              >
+                {{
+                  (record as BackendMenuItem).featureCode.length > 10
+                    ? `${(record as BackendMenuItem).featureCode.slice(
+                        0,
+                        10,
+                      )}...`
+                    : (record as BackendMenuItem).featureCode
+                }}
+              </Badge>
+            </template>
+
+            <!-- 功能类型 -->
+            <template v-else-if="column.key === 'featureType'">
+              {{
+                featureTypeMap[(record as BackendMenuItem).featureType]
+                  ? $t(
+                      featureTypeMap[(record as BackendMenuItem).featureType]!
+                        .labelKey,
+                    )
+                  : (record as BackendMenuItem).featureType
+              }}
+            </template>
+
+            <!-- 功能图标 -->
+            <template v-else-if="column.key === 'featureIcon'">
+              <span
+                v-if="(record as BackendMenuItem).featureIcon"
+                class="text-base"
+              >
+                {{ (record as BackendMenuItem).featureIcon }}
+              </span>
+              <span v-else class="text-muted-foreground">-</span>
+            </template>
+
+            <!-- 功能排序 -->
+            <template v-else-if="column.key === 'sort'">
+              {{ (record as BackendMenuItem).sort ?? '-' }}
+            </template>
+
+            <!-- 路由地址 -->
+            <template v-else-if="column.key === 'routePath'">
+              <Tooltip :title="(record as BackendMenuItem).routePath">
+                <code class="rounded-sm bg-muted px-1 py-0.5 text-xs">
+                  {{
+                    (record as BackendMenuItem).routePath.length > 12
+                      ? `${(record as BackendMenuItem).routePath.slice(0, 12)}...`
+                      : (record as BackendMenuItem).routePath
+                  }}
+                </code>
+              </Tooltip>
+            </template>
+
+            <!-- 操作 -->
+            <template v-else-if="column.key === 'action'">
+              <Space size="small">
+                <VbenButton
+                  size="sm"
+                  variant="ghost"
+                  @click="handleEdit(record as BackendMenuItem)"
+                >
+                  {{ $t('menu.action.edit') }}
+                </VbenButton>
+                <VbenButton
+                  size="sm"
+                  variant="ghost"
+                  @click="handleDelete(record as BackendMenuItem)"
+                >
+                  <span class="text-destructive">{{
+                    $t('menu.action.delete')
+                  }}</span>
+                </VbenButton>
+                <VbenButton
+                  size="sm"
+                  variant="ghost"
+                  @click="handleAdd(record as BackendMenuItem)"
+                >
+                  <span class="text-primary">{{
+                    $t('menu.action.addChild')
+                  }}</span>
+                </VbenButton>
+              </Space>
+            </template>
+          </template>
+        </Table>
       </div>
 
-      <!-- 树形表格 + 分页 -->
-      <Table
-        :columns="columns"
-        :data-source="tableData"
-        :loading="loading"
-        :pagination="{
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          showTotal: pagination.showTotal,
-          showSizeChanger: false,
-          onChange: handlePageChange,
-        }"
-        :row-key="(record) => String((record as BackendMenuItem).id)"
-        :row-selection="rowSelection"
-        :scroll="{ x: 1200 }"
-        child-row-key="children"
-        class="flex-1"
-        size="small"
-      >
-        <template #bodyCell="{ column, record }">
-          <!-- 操作 -->
-          <template v-if="column.key === 'action'">
-            <Space size="small">
-              <VbenButton
-                size="sm"
-                variant="ghost"
-                @click="handleEdit(record as BackendMenuItem)"
-              >
-                <span class="text-primary">
-                  {{ $t('menu.action.edit') }}
-                </span>
-              </VbenButton>
-              <VbenButton
-                size="sm"
-                variant="ghost"
-                @click="handleDelete(record as BackendMenuItem)"
-              >
-                <span class="text-destructive">{{
-                  $t('menu.action.delete')
-                }}</span>
-              </VbenButton>
-              <VbenButton
-                size="sm"
-                variant="ghost"
-                @click="handleAdd(record as BackendMenuItem)"
-              >
-                <span class="text-primary">{{
-                  $t('menu.action.addChild')
-                }}</span>
-              </VbenButton>
-            </Space>
-          </template>
-        </template>
-      </Table>
+      <!-- 新增/编辑弹窗 -->
+      <AddOrUpdate ref="addOrUpdateRef" @success="handleAddOrUpdateSuccess" />
     </div>
-
-    <!-- 新增/编辑弹窗 -->
-    <AddOrUpdate ref="addOrUpdateRef" @success="handleAddOrUpdateSuccess" />
   </Page>
 </template>

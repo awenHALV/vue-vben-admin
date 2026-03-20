@@ -50,6 +50,7 @@ vite.config.ts.*
 *.sw?
 .history
 .cursor
+.pnpm-store
 
 # AI
 .agent

@@ -6,7 +6,7 @@ import type { IBreadcrumb } from '@vben-core/shadcn-ui';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import { $t } from '@vben/locales';
+import { $t, $te } from '@vben/locales';
 
 import { VbenBreadcrumbView } from '@vben-core/shadcn-ui';
 
@@ -42,7 +42,11 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
     resultBreadcrumb.push({
       icon,
       path: path || route.path,
-      title: title ? $t((title || name) as string) : '',
+      title: (() => {
+        const raw = (title || name) as string | undefined;
+        if (!raw) return '';
+        return $te(raw) ? $t(raw) : raw;
+      })(),
     });
   }
   if (props.showHome) {

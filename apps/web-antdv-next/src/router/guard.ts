@@ -10,6 +10,29 @@ import { useAuthStore } from '#/store';
 
 import { generateAccess } from './access';
 
+interface AccessMenuItem {
+  children?: AccessMenuItem[];
+  path?: string;
+}
+
+function getFirstMenuPath(menus: AccessMenuItem[]): string {
+  for (const menu of menus) {
+    const children = menu.children ?? [];
+    if (children.length > 0) {
+      const childPath = getFirstMenuPath(children);
+      if (childPath) {
+        return childPath;
+      }
+    }
+
+    const path = menu.path ?? '';
+    if (path && !path.startsWith('http')) {
+      return path;
+    }
+  }
+  return '';
+}
+
 /**
  * 通用守卫配置
  * @param router
@@ -107,9 +130,15 @@ function setupAccessGuard(router: Router) {
     accessStore.setAccessMenus(accessibleMenus);
     accessStore.setAccessRoutes(accessibleRoutes);
     accessStore.setIsAccessChecked(true);
+
+    const firstMenuPath = getFirstMenuPath(accessibleMenus as AccessMenuItem[]);
+    const requestedDefaultHome =
+      to.path === preferences.app.defaultHomePath ||
+      to.fullPath === preferences.app.defaultHomePath;
+
     const redirectPath = (from.query.redirect ??
-      (to.path === preferences.app.defaultHomePath
-        ? userInfo.homePath || preferences.app.defaultHomePath
+      (requestedDefaultHome
+        ? userInfo.homePath || firstMenuPath || preferences.app.defaultHomePath
         : to.fullPath)) as string;
 
     return {

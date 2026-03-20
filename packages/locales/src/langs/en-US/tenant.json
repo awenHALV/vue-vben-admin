@@ -1,0 +1,41 @@
+{
+  "title": "Tenant Management",
+  "list": {
+    "tenantCode": "Tenant Code",
+    "tenantName": "Tenant Name",
+    "tenantNameEn": "English Name",
+    "contact": "Contact",
+    "phone": "Phone",
+    "status": "Status",
+    "action": "Action",
+    "placeholderName": "Please enter tenant name",
+    "placeholderCode": "Please enter tenant code"
+  },
+  "form": {
+    "tenantCode": "Tenant Code",
+    "tenantName": "Tenant Name",
+    "tenantNameEn": "English Name",
+    "contact": "Contact",
+    "phone": "Phone",
+    "remark": "Remark",
+    "status": "Enabled"
+  },
+  "status": {
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "action": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "batchDelete": "Batch Delete"
+  },
+  "message": {
+    "selectFirst": "Please select tenants to delete first",
+    "deleteConfirm": "Are you sure you want to delete tenant \"{0}\"? This action cannot be undone.",
+    "deleted": "Deleted: {0}",
+    "deleteFailed": "Delete failed",
+    "batchDeleteConfirm": "Are you sure you want to delete the selected {0} tenants?",
+    "batchDeleteSuccess": "Batch delete successful"
+  }
+}

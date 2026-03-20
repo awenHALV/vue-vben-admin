@@ -1,0 +1,63 @@
+{
+  "title": "Menu Management",
+  "list": {
+    "featureName": "Feature Name",
+    "featureNameEn": "English Name",
+    "featureCode": "Feature Code",
+    "featureType": "Feature Type",
+    "featureIcon": "Feature Icon",
+    "sort": "Sort Order",
+    "routePath": "Route Path",
+    "action": "Action",
+    "total": "{0} items in total",
+    "placeholder": "Please enter menu name"
+  },
+  "type": {
+    "menu": "Menu",
+    "button": "Button",
+    "api": "API"
+  },
+  "form": {
+    "featureType": "Feature Type",
+    "featureCode": "Feature Code",
+    "featureName": "Feature Name",
+    "featureNameEn": "English Name",
+    "featureIcon": "Feature Icon",
+    "routePath": "Route Path",
+    "sort": "Sort Order",
+    "parentId": "Parent Menu"
+  },
+  "formRules": {
+    "featureType": "Please select feature type",
+    "featureCode": "Please enter feature code",
+    "featureName": "Please enter feature name",
+    "featureNameEn": "Please enter English name",
+    "featureIcon": "Please enter feature icon",
+    "routePath": "Please enter route path",
+    "routePathStartWithSlash": "Route path must start with /",
+    "routePathOnlyEnglish": "Route path can only contain English letters, numbers, /, -, _",
+    "sort": "Please enter sort order",
+    "parentId": "Please select parent menu"
+  },
+  "placeholder": {
+    "select": "Please select {0}",
+    "input": "Please enter {0}"
+  },
+  "action": {
+    "search": "Search",
+    "reset": "Reset",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "addChild": "Add Subitem",
+    "batchDelete": "Batch Delete"
+  },
+  "message": {
+    "fetchFailed": "Failed to fetch menu list",
+    "deleteConfirm": "Are you sure you want to delete menu \"{0}\"? This action cannot be undone.",
+    "deleted": "Deleted",
+    "selectFirst": "Please select the menus to delete first",
+    "batchDeleteConfirm": "Are you sure you want to delete the selected {0} menus?",
+    "batchDeleteSuccess": "Batch delete successful "
+  }
+}

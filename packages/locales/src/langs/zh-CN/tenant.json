@@ -1,0 +1,41 @@
+{
+  "title": "租户管理",
+  "list": {
+    "tenantCode": "租户编码",
+    "tenantName": "租户名称",
+    "tenantNameEn": "英文名称",
+    "contact": "联系人",
+    "phone": "联系电话",
+    "status": "状态",
+    "action": "操作",
+    "placeholderName": "请输入租户名称",
+    "placeholderCode": "请输入租户编码"
+  },
+  "form": {
+    "tenantCode": "租户编码",
+    "tenantName": "租户名称",
+    "tenantNameEn": "英文名称",
+    "contact": "联系人",
+    "phone": "联系电话",
+    "remark": "备注",
+    "status": "启用状态"
+  },
+  "status": {
+    "enabled": "启用",
+    "disabled": "禁用"
+  },
+  "action": {
+    "add": "新增",
+    "edit": "编辑",
+    "delete": "删除",
+    "batchDelete": "批量删除"
+  },
+  "message": {
+    "selectFirst": "请先选择要删除的租户",
+    "deleteConfirm": "确定要删除租户「{0}」吗？此操作不可撤销。",
+    "deleted": "已删除：{0}",
+    "deleteFailed": "删除失败",
+    "batchDeleteConfirm": "确定删除所选 {0} 个租户？",
+    "batchDeleteSuccess": "批量删除成功"
+  }
+}

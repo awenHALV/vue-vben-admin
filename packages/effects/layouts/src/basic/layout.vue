@@ -8,7 +8,7 @@ import { computed, onMounted, useSlots, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { useRefresh } from '@vben/hooks';
-import { $t, i18n } from '@vben/locales';
+import { $t, $te, i18n } from '@vben/locales';
 import {
   preferences,
   updatePreferences,
@@ -136,12 +136,15 @@ const {
  * @param deep 是否深度包装。对于双列布局，只需要包装第一层，因为更深层的数据会在扩展菜单中重新包装
  */
 function wrapperMenus(menus: MenuRecordRaw[], deep: boolean = true) {
+  function resolveName(raw: string) {
+    return $te(raw) ? $t(raw) : raw;
+  }
   return deep
     ? mapTree(menus, (item) => {
-        return { ...cloneDeep(item), name: $t(item.name) };
+        return { ...cloneDeep(item), name: resolveName(item.name) };
       })
     : menus.map((item) => {
-        return { ...cloneDeep(item), name: $t(item.name) };
+        return { ...cloneDeep(item), name: resolveName(item.name) };
       });
 }
 

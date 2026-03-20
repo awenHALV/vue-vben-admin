@@ -63,9 +63,11 @@ export {
   Square,
   SquareCheckBig,
   SquareMinus,
+  SquarePen,
   Sun,
   SunMoon,
   SwatchBook,
+  Trash2,
   UserRoundPen,
   X,
 } from 'lucide-vue-next';

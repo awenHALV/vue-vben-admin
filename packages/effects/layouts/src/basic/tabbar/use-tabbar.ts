@@ -21,7 +21,7 @@ import {
   RotateCw,
   X,
 } from '@vben/icons';
-import { $t, useI18n } from '@vben/locales';
+import { $t, $te, useI18n } from '@vben/locales';
 import { getTabKey, useAccessStore, useTabbarStore } from '@vben/stores';
 import { filterTree } from '@vben/utils';
 
@@ -86,11 +86,12 @@ export function useTabbar() {
   };
 
   function wrapperTabLocale(tab: RouteLocationNormalizedGeneric) {
+    const rawTitle = tab?.meta?.title as string | undefined;
     return {
       ...tab,
       meta: {
         ...tab?.meta,
-        title: $t(tab?.meta?.title as string),
+        title: rawTitle ? ($te(rawTitle) ? $t(rawTitle) : rawTitle) : '',
       },
     };
   }
