@@ -7,23 +7,19 @@ import { computed, ref, watch } from 'vue';
 import { $t } from '#/locales';
 
 import {
-  Button,
-  Form,
+  Button, Divider,
+  Form, FormInstance,
   FormItem,
   Input,
-  InputNumber,
   message,
   Modal,
   Select,
-  Switch,
   TextArea,
   TreeSelect,
 } from 'antdv-next';
-import type { FormInstance } from 'ant-design-vue';
+// import type { FormInstance } from 'ant-design-vue';
 import { createOrgApi, getOrgTreeApi, updateOrgApi } from '#/api/system/org';
 import { getDictOptionsApi } from '#/api/system/dict';
-
-const SelectOption = Select.Option;
 
 // ==================== Props & Emits ====================
 
@@ -65,15 +61,38 @@ const formData = ref({
 
 // ==================== 计算属性 ====================
 
-const modalTitle = $t(`system.org.${props.type === 'edit' ? 'editOrg' : 'addOrg'}`);
+const modalTitle = computed(() => {
+  if (props.type === 'edit') {
+    return $t('system.org.editOrg');
+  }
+  return $t('system.org.addOrg');
+});
 
-
+const isEdit = computed(() => props.type === 'edit');
+const isAdd = computed(() => props.type === 'add');
+const isAddChild = computed(() => props.type === 'addChild');
 
 // ==================== 表单规则 ====================
 
-const rules = {
-  deptName: [{ required: true, message: $t('system.org.orgNameRequired'), trigger: 'blur' }],
-};
+const rules = computed(() => {
+  const baseRules: Record<string, any[]> = {
+    deptName: [{ required: true, message: $t('system.org.orgNameRequired'), trigger: 'blur' }],
+    parentId : [{ required: true, message: $t('system.org.parentOrgPlaceholder'), trigger: 'change' }],
+  };
+
+  // 新增组织时，上级组织和组织属性必填
+  if (isAdd.value) {
+    baseRules.parentId = [{ required: true, message: $t('system.org.parentOrgPlaceholder'), trigger: 'change' }];
+    baseRules.internal = [{ required: true, message: $t('system.org.orgAttributePlaceholder'), trigger: 'change' }];
+  }
+
+  // 添加子组织时，组织属性必填
+  if (isAddChild.value) {
+    baseRules.internal = [{ required: true, message: $t('system.org.orgAttributePlaceholder'), trigger: 'change' }];
+  }
+
+  return baseRules;
+});
 
 // ==================== 方法 ====================
 
@@ -171,6 +190,7 @@ watch(
     @ok="handleOk"
     @cancel="handleClose"
   >
+    <Divider/>
     <Form
       ref="formRef"
       :model="formData"
@@ -187,8 +207,9 @@ watch(
         />
       </FormItem>
 
+      <!-- 上级组织：新增时显示且可编辑，添加子组织时显示但禁用，编辑时隐藏 -->
       <FormItem
-        v-if="data?.parentId !== '0' && data?.id !== rootId"
+        v-if="!isEdit"
         :label="$t('system.org.parentOrg')"
         name="parentId"
       >
@@ -199,31 +220,23 @@ watch(
           :placeholder="$t('system.org.parentOrgPlaceholder')"
           tree-default-expand-all
           allow-clear
-          disabled
+          :disabled="isAddChild"
         />
       </FormItem>
 
-      <FormItem
-        v-if="data?.parentId === rootId || type === 'edit'"
-        :label="$t('system.org.orgAttribute')"
-        name="internal"
-      >
-        <Select
-          v-model:value="formData.internal"
-          :placeholder="$t('system.org.orgAttributePlaceholder')"
-          allow-clear
-          :disabled="type === 'edit'"
-        >
-          <SelectOption
-            v-for="item in internalOptions"
-            :key="item.optionKey"
-            :value="item.optionKey"
-          >
-            {{ item.optionValue }}
-          </SelectOption>
-        </Select>
-      </FormItem>
-
+      <!-- 组织属性：新增和添加子组织时必填，编辑时禁用 -->
+<!--      <FormItem-->
+<!--        :label="$t('system.org.orgAttribute')"-->
+<!--        name="internal"-->
+<!--      >-->
+<!--        <Select-->
+<!--          v-model:value="formData.internal"-->
+<!--          :placeholder="$t('system.org.orgAttributePlaceholder')"-->
+<!--          :options="internalOptions.map(item => ({ label: item.optionValue, value: item.optionKey }))"-->
+<!--          allow-clear-->
+<!--          :disabled="isEdit"-->
+<!--        />-->
+<!--      </FormItem>-->
 
       <FormItem :label="$t('system.common.remarks')" name="remark">
         <TextArea

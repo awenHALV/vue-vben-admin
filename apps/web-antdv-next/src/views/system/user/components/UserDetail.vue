@@ -2,11 +2,11 @@
 import type { UserInfo } from '#/api/system/user';
 import type { DescriptionsItemType } from 'antdv-next';
 
-import { computed, h } from 'vue';
+import { computed } from 'vue';
 
 import { $t } from '#/locales';
 
-import { Descriptions, Modal, Tag } from 'antdv-next';
+import {Descriptions, Divider, Modal} from 'antdv-next';
 
 // ==================== Props & Emits ====================
 
@@ -29,16 +29,12 @@ const emit = defineEmits<{
 const detailItems = computed<DescriptionsItemType[]>(() => {
   if (!props.data) return [];
   const renderStatus = (status: number) => {
-    return h(Tag, { color: status === 1 ? 'green' : 'red' }, () =>
-      status === 1 ? $t('system.common.normal') : $t('system.common.disabled')
-    );
+    return status === 1 ? $t('system.common.normal') : $t('system.common.disabled');
   };
 
   const renderRoles = (roles: string) => {
     if (!roles) return '-';
-    return roles.split(',').map((role, idx) =>
-      h(Tag, { key: idx, color: 'blue' }, () => role)
-    );
+    return roles.split(',').join('、');
   };
 
   return [
@@ -64,11 +60,12 @@ const handleClose = () => {
     :open="visible"
     :title="$t('system.user.userDetails')"
     :width="700"
-    :footer="null"
     class="system-modal-no-radius"
     @cancel="handleClose"
+    @ok="handleClose"
   >
-    <Descriptions :column="2" bordered :items="detailItems" />
+    <Divider/>
+    <Descriptions :column="1" bordered :items="detailItems" />
   </Modal>
 </template>
 

@@ -7,8 +7,8 @@ import { computed, ref, watch } from 'vue';
 import { $t } from '#/locales';
 
 import {
-  Button,
-  Form,
+  Button, Divider,
+  Form, FormInstance,
   FormItem,
   Input,
   InputNumber,
@@ -18,7 +18,7 @@ import {
   TextArea,
   TreeSelect,
 } from 'antdv-next';
-import type { FormInstance } from 'ant-design-vue';
+// import type { FormInstance } from 'ant-design-vue';
 import {createRoleApi, updateRoleApi} from "#/api/system/role";
 
 // ==================== Props & Emits ====================
@@ -148,6 +148,7 @@ watch(
     @ok="handleOk"
     @cancel="handleClose"
   >
+    <Divider/>
     <Form
       ref="formRef"
       :model="formData"

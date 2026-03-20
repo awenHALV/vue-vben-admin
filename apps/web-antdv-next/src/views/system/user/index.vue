@@ -40,6 +40,7 @@ const deptTreeData = ref<DeptTreeNode[]>([]);
 const searchKey = ref('');
 const expandedKeys = ref<string[]>([]);
 const selectedKeys = ref<string[]>([]);
+const checkedKeys = ref<string[]>([]);
 
 // 搜索表单
 const searchForm = reactive({
@@ -268,39 +269,35 @@ watch(selectedDeptId, () => {
 </script>
 
 <template>
-  <Page auto-content-height>
-    <Card class="h-full">
-      <div class="flex h-full">
-        <!-- 左侧部门树 -->
-        <div class="w-80 flex-shrink-0 pr-4">
-          <div class="mb-3">
-            <InputSearch
-              v-model:value="searchKey"
-              :placeholder="$t('system.org.orgNamePlaceholder')"
-              allow-clear
-            />
-          </div>
-          <Tree
-            v-model:expandedKeys="expandedKeys"
-            v-model:selectedKeys="selectedKeys"
-            :tree-data="filteredDeptTree"
-            :field-names="{ title: 'deptName', key: 'id', children: 'children' }"
-            block-node
-            class="h-[calc(100%-60px)]"
-            @select="handleDeptSelect"
+  <Page auto-content-height :title="$t('system.user.title')">
+    <div class="flex h-full gap-4">
+      <!-- 左侧部门树 -->
+      <Card class="w-80 flex-shrink-0">
+        <div class="mb-3">
+          <InputSearch
+            v-model:value="searchKey"
+            :placeholder="$t('system.org.orgNamePlaceholder')"
+            allow-clear
           />
         </div>
+        <Tree
+          v-model:expandedKeys="expandedKeys"
+          v-model:selectedKeys="selectedKeys"
+          v-model:checkedKeys="checkedKeys"
+          :tree-data="filteredDeptTree"
+          :field-names="{ title: 'deptName', key: 'id', children: 'children' }"
+          checkable
+          block-node
+          class="h-[calc(100%-60px)]"
+          @select="handleDeptSelect"
+        />
+      </Card>
 
-        <!-- 分割线 -->
-        <div class="w-px bg-border mr-4 flex-shrink-0"></div>
-
-        <!-- 右侧内容区 -->
-        <div class="flex-1 flex flex-col min-w-0">
-          <div class="mb-4">
-            <h1 class="text-lg font-medium">{{ $t('system.user.title') }}</h1>
-          </div>
-          <!-- 搜索表单 -->
-          <div class="pb-4 mb-4 border-b border-border">
+      <!-- 右侧内容区 -->
+      <div class="flex-1 flex flex-col min-w-0 gap-4">
+        <!-- 搜索表单 -->
+        <Card>
+          <div class="flex justify-between items-start">
             <Form layout="inline">
               <FormItem :label="$t('system.user.account')">
                 <Input
@@ -318,80 +315,77 @@ watch(selectedDeptId, () => {
                   style="width: 240px"
                 />
               </FormItem>
-              <FormItem>
-                <Space>
-                  <Button type="primary" class="w-21" @click="handleSearch">
-                    <template #icon><IconifyIcon icon="lucide:search" /></template>
-                    {{ $t('system.common.search') }}
-                  </Button>
-                  <Button class="w-21" @click="handleReset">
-                    <template #icon><IconifyIcon icon="lucide:rotate-ccw" /></template>
-                    {{ $t('system.common.reset') }}
-                  </Button>
-                </Space>
-              </FormItem>
             </Form>
+            <Space>
+              <Button type="primary" class="w-21" @click="handleSearch">
+                <template #icon><IconifyIcon icon="lucide:search" /></template>
+                {{ $t('system.common.search') }}
+              </Button>
+              <Button class="w-21" @click="handleReset">
+                <template #icon><IconifyIcon icon="lucide:rotate-ccw" /></template>
+                {{ $t('system.common.reset') }}
+              </Button>
+            </Space>
           </div>
+        </Card>
 
+
+
+        <!-- 用户列表 -->
+        <Card class="flex-1 min-h-0">
           <!-- 操作按钮 -->
-          <div class="mb-4">
+          <div class="mb-4 flex justify-end">
             <Space>
               <Button type="primary" class="w-21" @click="handleAdd">
                 <template #icon><IconifyIcon icon="lucide:plus" /></template>
                 {{ $t('system.common.add') }}
               </Button>
-              <Button class="w-24" @click="handleImport">
+              <Button class="w-26" @click="handleImport">
                 <template #icon><IconifyIcon icon="lucide:upload" /></template>
                 {{ $t('system.user.batchImport') }}
               </Button>
             </Space>
           </div>
-
-          <!-- 用户列表 -->
-          <div class="flex-1 min-h-0">
-            <Table
-              :columns="columns"
-              :data-source="tableData"
-              :loading="loading"
-              :pagination="pagination"
-              :scroll="{ x: 900 }"
-              row-key="id"
-              size="middle"
-              @change="handleTableChange"
-            >
-              <template #bodyCell="{ column, record, index }">
-                <template v-if="column.dataIndex === 'index'">
-                  {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
-                </template>
-                <template v-else-if="column.dataIndex === 'status'">
-                  <Tag :color="record.status === 1 ? 'success' : 'error'">
-                    {{ record.status === 1 ? $t('system.common.normal') : $t('system.common.disabled') }}
+          <Table
+            :columns="columns"
+            :data-source="tableData"
+            :loading="loading"
+            :pagination="pagination"
+            :scroll="{ x: 900 }"
+            row-key="id"
+            size="middle"
+            @change="handleTableChange"
+          >
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.dataIndex === 'index'">
+                {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+              </template>
+              <template v-else-if="column.dataIndex === 'status'">
+                {{ record.status === 1 ? $t('system.common.normal') : $t('system.common.disabled') }}
+              </template>
+              <template v-else-if="column.dataIndex === 'roleName'">
+                <template v-if="record.roleName">
+                  <Tag
+                    v-for="(role, idx) in record.roleName.split(',')"
+                    :key="idx"
+                    color="blue"
+                  >
+                    {{ role }}
                   </Tag>
                 </template>
-                <template v-else-if="column.dataIndex === 'roleName'">
-                  <template v-if="record.roleName">
-                    <Tag
-                      v-for="(role, idx) in record.roleName.split(',')"
-                      :key="idx"
-                      color="blue"
-                    >
-                      {{ role }}
-                    </Tag>
-                  </template>
-                </template>
-                <template v-else-if="column.key === 'action'">
-                  <Space>
-                    <a @click="handleView(record)">{{ $t('system.common.view') }}</a>
-                    <a @click="handleEdit(record)">{{ $t('system.common.edit') }}</a>
-                    <a @click="handlePasswordReset(record)">{{ $t('system.user.resetPassword') }}</a>
-                  </Space>
-                </template>
               </template>
-            </Table>
-          </div>
-        </div>
+              <template v-else-if="column.key === 'action'">
+                <Space>
+                  <a @click="handleView(record)">{{ $t('system.common.view') }}</a>
+                  <a @click="handleEdit(record)">{{ $t('system.common.edit') }}</a>
+                  <a @click="handlePasswordReset(record)">{{ $t('system.user.editPassword') }}</a>
+                </Space>
+              </template>
+            </template>
+          </Table>
+        </Card>
       </div>
-    </Card>
+    </div>
 
     <!-- 用户表单弹窗 -->
     <UserForm

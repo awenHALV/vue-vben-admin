@@ -99,11 +99,6 @@ const handleReset = () => {
   getTableData();
 };
 
-const handleAdd = () => {
-  formType.value = 'add';
-  formData.value = {};
-  formVisible.value = true;
-};
 
 const handleEdit = (record: OrgInfo) => {
   formType.value = 'edit';
@@ -156,39 +151,36 @@ onMounted(() => {
 </script>
 
 <template>
-  <Page auto-content-height>
-    <Card class="h-full">
+  <Page auto-content-height :title="$t('system.org.title')">
+    <div class="flex flex-col h-full gap-4">
       <!-- 搜索表单 -->
-      <div class="pb-4 mb-4 border-b border-border">
-        <div class="mb-4">
-          <h1 class="text-lg font-medium">{{ $t('system.org.title') }}</h1>
+      <Card>
+        <div class="flex justify-between items-start">
+          <Form layout="inline">
+            <FormItem :label="$t('system.org.orgName')">
+              <Input
+                v-model:value="searchForm.deptName"
+                :placeholder="$t('system.org.orgNamePlaceholder')"
+                allow-clear
+                style="width: 240px"
+              />
+            </FormItem>
+          </Form>
+          <Space>
+            <Button type="primary" class="w-21" @click="handleSearch">
+              <template #icon><IconifyIcon icon="lucide:search" /></template>
+              {{ $t('system.common.search') }}
+            </Button>
+            <Button class="w-21" @click="handleReset">
+              <template #icon><IconifyIcon icon="lucide:rotate-ccw" /></template>
+              {{ $t('system.common.reset') }}
+            </Button>
+          </Space>
         </div>
-        <Form layout="inline">
-          <FormItem :label="$t('system.org.orgName')">
-            <Input
-              v-model:value="searchForm.deptName"
-              :placeholder="$t('system.org.orgNamePlaceholder')"
-              allow-clear
-              style="width: 240px"
-            />
-          </FormItem>
-          <FormItem>
-            <Space>
-              <Button type="primary" class="w-21" @click="handleSearch">
-                <template #icon><IconifyIcon icon="lucide:search" /></template>
-                {{ $t('system.common.search') }}
-              </Button>
-              <Button class="w-21" @click="handleReset">
-                <template #icon><IconifyIcon icon="lucide:rotate-ccw" /></template>
-                {{ $t('system.common.reset') }}
-              </Button>
-            </Space>
-          </FormItem>
-        </Form>
-      </div>
+      </Card>
 
       <!-- 组织列表 -->
-      <div class="flex-1 min-h-0">
+      <Card class="flex-1 min-h-0">
         <Table
           :columns="columns"
           :data-source="tableData"
@@ -208,7 +200,7 @@ onMounted(() => {
             <Space>
               <a @click="handleEdit(record)">{{ $t('system.common.edit') }}</a>
               <a
-                :class="!record.parentId || record.parentId === '0' ? 'text-gray-400 cursor-not-allowed' : ''"
+                :style="(!record.parentId || record.parentId === '0') ? { color: '#9ca3af', cursor: 'not-allowed' } : { color: '#ef4444' }"
                 @click="handleDelete(record)"
               >
                 {{ $t('system.common.delete') }}
@@ -218,8 +210,8 @@ onMounted(() => {
           </template>
         </template>
         </Table>
-      </div>
-    </Card>
+      </Card>
+    </div>
 
     <!-- 组织表单弹窗 -->
     <OrgForm

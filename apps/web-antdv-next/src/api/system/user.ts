@@ -80,7 +80,7 @@ export interface UpdateUserParams {
 }
 
 /** 重置密码参数 */
-export interface ResetPasswordParams {
+export interface EditPasswordParams {
   id: string;
   pwd: string;
   password2: string;
@@ -150,7 +150,7 @@ export async function updateUserApi(data: UpdateUserParams) {
 /**
  * 重置密码
  */
-export async function resetPasswordApi(data: ResetPasswordParams) {
+export async function editPasswordApi(data: EditPasswordParams) {
   return requestClient.post('/de-base-system/external/private/user/pwd/update', data);
 }
 

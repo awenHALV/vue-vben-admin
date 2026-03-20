@@ -7,7 +7,7 @@ import {
   createUserApi,
   getDeptTreeApi,
   getDeptRolesApi,
-  resetPasswordApi,
+  editPasswordApi,
   updateUserApi,
 } from '#/api/system/user';
 
@@ -16,7 +16,8 @@ import { $t } from '#/locales';
 import {
   Button,
   Col,
-  Form,
+  Divider,
+  Form, FormInstance,
   FormItem,
   Input,
   InputPassword,
@@ -24,12 +25,9 @@ import {
   Modal,
   Row,
   Select,
-  Switch,
   TreeSelect,
 } from 'antdv-next';
-import type { FormInstance } from 'ant-design-vue';
-
-const SelectOption = Select.Option;
+// import type { FormInstance } from 'ant-design-vue';
 
 // ==================== Props & Emits ====================
 
@@ -76,7 +74,7 @@ const modalTitle = computed(() => {
   const titles = {
     add: $t('system.user.addUser'),
     edit: $t('system.user.editUser'),
-    passwordReset: $t('system.user.resetPassword'),
+    passwordReset: $t('system.user.editPassword'),
   };
   return titles[props.type];
 });
@@ -84,14 +82,6 @@ const modalTitle = computed(() => {
 const isAdd = computed(() => props.type === 'add');
 const isEdit = computed(() => props.type === 'edit');
 const isPasswordReset = computed(() => props.type === 'passwordReset');
-
-// Switch 状态绑定
-const statusChecked = computed({
-  get: () => formData.value.status === 1,
-  set: (val: boolean) => {
-    formData.value.status = val ? 1 : 0;
-  },
-});
 
 // ==================== 表单规则 ====================
 
@@ -134,14 +124,14 @@ const rules = computed(() => {
 
   // 密码重置时的规则
   if (isPasswordReset.value) {
-    // baseRules.pwd = [
-    //   { required: true, message: $t('system.user.passwordRequired'), trigger: 'blur' },
-    //   {
-    //     pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,32}$/,
-    //     message: $t('system.user.passwordFormat'),
-    //     trigger: 'blur',
-    //   },
-    // ];
+    baseRules.pwd = [
+      { required: true, message: $t('system.user.passwordRequired'), trigger: 'blur' },
+      {
+        pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,32}$/,
+        message: $t('system.user.passwordFormat'),
+        trigger: 'blur',
+      },
+    ];
     baseRules.password2 = [
       { required: true, message: $t('system.user.confirmPassword'), trigger: 'blur' },
       {
@@ -171,6 +161,12 @@ const rules = computed(() => {
         trigger: 'change',
       },
     ];
+  }
+
+  // 编辑时的状态必填规则
+  if (isEdit.value) {
+    baseRules.status = [{ required: true, message: $t('system.common.selectPlaceholder'), trigger: 'change' }];
+
   }
 
   return baseRules;
@@ -206,28 +202,24 @@ const handleOk = async () => {
     await formRef.value?.validate();
     loading.value = true;
     if (isAdd.value) {
-      delete formData.value.password2;
       await createUserApi({
         ...formData.value,
         roleId: formData.value.roleId.join(','),
       });
       message.success($t('system.common.addSuccess'));
     } else if (isEdit.value) {
-      delete formData.value.password2;
-      delete formData.value.account;
-      delete formData.value.pwd;
       await updateUserApi({
         ...formData.value,
         roleId: formData.value.roleId.join(','),
       });
       message.success($t('system.common.editSuccess'));
     } else if (isPasswordReset.value) {
-      await resetPasswordApi({
+      await editPasswordApi({
         id: formData.value.id,
         pwd: formData.value.pwd,
         phone: formData.value.phone,
       });
-      message.success($t('system.user.resetPassword') + $t('system.common.addSuccess'));
+      message.success($t('system.user.editPassword') + $t('system.common.addSuccess'));
     }
 
     emit('success');
@@ -310,6 +302,7 @@ watch(
     @ok="handleOk"
     @cancel="handleClose"
   >
+    <Divider/>
     <Form
       ref="formRef"
       :model="formData"
@@ -321,9 +314,6 @@ watch(
       <template v-if="isPasswordReset">
         <FormItem :label="$t('system.user.account')" name="account">
           <Input v-model:value="formData.account" disabled />
-        </FormItem>
-        <FormItem :label="$t('system.user.phone')" >
-          <Input v-model:value="formData.phone" :placeholder="$t('system.user.phonePlaceholder')" :maxlength="11" allow-clear />
         </FormItem>
         <FormItem :label="$t('system.user.password')" name="pwd">
           <InputPassword
@@ -345,9 +335,7 @@ watch(
 
       <!-- 新增/编辑模式 -->
       <template v-else>
-        <Row :gutter="16">
-          <Col :span="12">
-            <FormItem :label="$t('system.user.account')" name="account" >
+            <FormItem :label="$t('system.user.account')" name="account" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
               <Input
                 v-model:value="formData.account"
                 :placeholder="$t('system.user.accountPlaceholder')"
@@ -356,27 +344,23 @@ watch(
                 allow-clear
               />
             </FormItem>
-          </Col>
-          <Col :span="12">
-            <FormItem :label="$t('system.user.name')" name="name" >
-              <Input v-model:value="formData.name" :placeholder="$t('system.user.namePlaceholder')" :maxlength="20" allow-clear />
-            </FormItem>
-          </Col>
-        </Row>
 
-        <Row :gutter="16">
-          <Col :span="12">
-            <FormItem v-if="isAdd" :label="$t('system.user.password')" name="pwd" >
-              <InputPassword
-                v-model:value="formData.pwd"
-                :placeholder="$t('system.user.passwordPlaceholder')"
-                :maxlength="20"
-                allow-clear
-              />
-            </FormItem>
-          </Col>
-          <Col :span="12">
-            <FormItem v-if="isAdd" :label="$t('system.user.confirmPassword')" name="password2">
+        <FormItem
+          v-if="isAdd"
+          :label="$t('system.user.password')"
+          :tooltip="$t('system.user.passwordFormat')"
+          name="pwd"
+          :label-col="{ span: 4 }"
+          :wrapper-col="{ span: 20 }"
+        >
+          <InputPassword
+              v-model:value="formData.pwd"
+              :placeholder="$t('system.user.passwordPlaceholder')"
+              :maxlength="20"
+              allow-clear
+          />
+        </FormItem>
+            <FormItem v-if="isAdd" :label="$t('system.user.confirmPassword')" name="password2" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
               <InputPassword
                 v-model:value="formData.password2"
                 :placeholder="$t('system.user.confirmPasswordPlaceholder')"
@@ -384,33 +368,29 @@ watch(
                 allow-clear
               />
             </FormItem>
-          </Col>
-        </Row>
-
-        <Row :gutter="16">
-          <Col :span="12">
-            <FormItem :label="$t('system.user.phone')" name="phone" >
+        <FormItem v-if="isEdit" :label="$t('system.common.status')" name="status" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
+          <Select
+              v-model:value="formData.status"
+              :placeholder="$t('system.common.selectPlaceholder')"
+              :options="[
+                { label: $t('system.common.normal'), value: 1 },
+                { label: $t('system.common.disabled'), value: 0 }
+              ]"
+              allow-clear
+          />
+        </FormItem>
+            <FormItem :label="$t('system.user.name')" name="name" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
+             <Input v-model:value="formData.name" :placeholder="$t('system.user.namePlaceholder')" :maxlength="20" allow-clear />
+           </FormItem>
+            <FormItem :label="$t('system.user.phone')" name="phone" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
               <Input v-model:value="formData.phone" :placeholder="$t('system.user.phonePlaceholder')" :maxlength="11" allow-clear />
             </FormItem>
-          </Col>
-          <Col :span="12">
-            <FormItem :label="$t('system.user.email')" name="email">
+            <FormItem :label="$t('system.user.email')" name="email" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
               <Input v-model:value="formData.email" :placeholder="$t('system.user.emailPlaceholder')" :maxlength="50" allow-clear />
             </FormItem>
-          </Col>
-        </Row>
-        <Row :gutter="16">
-          <Col :span="12">
-          <FormItem v-if="!isAdd" :label="$t('system.common.status')" name="status">
-            <Switch
-                v-model:checked="statusChecked"
-                :checked-children="$t('system.common.normal')"
-                :un-checked-children="$t('system.common.disabled')"
-            />
-          </FormItem>
-          </Col>
-        </Row>
-        <FormItem :label="$t('system.user.org')" name="deptId" :label-col="{ span: 3 }" :wrapper-col="{ span: 20 }">
+
+
+        <FormItem :label="$t('system.user.org')" name="deptId" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
           <TreeSelect
             v-model:value="formData.deptId"
             :tree-data="deptTreeData"
@@ -422,7 +402,7 @@ watch(
           />
         </FormItem>
 
-        <FormItem :label="$t('system.user.role')" name="roleId" :label-col="{ span: 3 }" :wrapper-col="{ span: 20 }">
+        <FormItem :label="$t('system.user.role')" name="roleId" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
           <Select
             v-model:value="formData.roleId"
             mode="multiple"
@@ -456,5 +436,15 @@ watch(
 .system-modal-no-radius.ant-modal,
 .system-modal-no-radius .ant-modal-content {
   border-radius: 0 !important;
+}
+
+.system-modal-no-radius .ant-form-item-label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.system-modal-no-radius .ant-form-item-label > label {
+  justify-content: flex-end;
 }
 </style>

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 
-import { Button, Form, FormItem, message, Modal, Upload } from 'antdv-next';
+import {Button, Divider, Form, FormItem, message, Modal, Upload} from 'antdv-next';
 import type { UploadProps } from 'ant-design-vue';
 
 import { getUserImportTemplateUrl, importUserApi } from '#/api/system/user';
@@ -75,32 +75,34 @@ const handleClose = () => {
 <template>
   <Modal
     :open="visible"
-    title="批量导入用户"
+    title="批量导入"
     :width="500"
     :footer="null"
     class="system-modal-no-radius"
     @cancel="handleClose"
   >
+    <Divider/>
     <Form :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
+      <FormItem label="模板上传">
+        <Upload
+            v-model:file-list="fileList"
+            :before-upload="beforeUpload"
+            :custom-request="handleUpload"
+            accept=".xls,.xlsx"
+            :max-count="1"
+        >
+          <Button :loading="loading">点击上传</Button>  <span class="mt-2 text-gray-400 text-xs">
+          请上传 .xls, .xlsx 标准格式文件
+        </span>
+        </Upload>
+
+      </FormItem>
       <FormItem label="模板下载">
         <Button type="primary" @click="handleDownloadTemplate">
-          下载模板
+          点击下载
         </Button>
       </FormItem>
-      <FormItem label="文件上传">
-        <Upload
-          v-model:file-list="fileList"
-          :before-upload="beforeUpload"
-          :custom-request="handleUpload"
-          accept=".xls,.xlsx"
-          :max-count="1"
-        >
-          <Button :loading="loading">选择文件</Button>
-        </Upload>
-        <div class="mt-2 text-gray-400 text-xs">
-          仅支持 .xls, .xlsx 格式，文件大小不超过 10MB
-        </div>
-      </FormItem>
+
     </Form>
   </Modal>
 </template>

@@ -6,7 +6,7 @@ import { ref, watch } from 'vue';
 import { $t } from '#/locales';
 
 import {
-  Button,
+  Button, Divider,
   message,
   Modal,
   Spin,
@@ -154,6 +154,7 @@ watch(
     @ok="handleOk"
     @cancel="handleClose"
   >
+    <Divider/>
     <Spin :spinning="loading">
       <Tree
         v-model:checkedKeys="checkedKeys"
