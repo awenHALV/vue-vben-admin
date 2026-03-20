@@ -1,8 +1,21 @@
 import { requestClient } from '#/api/request';
 
 export interface BackendTenantItem {
+  /** 后端可能返回的菜单 id 列表（逗号分隔） */
+  appFeatureIds?: string;
+  /** 分页/详情若返回 snake_case */
+  app_feature_ids?: string;
+  adminAccount?: string;
+  adminName?: string;
+  adminPhone?: string;
+  admin_name?: string;
+  admin_phone?: string;
+  companyName?: string;
   contact?: string;
   createdAt?: string;
+  creditCode?: string;
+  featureIds?: string | string[];
+  feature_ids?: string | string[];
   id: number | string;
   phone?: string;
   remark?: string;
@@ -47,7 +60,9 @@ export async function getTenantPageApi(
   params: TenantPageParams = {},
 ): Promise<TenantPageResult> {
   const res = await requestClient.get<
-    BackendTenantItem[] | BackendPagedResult<BackendTenantItem> | TenantPageResult
+    | BackendPagedResult<BackendTenantItem>
+    | BackendTenantItem[]
+    | TenantPageResult
   >('/de-base-system/external/private/tenant/page', { params } as any);
 
   if (Array.isArray(res)) {
@@ -57,46 +72,66 @@ export async function getTenantPageApi(
   if (res && typeof res === 'object') {
     const paged = res as BackendPagedResult<BackendTenantItem>;
     if (Array.isArray(paged.records)) {
-      return { items: paged.records, total: paged.total ?? paged.records.length };
+      return {
+        items: paged.records,
+        total: paged.total ?? paged.records.length,
+      };
     }
     const legacy = res as TenantPageResult;
     if (Array.isArray(legacy.items)) {
-      return { items: legacy.items, total: legacy.total ?? legacy.items.length };
+      return {
+        items: legacy.items,
+        total: legacy.total ?? legacy.items.length,
+      };
     }
   }
 
   return { items: [], total: 0 };
 }
 
-export interface CreateTenantParams {
-  contact?: string;
-  phone?: string;
-  remark?: string;
-  status?: boolean | number | string;
-  tenantCode: string;
+/**
+ * 新增租户请求体（与接口文档一致）
+ * POST /de-base-system/external/private/tenant/create
+ */
+export interface TenantCreateBody {
+  /** 菜单 id，英文逗号分隔 */
+  appFeatureIds: string;
+  adminName: string;
+  adminPhone: string;
+  companyName: string;
+  creditCode: string;
   tenantName: string;
-  tenantNameEn?: string;
 }
 
-export async function createTenantApi(params: CreateTenantParams): Promise<void> {
-  await requestClient.post('/de-base-system/external/private/tenant/create', params);
+export async function createTenantApi(body: TenantCreateBody): Promise<void> {
+  await requestClient.post(
+    '/de-base-system/external/private/tenant/create',
+    body,
+  );
 }
 
-export interface UpdateTenantParams extends CreateTenantParams {
+/** 更新租户（在新增字段基础上增加主键与租户编码） */
+export interface UpdateTenantParams extends TenantCreateBody {
   id: number | string;
+  tenantCode: string;
 }
 
-export async function updateTenantApi(params: UpdateTenantParams): Promise<void> {
-  await requestClient.post('/de-base-system/external/private/tenant/update', params);
+export async function updateTenantApi(
+  params: UpdateTenantParams,
+): Promise<void> {
+  await requestClient.post(
+    '/de-base-system/external/private/tenant/update',
+    params,
+  );
 }
 
-export async function deleteTenantApi(id: number | string): Promise<void> {
-  await requestClient.post('/de-base-system/external/private/tenant/delete', { id });
+export async function batchDeleteTenantApi(
+  ids: Array<number | string>,
+): Promise<void> {
+  await requestClient.post(
+    '/de-base-system/external/private/tenant/batch-delete',
+    {
+      ids,
+    },
+  );
 }
-
-export async function batchDeleteTenantApi(ids: Array<number | string>): Promise<void> {
-  await requestClient.post('/de-base-system/external/private/tenant/batch-delete', {
-    ids,
-  });
-}
-

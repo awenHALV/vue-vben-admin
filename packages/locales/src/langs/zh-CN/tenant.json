@@ -1,9 +1,15 @@
 {
   "title": "租户管理",
   "list": {
-    "tenantCode": "租户编码",
+    "id": "租户ID",
     "tenantName": "租户名称",
     "tenantNameEn": "英文名称",
+    "tenantCode": "租户编码",
+    "companyName": "公司名称",
+    "creditCode": "社会信用代码",
+    "adminAccount": "管理员账号",
+    "adminName": "管理员用户姓名",
+    "adminPhone": "管理员手机号",
     "contact": "联系人",
     "phone": "联系电话",
     "status": "状态",
@@ -11,17 +17,51 @@
     "placeholderName": "请输入租户名称",
     "placeholderCode": "请输入租户编码"
   },
+  "modal": {
+    "addTenant": "新增租户",
+    "editTenant": "编辑租户"
+  },
   "form": {
+    "id": "租户ID",
     "tenantCode": "租户编码",
     "tenantName": "租户名称",
     "tenantNameEn": "英文名称",
+    "tenantInfo": "租户信息",
+    "companyName": "公司名称",
+    "creditCode": "社会信用代码",
+    "features": "功能列表",
+    "adminName": "管理员姓名",
+    "adminPhone": "管理员手机号",
     "contact": "联系人",
     "phone": "联系电话",
     "remark": "备注",
-    "status": "启用状态"
+    "status": "状态",
+    "placeholder": {
+      "tenantInfo": "请输入租户信息",
+      "companyName": "请输入公司名称",
+      "creditCode": "请输入统一社会信用代码",
+      "features": "请选择功能模块",
+      "adminName": "请输入管理员姓名",
+      "adminPhone": "请输入管理员手机号"
+    }
+  },
+  "featuresTree": {
+    "newEnergy": "新能源场景",
+    "parkMicrogrid": "园区微网",
+    "pvMonitor": "光伏监控",
+    "storageCloud": "储能云平台",
+    "energyMonitor": "用能监测",
+    "integratedBusiness": "综合业务",
+    "homeMicrogrid": "家庭微网",
+    "virtualPlant": "虚拟电厂",
+    "integratedEnergy": "综合能源",
+    "ems": "EMS"
+  },
+  "rules": {
+    "phoneInvalid": "请输入正确的11位手机号码"
   },
   "status": {
-    "enabled": "启用",
+    "enabled": "正常",
     "disabled": "禁用"
   },
   "action": {

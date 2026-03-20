@@ -33,11 +33,14 @@ function mapMenuToRoute(item: BackendMenuItem): RouteRecordStringComponent {
 
   // 叶子路由：根据 routePath 推断 component 路径
   // 例如 /system/menu → views/system/menu/index.vue → 归一化后为 system/menu/index.vue
-  const inferredComponent = hasChildren
-    ? 'BasicLayout'
-    : item.routePath
-      ? `${item.routePath.replace(/^\//, '')}/index`
-      : '/';
+  let inferredComponent: string;
+  if (hasChildren) {
+    inferredComponent = 'BasicLayout';
+  } else if (item.routePath) {
+    inferredComponent = `${item.routePath.replace(/^\//, '')}/index`;
+  } else {
+    inferredComponent = '/';
+  }
 
   return {
     name: item.featureCode,
@@ -60,14 +63,84 @@ function mapMenuToRoute(item: BackendMenuItem): RouteRecordStringComponent {
 }
 
 /**
+ * 获取「我的功能」原始树（与 {@link getAllMenusApi} 同源接口）
+ * 含 MENU / BUTTON / API 等全部节点，用于租户勾选能力等场景
+ */
+export async function getMineFeaturesRawApi(): Promise<BackendMenuItem[]> {
+  const rawList = await requestClient.get<BackendMenuItem[]>(
+    '/de-base-system/external/private/mine/feature',
+  );
+  return Array.isArray(rawList) ? rawList : [];
+}
+
+/** Ant Design Vue TreeSelect 的 treeData 节点 */
+export interface AppFeatureTreeNode {
+  children?: AppFeatureTreeNode[];
+  title: string;
+  value: string;
+}
+
+export interface MapMenusToFeatureTreeOptions {
+  /** 是否优先展示英文名（与路由 meta 逻辑一致） */
+  useEnglishName: boolean;
+  t: (key: string) => string;
+}
+
+function featureTypeLabel(
+  featureType: string,
+  t: (key: string) => string,
+): string {
+  const ft = String(featureType).toUpperCase();
+  if (ft === 'MENU') {
+    return t('menu.type.menu');
+  }
+  if (ft === 'BUTTON') {
+    return t('menu.type.button');
+  }
+  if (ft === 'API') {
+    return t('menu.type.api');
+  }
+  return featureType;
+}
+
+/**
+ * 将后端功能树转为 TreeSelect 数据，标题附带「菜单/按钮/接口」标识
+ */
+export function mapBackendMenusToFeatureTree(
+  items: BackendMenuItem[],
+  options: MapMenusToFeatureTreeOptions,
+): AppFeatureTreeNode[] {
+  const mapOne = (item: BackendMenuItem): AppFeatureTreeNode => {
+    const baseName =
+      options.useEnglishName && item.featureNameEn
+        ? item.featureNameEn
+        : item.featureName;
+    const typeLabel = featureTypeLabel(item.featureType, options.t);
+    const rawChildren = item.children ?? [];
+    const childList = Array.isArray(rawChildren)
+      ? rawChildren.filter(Boolean)
+      : [];
+    const childrenNodes = childList.map((c) => mapOne(c));
+
+    const node: AppFeatureTreeNode = {
+      title: `${baseName} (${typeLabel})`,
+      value: String(item.id),
+    };
+    if (childrenNodes.length > 0) {
+      node.children = childrenNodes;
+    }
+    return node;
+  };
+
+  return (items ?? []).filter(Boolean).map((item) => mapOne(item));
+}
+
+/**
  * 获取用户所有菜单（后端模式）
  * 接口返回后端自定义格式，此处统一做字段映射转换为 Vben 标准路由格式
  */
 export async function getAllMenusApi(): Promise<RouteRecordStringComponent[]> {
-  const rawList = await requestClient.get<BackendMenuItem[]>(
-    '/de-base-system/external/private/mine/feature',
-  );
-  if (!Array.isArray(rawList)) return [];
+  const rawList = await getMineFeaturesRawApi();
   return rawList
     .filter((item) => item.featureType === 'MENU')
     .map((item) => mapMenuToRoute(item));
@@ -181,7 +254,7 @@ export async function updateFeatureApi(
  * 删除菜单/功能（支持单个或批量）
  */
 export async function deleteFeatureApi(
-  ids: number | string | Array<number | string>,
+  ids: Array<number | string> | number | string,
 ): Promise<void> {
   const normalizedIds = Array.isArray(ids) ? ids.join(',') : String(ids);
   await requestClient.post(

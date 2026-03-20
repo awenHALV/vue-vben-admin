@@ -1,9 +1,15 @@
 {
   "title": "Tenant Management",
   "list": {
-    "tenantCode": "Tenant Code",
+    "id": "Tenant ID",
     "tenantName": "Tenant Name",
     "tenantNameEn": "English Name",
+    "tenantCode": "Tenant Code",
+    "companyName": "Company Name",
+    "creditCode": "Unified Social Credit Code",
+    "adminAccount": "Admin Account",
+    "adminName": "Admin Full Name",
+    "adminPhone": "Admin Phone",
     "contact": "Contact",
     "phone": "Phone",
     "status": "Status",
@@ -11,17 +17,51 @@
     "placeholderName": "Please enter tenant name",
     "placeholderCode": "Please enter tenant code"
   },
+  "modal": {
+    "addTenant": "Add Tenant",
+    "editTenant": "Edit Tenant"
+  },
   "form": {
+    "id": "Tenant ID",
     "tenantCode": "Tenant Code",
     "tenantName": "Tenant Name",
     "tenantNameEn": "English Name",
+    "tenantInfo": "Tenant Information",
+    "companyName": "Company Name",
+    "creditCode": "Unified Social Credit Code",
+    "features": "Features",
+    "adminName": "Administrator Name",
+    "adminPhone": "Administrator Mobile",
     "contact": "Contact",
     "phone": "Phone",
     "remark": "Remark",
-    "status": "Enabled"
+    "status": "Status",
+    "placeholder": {
+      "tenantInfo": "Please enter tenant information",
+      "companyName": "Please enter company name",
+      "creditCode": "Please enter unified social credit code",
+      "features": "Please select feature modules",
+      "adminName": "Please enter administrator name",
+      "adminPhone": "Please enter administrator mobile number"
+    }
+  },
+  "featuresTree": {
+    "newEnergy": "New Energy Scenarios",
+    "parkMicrogrid": "Park Microgrid",
+    "pvMonitor": "Photovoltaic Monitoring",
+    "storageCloud": "Energy Storage Cloud",
+    "energyMonitor": "Energy Consumption Monitoring",
+    "integratedBusiness": "Integrated Business",
+    "homeMicrogrid": "Home Microgrid",
+    "virtualPlant": "Virtual Power Plant",
+    "integratedEnergy": "Integrated Energy",
+    "ems": "EMS"
+  },
+  "rules": {
+    "phoneInvalid": "Please enter a valid 11-digit mobile number"
   },
   "status": {
-    "enabled": "Enabled",
+    "enabled": "Normal",
     "disabled": "Disabled"
   },
   "action": {

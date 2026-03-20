@@ -3,18 +3,14 @@ import type { BackendTenantItem, TenantPageParams } from '#/api/core/tenant';
 
 import { computed, ref } from 'vue';
 
-import { Page, VbenButton } from '@vben/common-ui';
-import { Plus, Trash2 } from '@vben/icons';
+import { Page, VbenButton, VbenInput } from '@vben/common-ui';
+import { Plus } from '@vben/icons';
 import { $t } from '@vben/locales';
 
-import { message, Modal } from 'antdv-next';
+import { Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import {
-  batchDeleteTenantApi,
-  deleteTenantApi,
-  getTenantPageApi,
-} from '#/api/core/tenant';
+import { getTenantPageApi } from '#/api/core/tenant';
 
 import AddOrUpdate from './AddOrUpdate.vue';
 
@@ -22,54 +18,9 @@ defineOptions({ name: 'SystemTenant' });
 
 const addOrUpdateRef = ref<InstanceType<typeof AddOrUpdate> | null>(null);
 
-function openAdd() {
-  addOrUpdateRef.value?.open();
-}
-
-function openEdit(record: BackendTenantItem) {
-  addOrUpdateRef.value?.open(record);
-}
-
-async function handleDelete(record: BackendTenantItem) {
-  Modal.confirm({
-    title: $t('tenant.action.delete'),
-    content: $t('tenant.message.deleteConfirm', { 0: record.tenantName }),
-    okType: 'danger',
-    onOk: async () => {
-      try {
-        await deleteTenantApi(record.id);
-        message.success($t('tenant.message.deleted', { 0: record.tenantName }));
-        await gridApi.reload();
-      } catch {
-        message.error($t('tenant.message.deleteFailed'));
-      }
-    },
-  });
-}
-
-async function handleBatchDelete() {
-  const records =
-    (await gridApi.grid.getCheckboxRecords()) as BackendTenantItem[];
-  if (records.length === 0) {
-    message.warning($t('tenant.message.selectFirst'));
-    return;
-  }
-
-  Modal.confirm({
-    title: $t('tenant.action.batchDelete'),
-    content: $t('tenant.message.batchDeleteConfirm', { 0: records.length }),
-    okType: 'danger',
-    onOk: async () => {
-      try {
-        await batchDeleteTenantApi(records.map((r) => r.id));
-        message.success($t('tenant.message.batchDeleteSuccess'));
-        await gridApi.reload();
-      } catch {
-        message.error($t('tenant.message.deleteFailed'));
-      }
-    },
-  });
-}
+/** 与菜单管理页一致的搜索条，条件通过 reload 传给 proxy */
+const searchTenantName = ref('');
+const searchTenantCode = ref('');
 
 const statusLabel = computed(() => ({
   true: $t('tenant.status.enabled'),
@@ -77,28 +28,9 @@ const statusLabel = computed(() => ({
 }));
 
 const [Grid, gridApi] = useVbenVxeGrid<BackendTenantItem>({
-  tableTitle: $t('tenant.title'),
-  showSearchForm: true,
-  formOptions: {
-    schema: [
-      {
-        component: 'VbenInput',
-        fieldName: 'tenantName',
-        label: $t('tenant.list.tenantName'),
-        componentProps: {
-          placeholder: $t('tenant.list.placeholderName'),
-        },
-      },
-      {
-        component: 'VbenInput',
-        fieldName: 'tenantCode',
-        label: $t('tenant.list.tenantCode'),
-        componentProps: {
-          placeholder: $t('tenant.list.placeholderCode'),
-        },
-      },
-    ],
-  },
+  /** 使用与菜单管理一致的自定义搜索区（见模板） */
+  showSearchForm: false,
+  separator: false,
   gridOptions: {
     height: 'auto',
     rowConfig: { isHover: true },
@@ -118,10 +50,9 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendTenantItem>({
       },
     },
     columns: [
-      { type: 'checkbox', width: 44, fixed: 'left' },
       {
-        field: 'tenantCode',
-        title: $t('tenant.list.tenantCode'),
+        field: 'id',
+        title: $t('tenant.list.id'),
         minWidth: 160,
       },
       {
@@ -130,20 +61,29 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendTenantItem>({
         minWidth: 180,
       },
       {
-        field: 'tenantNameEn',
-        title: $t('tenant.list.tenantNameEn'),
-        minWidth: 180,
-        showOverflow: true,
+        field: 'companyName',
+        title: $t('tenant.list.companyName'),
+        minWidth: 100,
       },
       {
-        field: 'contact',
-        title: $t('tenant.list.contact'),
-        minWidth: 140,
+        field: 'creditCode',
+        title: $t('tenant.list.creditCode'),
+        minWidth: 100,
       },
       {
-        field: 'phone',
-        title: $t('tenant.list.phone'),
-        minWidth: 140,
+        field: 'adminAccount',
+        title: $t('tenant.list.adminAccount'),
+        minWidth: 100,
+      },
+      {
+        field: 'adminName',
+        title: $t('tenant.list.adminName'),
+        minWidth: 100,
+      },
+      {
+        field: 'adminPhone',
+        title: $t('tenant.list.adminPhone'),
+        minWidth: 100,
       },
       {
         field: 'status',
@@ -165,41 +105,118 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendTenantItem>({
     ],
   },
 });
+
+function getSearchPayload(): Partial<TenantPageParams> {
+  const tenantName = searchTenantName.value.trim();
+  const tenantCode = searchTenantCode.value.trim();
+  const payload: Partial<TenantPageParams> = {};
+  if (tenantName) {
+    payload.tenantName = tenantName;
+  }
+  if (tenantCode) {
+    payload.tenantCode = tenantCode;
+  }
+  return payload;
+}
+
+async function reloadTenantGrid() {
+  await gridApi.reload(getSearchPayload());
+}
+
+function handleSearch() {
+  void reloadTenantGrid();
+}
+
+function handleReset() {
+  searchTenantName.value = '';
+  searchTenantCode.value = '';
+  void reloadTenantGrid();
+}
+
+function openAdd() {
+  addOrUpdateRef.value?.open();
+}
+
+function openEdit(record: BackendTenantItem) {
+  addOrUpdateRef.value?.open(record);
+}
 </script>
 
 <template>
-  <Page :auto-content-height="true" content-class="flex flex-col gap-3 p-4">
+  <Page
+    :title="$t('tenant.title')"
+    :auto-content-height="true"
+    content-class="flex flex-col gap-3 p-4"
+  >
+    <!-- 搜索区域：与 system/menu 同一套布局与按钮样式 -->
+    <div
+      class="flex flex-nowrap items-center justify-between gap-3 overflow-x-auto rounded-lg border border-border bg-background px-4 py-3 shadow-sm"
+    >
+      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-6 gap-y-2">
+        <div class="flex items-center gap-2">
+          <span class="shrink-0 text-sm text-muted-foreground">{{
+            $t('tenant.list.tenantName')
+          }}</span>
+          <VbenInput
+            v-model="searchTenantName"
+            class="w-56 [&_input]:h-8"
+            :placeholder="$t('tenant.list.placeholderName')"
+            @keydown.enter="handleSearch"
+          />
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="shrink-0 text-sm text-muted-foreground">{{
+            $t('tenant.list.tenantCode')
+          }}</span>
+          <VbenInput
+            v-model="searchTenantCode"
+            class="w-56 [&_input]:h-8"
+            :placeholder="$t('tenant.list.placeholderCode')"
+            @keydown.enter="handleSearch"
+          />
+        </div>
+      </div>
+      <div class="ml-auto flex shrink-0 items-center justify-end">
+        <Space>
+          <VbenButton
+            class="w-[60px]"
+            size="sm"
+            variant="outline"
+            @click="handleReset"
+          >
+            {{ $t('menu.action.reset') }}
+          </VbenButton>
+          <VbenButton class="w-[60px]" size="sm" @click="handleSearch">
+            {{ $t('menu.action.search') }}
+          </VbenButton>
+        </Space>
+      </div>
+    </div>
+
     <Grid>
       <template #toolbar-actions>
-        <div class="flex items-center gap-2">
-          <VbenButton @click="openAdd">
+        <div class="flex items-center justify-end gap-2">
+          <VbenButton class="w-[84px]" size="sm" @click="openAdd">
             <Plus class="mr-1 size-4" />
             {{ $t('tenant.action.add') }}
-          </VbenButton>
-          <VbenButton variant="destructive" @click="handleBatchDelete">
-            <Trash2 class="mr-1 size-4" />
-            {{ $t('tenant.action.batchDelete') }}
           </VbenButton>
         </div>
       </template>
 
       <template #action="{ row }">
         <div class="flex-center gap-2">
-          <VbenButton size="sm" variant="ghost" @click="openEdit(row)">
-            {{ $t('tenant.action.edit') }}
-          </VbenButton>
           <VbenButton
             size="sm"
             variant="ghost"
-            class="text-destructive"
-            @click="handleDelete(row)"
+            class="text-primary"
+            @click="openEdit(row)"
           >
-            {{ $t('tenant.action.delete') }}
+            {{ $t('tenant.action.edit') }}
           </VbenButton>
         </div>
       </template>
     </Grid>
 
-    <AddOrUpdate ref="addOrUpdateRef" @success="gridApi.reload()" />
+    <AddOrUpdate ref="addOrUpdateRef" @success="reloadTenantGrid()" />
   </Page>
 </template>
