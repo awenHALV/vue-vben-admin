@@ -114,7 +114,28 @@ function getSearchPayload(): Partial<DictOptionPageParams> {
   return payload;
 }
 
+/**
+ * 弹窗 destroyOnClose 时，Grid 的 onMounted（挂载 gridApi）晚于 modal 的 onOpenChange，
+ * 需在 commitProxy 可用后再 query/reload，否则会报 commitProxy is not a function。
+ */
+async function waitForGridReady(maxAttempts = 40): Promise<boolean> {
+  for (let i = 0; i < maxAttempts; i++) {
+    if (typeof gridApi.grid?.commitProxy === 'function') {
+      return true;
+    }
+    await nextTick();
+    if (i % 2 === 1) {
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+    }
+  }
+  return false;
+}
+
 async function reloadGrid() {
+  const ready = await waitForGridReady();
+  if (!ready) {
+    return;
+  }
   await gridApi.reload(getSearchPayload());
 }
 
