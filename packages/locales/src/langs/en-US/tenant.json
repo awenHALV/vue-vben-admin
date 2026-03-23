@@ -19,7 +19,14 @@
   },
   "modal": {
     "addTenant": "Add Tenant",
-    "editTenant": "Edit Tenant"
+    "editTenant": "Edit Tenant",
+    "detailTenant": "Tenant Details",
+    "menuConfig": "Menu Configuration"
+  },
+  "detail": {
+    "sectionTenant": "Tenant Information",
+    "sectionAdmin": "Administrator Information",
+    "adminLoginAccount": "Administrator Login Account"
   },
   "form": {
     "id": "Tenant ID",
@@ -67,8 +74,10 @@
   "action": {
     "add": "Add",
     "edit": "Edit",
+    "detail": "Details",
     "delete": "Delete",
-    "batchDelete": "Batch Delete"
+    "batchDelete": "Batch Delete",
+    "menuConfig": "Menu Config"
   },
   "message": {
     "selectFirst": "Please select tenants to delete first",
@@ -76,6 +85,10 @@
     "deleted": "Deleted: {0}",
     "deleteFailed": "Delete failed",
     "batchDeleteConfirm": "Are you sure you want to delete the selected {0} tenants?",
-    "batchDeleteSuccess": "Batch delete successful"
+    "batchDeleteSuccess": "Batch delete successful",
+    "detailFailed": "Failed to load tenant details",
+    "menuConfigSuccess": "Menu configuration saved",
+    "menuConfigEmptyTree": "No feature menu data",
+    "menuConfigMissingCode": "Tenant code is missing; cannot save"
   }
 }

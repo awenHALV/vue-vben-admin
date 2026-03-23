@@ -7,6 +7,11 @@ import type {
 
 type ExtendOptions<T = any> = {
   /**
+   * 为 true 时，响应为 401 不会触发 authenticate 拦截器中的重新认证（登出/刷新 token）。
+   * 用于登录、注册等「本就没有有效会话」的接口：这些接口返回 401 表示账号密码错误等，而非 token 过期。
+   */
+  skipReAuthenticate?: boolean;
+  /**
    * 参数序列化方式。预置的有
    * - brackets: ids[]=1&ids[]=2&ids[]=3
    * - comma: ids=1,2,3

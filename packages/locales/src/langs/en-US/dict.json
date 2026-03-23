@@ -1,0 +1,28 @@
+{
+  "title": "Dictionary Management",
+  "list": {
+    "id": "ID",
+    "dictName": "Dictionary Name",
+    "dictCode": "Dictionary Code",
+    "remark": "Dictionary Remark",
+    "action": "Action",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "dictConfig": "Dictionary Config"
+  },
+  "placeholder": {
+    "dictName": "Please enter dictionary name",
+    "dictCode": "Please enter dictionary code",
+    "dictRemark": "Please enter dictionary remark"
+  },
+  "modal": {
+    "add": "Add",
+    "edit": "Edit"
+  },
+  "form": {
+    "dictCode": "Dictionary Code",
+    "dictName": "Dictionary Name",
+    "remark": "Remark"
+  }
+}
