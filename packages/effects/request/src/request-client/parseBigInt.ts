@@ -6,7 +6,7 @@ import JSONbig from 'json-bigint';
 const JSONbigNative = JSONbig({ useNativeBigInt: true }); // 先用原生 BigInt 保留精度
 
 // 需要转为 string 的字段名
-const BIG_INT_KEYS = new Set(['id', 'orderId', 'parentId', 'userId']);
+const BIG_INT_KEYS = new Set(['id', 'orderId', 'parentId', 'userId','deptId']);
 
 function convertKeys(data: unknown): unknown {
   if (Array.isArray(data)) {
