@@ -8,7 +8,7 @@
     "companyName": "公司名称",
     "creditCode": "社会信用代码",
     "adminAccount": "管理员账号",
-    "adminName": "管理员用户姓名",
+    "adminName": "管理员姓名",
     "adminPhone": "管理员手机号",
     "contact": "联系人",
     "phone": "联系电话",
@@ -19,14 +19,21 @@
   },
   "modal": {
     "addTenant": "新增租户",
-    "editTenant": "编辑租户"
+    "editTenant": "编辑租户",
+    "detailTenant": "租户详情",
+    "menuConfig": "菜单配置"
+  },
+  "detail": {
+    "sectionTenant": "租户信息",
+    "sectionAdmin": "管理员信息",
+    "adminLoginAccount": "管理员登录账号"
   },
   "form": {
     "id": "租户ID",
     "tenantCode": "租户编码",
     "tenantName": "租户名称",
     "tenantNameEn": "英文名称",
-    "tenantInfo": "租户信息",
+    "tenantInfo": "租户名称",
     "companyName": "公司名称",
     "creditCode": "社会信用代码",
     "features": "功能列表",
@@ -67,8 +74,10 @@
   "action": {
     "add": "新增",
     "edit": "编辑",
+    "detail": "查看",
     "delete": "删除",
-    "batchDelete": "批量删除"
+    "batchDelete": "批量删除",
+    "menuConfig": "菜单配置"
   },
   "message": {
     "selectFirst": "请先选择要删除的租户",
@@ -76,6 +85,11 @@
     "deleted": "已删除：{0}",
     "deleteFailed": "删除失败",
     "batchDeleteConfirm": "确定删除所选 {0} 个租户？",
-    "batchDeleteSuccess": "批量删除成功"
+    "batchDeleteSuccess": "批量删除成功",
+    "detailFailed": "租户详情加载失败",
+    "menuConfigSuccess": "菜单配置已保存",
+    "menuConfigEmptyTree": "暂无功能菜单数据",
+    "menuConfigMissingCode": "租户编码缺失，无法保存",
+    "saveSuccess": "保存成功"
   }
 }

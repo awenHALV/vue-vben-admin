@@ -64,6 +64,10 @@ export const authenticateResponseInterceptor = ({
       if (response?.status !== 401) {
         throw error;
       }
+      // 登录/注册等未携带会话的接口，401 表示业务失败（如密码错误），不应走登出或刷新 token
+      if (config?.skipReAuthenticate) {
+        throw error;
+      }
       // 判断是否启用了 refreshToken 功能
       // 如果没有启用或者已经是重试请求了，直接跳转到重新登录
       if (!enableRefreshToken || config.__isRetryRequest) {

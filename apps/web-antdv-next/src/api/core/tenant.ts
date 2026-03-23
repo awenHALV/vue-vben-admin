@@ -2,9 +2,6 @@ import { requestClient } from '#/api/request';
 
 export interface BackendTenantItem {
   /** 后端可能返回的菜单 id 列表（逗号分隔） */
-  appFeatureIds?: string;
-  /** 分页/详情若返回 snake_case */
-  app_feature_ids?: string;
   adminAccount?: string;
   adminName?: string;
   adminPhone?: string;
@@ -15,7 +12,6 @@ export interface BackendTenantItem {
   createdAt?: string;
   creditCode?: string;
   featureIds?: string | string[];
-  feature_ids?: string | string[];
   id: number | string;
   phone?: string;
   remark?: string;
@@ -90,16 +86,30 @@ export async function getTenantPageApi(
 }
 
 /**
+ * 租户详情
+ * GET /de-base-system/external/private/tenant/detail?id=
+ */
+export async function getTenantDetailApi(
+  id: number | string,
+): Promise<BackendTenantItem> {
+  return requestClient.get<BackendTenantItem>(
+    '/de-base-system/external/private/tenant/detail',
+    { params: { id } },
+  );
+}
+
+/**
  * 新增租户请求体（与接口文档一致）
  * POST /de-base-system/external/private/tenant/create
  */
 export interface TenantCreateBody {
   /** 菜单 id，英文逗号分隔 */
-  appFeatureIds: string;
+  featureIds: string;
   adminName: string;
   adminPhone: string;
   companyName: string;
   creditCode: string;
+  status: boolean | number | string;
   tenantName: string;
 }
 
@@ -113,7 +123,12 @@ export async function createTenantApi(body: TenantCreateBody): Promise<void> {
 /** 更新租户（在新增字段基础上增加主键与租户编码） */
 export interface UpdateTenantParams extends TenantCreateBody {
   id: number | string;
-  tenantCode: string;
+  adminName: string;
+  adminPhone: string;
+  companyName: string;
+  creditCode: string;
+  status: boolean | number | string;
+  tenantName: string;
 }
 
 export async function updateTenantApi(
@@ -133,5 +148,23 @@ export async function batchDeleteTenantApi(
     {
       ids,
     },
+  );
+}
+
+export interface UpdateConfigParams {
+  tenantId: number | string;
+  featureIds: string;
+}
+
+/**
+ * 编辑功能配置
+ * POST /external/private/tenant/feature/update
+ */
+export async function updateConfigApi(
+  params: UpdateConfigParams,
+): Promise<void> {
+  await requestClient.post(
+    '/de-base-system/external/private/tenant/feature/update',
+    params,
   );
 }

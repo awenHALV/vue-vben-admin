@@ -1,0 +1,31 @@
+{
+  "title": "字典管理",
+  "list": {
+    "id": "ID",
+    "dictName": "字典名称",
+    "dictCode": "字典编码",
+    "remark": "字典备注",
+    "action": "操作",
+    "add": "新增",
+    "edit": "编辑",
+    "delete": "删除",
+    "dictConfig": "字典配置",
+    "deleteConfirm": "确定删除字典「{0}」吗？此操作不可撤销。",
+    "deleteContent": "删除数据也会删除所有与其相关数据，请慎重选择",
+    "batchDeleteSuccess": "删除字典「{0}」成功"
+  },
+  "placeholder": {
+    "dictName": "请输入字典名称",
+    "dictCode": "请输入字典编码",
+    "dictRemark": "请输入字典备注"
+  },
+  "modal": {
+    "add": "新增",
+    "edit": "编辑"
+  },
+  "form": {
+    "dictCode": "字典编码",
+    "dictName": "字典名称",
+    "remark": "备注"
+  }
+}

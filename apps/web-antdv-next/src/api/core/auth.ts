@@ -41,6 +41,8 @@ export async function loginApi(data: AuthApi.LoginParams) {
   return requestClient.post<AuthApi.LoginResult>(
     '/de-base-system/external/public/auth/login',
     data,
+    /** 登录失败可能返回 401，不应触发全局 doReAuthenticate → logout */
+    { skipReAuthenticate: true },
   );
 }
 

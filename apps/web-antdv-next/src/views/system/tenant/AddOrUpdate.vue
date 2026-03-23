@@ -18,7 +18,11 @@ import {
   getMineFeaturesRawApi,
   mapBackendMenusToFeatureTree,
 } from '#/api/core/menu';
-import { createTenantApi, updateTenantApi } from '#/api/core/tenant';
+import {
+  createTenantApi,
+  getTenantDetailApi,
+  updateTenantApi,
+} from '#/api/core/tenant';
 
 defineOptions({ name: 'TenantAddOrUpdate' });
 
@@ -28,20 +32,18 @@ const emit = defineEmits<{
 
 const isEdit = ref(false);
 const currentRecord = ref<BackendTenantItem | null>(null);
+/** 编辑态：详情接口完整数据，提交时 appFeatureIds 直接取详情里的 featureIds */
+const editTenantDetail = ref<BackendTenantItem | null>(null);
 
 const PHONE_CN = /^1[3-9]\d{9}$/;
 
-/** 从分页/详情行解析可填入表单的租户字段（兼容 camelCase / snake_case） */
-function getTenantEditFormValues(r: BackendTenantItem) {
-  const rawFeatures =
-    r.appFeatureIds ?? r.app_feature_ids ?? r.featureIds ?? r.feature_ids;
-  const features = normalizeFeatureIds(rawFeatures);
+/** 编辑回填：不含功能列表（该字段隐藏，以详情接口为准提交） */
+function getTenantFormValuesWithoutFeatureIds(r: BackendTenantItem) {
   return {
     adminName: String(r.adminName ?? r.admin_name ?? r.contact ?? ''),
     adminPhone: String(r.adminPhone ?? r.admin_phone ?? r.phone ?? ''),
     companyName: String(r.companyName ?? ''),
     creditCode: String(r.creditCode ?? ''),
-    featureIds: features ?? [],
     tenantName: String(r.tenantName ?? ''),
   };
 }
@@ -121,7 +123,12 @@ function buildFormSchema() {
       },
       defaultValue: [] as string[],
       fieldName: 'featureIds',
+      hide: false,
       label: $t('tenant.form.features'),
+      /** 新增时必填；编辑时通过 onOpenChange 改为隐藏并放宽校验 */
+      rules: z
+        .array(z.string())
+        .min(1, $t('ui.formRules.required', [$t('tenant.form.features')])),
     },
     {
       component: 'Input',
@@ -182,19 +189,56 @@ const [VbenModal, modalApi] = useVbenModal({
   confirmLoading: false,
   title: $t('tenant.modal.addTenant'),
   onOpenChange: async (open) => {
-    if (open) {
-      // 先重置，再拉功能树，最后赋值；避免 TreeSelect 在 treeData 未就绪时写入导致不回显
-      await formApi.resetForm();
-      await refreshFeatureTreeFromMineApi();
-      await nextTick();
-      if (currentRecord.value) {
-        const values = getTenantEditFormValues(currentRecord.value);
-        // filterFields: false — 避免与 reset 后的 form.values 做 defu 合并时覆盖失败
-        await formApi.setValues(values, false);
-        await nextTick();
-        await formApi.setFieldValue('featureIds', values.featureIds);
-      }
+    if (!open) {
+      editTenantDetail.value = null;
+      return;
     }
+    // 先重置，再按新增/编辑切换功能列表显隐与校验
+    await formApi.resetForm();
+    editTenantDetail.value = null;
+    const labelFeatures = $t('tenant.form.features');
+    const featureIdsRequired = z
+      .array(z.string())
+      .min(1, $t('ui.formRules.required', [labelFeatures]));
+    const featureIdsOptional = z.array(z.string()).optional();
+
+    if (currentRecord.value) {
+      // 编辑：拉详情，不展示功能列表；提交时 featureIds 直接用详情里的 featureIds
+      await formApi.updateSchema([
+        {
+          fieldName: 'featureIds',
+          hide: true,
+          rules: featureIdsOptional,
+          componentProps: { treeData: [] },
+        },
+      ]);
+      try {
+        const detail = await getTenantDetailApi(currentRecord.value.id);
+        editTenantDetail.value = detail;
+        await formApi.setValues(
+          {
+            ...getTenantFormValuesWithoutFeatureIds(detail),
+            featureIds: [],
+          },
+          false,
+        );
+      } catch {
+        message.error($t('tenant.message.detailFailed'));
+        modalApi.close();
+      }
+    } else {
+      // 新增：展示功能列表且必填
+      await formApi.updateSchema([
+        {
+          fieldName: 'featureIds',
+          hide: false,
+          rules: featureIdsRequired,
+        },
+      ]);
+      await refreshFeatureTreeFromMineApi();
+    }
+
+    await nextTick();
   },
   async onConfirm() {
     const { valid } = await formApi.validate();
@@ -207,22 +251,16 @@ const [VbenModal, modalApi] = useVbenModal({
         adminPhone: string;
         companyName: string;
         creditCode: string;
-        featureIds?: string[];
+        featureIds?: string;
         tenantName: string;
       };
-
-      const featureIds = Array.isArray(values.featureIds)
-        ? values.featureIds.filter(
-            (id) => id !== null && id !== undefined && String(id).trim(),
-          )
-        : [];
-      /** 文档要求：菜单 id 英文逗号分隔 */
-      const appFeatureIds = featureIds.map(String).join(',');
 
       const createBody: TenantCreateBody = {
         adminName: values.adminName.trim(),
         adminPhone: values.adminPhone.trim(),
-        appFeatureIds,
+        featureIds: Array.isArray(values.featureIds)
+          ? values.featureIds?.map(String).join(',')
+          : values.featureIds,
         companyName: values.companyName.trim(),
         creditCode: values.creditCode.trim(),
         tenantName: values.tenantName.trim(),
@@ -233,11 +271,13 @@ const [VbenModal, modalApi] = useVbenModal({
             ...createBody,
             id: currentRecord.value.id,
             tenantCode: currentRecord.value.tenantCode,
+            status: currentRecord.value.status,
           } satisfies UpdateTenantParams)
         : createTenantApi(createBody));
 
       modalApi.close();
       emit('success');
+      message.success($t('tenant.message.saveSuccess'));
     } finally {
       modalApi.setState({ confirmLoading: false });
     }

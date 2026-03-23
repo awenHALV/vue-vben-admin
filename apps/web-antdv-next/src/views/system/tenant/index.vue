@@ -13,10 +13,16 @@ import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getTenantPageApi } from '#/api/core/tenant';
 
 import AddOrUpdate from './AddOrUpdate.vue';
+import TenantDetail from './TenantDetail.vue';
+import TenantMenuConfig from './TenantMenuConfig.vue';
 
 defineOptions({ name: 'SystemTenant' });
 
 const addOrUpdateRef = ref<InstanceType<typeof AddOrUpdate> | null>(null);
+const tenantDetailRef = ref<InstanceType<typeof TenantDetail> | null>(null);
+const tenantMenuConfigRef = ref<InstanceType<typeof TenantMenuConfig> | null>(
+  null,
+);
 
 /** 与菜单管理页一致的搜索条，条件通过 reload 传给 proxy */
 const searchTenantName = ref('');
@@ -37,13 +43,18 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendTenantItem>({
     checkboxConfig: { highlight: true, range: true },
     proxyConfig: {
       ajax: {
-        query: async ({ page, form }: any) => {
+        /**
+         * Vben 对 query 做了包装：第一个参数为 vxe 的 proxy 参数（含 page），
+         * 第二个参数为 `reload(传入对象)` 与内置搜索表单 `getLatestSubmissionValues()` 的合并结果。
+         * 本页自定义搜索区通过 `gridApi.reload(getSearchPayload())` 传参，必须在第二参数里合并。
+         */
+        query: async (proxyParams: any, mergedForm: any) => {
           const params: TenantPageParams = {
-            current: page?.currentPage,
-            size: page?.pageSize,
+            current: proxyParams?.page?.currentPage,
+            size: proxyParams?.page?.pageSize,
           };
-          if (form) {
-            Object.assign(params, form);
+          if (mergedForm && typeof mergedForm === 'object') {
+            Object.assign(params, mergedForm);
           }
           return await getTenantPageApi(params);
         },
@@ -97,7 +108,7 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendTenantItem>({
       },
       {
         title: $t('tenant.list.action'),
-        width: 210,
+        width: 280,
         fixed: 'right',
         align: 'center',
         slots: { default: 'action' },
@@ -140,6 +151,14 @@ function openAdd() {
 function openEdit(record: BackendTenantItem) {
   addOrUpdateRef.value?.open(record);
 }
+
+function openDetail(record: BackendTenantItem) {
+  tenantDetailRef.value?.open(record);
+}
+
+function openMenu(record: BackendTenantItem) {
+  tenantMenuConfigRef.value?.open(record);
+}
 </script>
 
 <template>
@@ -164,7 +183,7 @@ function openEdit(record: BackendTenantItem) {
             @keydown.enter="handleSearch"
           />
         </div>
-        <div class="flex items-center gap-2">
+        <!-- <div class="flex items-center gap-2">
           <span class="shrink-0 text-sm text-muted-foreground">{{
             $t('tenant.list.tenantCode')
           }}</span>
@@ -174,7 +193,7 @@ function openEdit(record: BackendTenantItem) {
             :placeholder="$t('tenant.list.placeholderCode')"
             @keydown.enter="handleSearch"
           />
-        </div>
+        </div> -->
       </div>
       <div class="ml-auto flex shrink-0 items-center justify-end">
         <Space>
@@ -186,7 +205,12 @@ function openEdit(record: BackendTenantItem) {
           >
             {{ $t('menu.action.reset') }}
           </VbenButton>
-          <VbenButton class="w-[60px]" size="sm" @click="handleSearch">
+          <!-- prettier-ignore -->
+          <VbenButton
+            class="w-[60px]"
+            size="sm"
+            @click="handleSearch"
+          >
             {{ $t('menu.action.search') }}
           </VbenButton>
         </Space>
@@ -195,8 +219,13 @@ function openEdit(record: BackendTenantItem) {
 
     <Grid>
       <template #toolbar-actions>
-        <div class="flex items-center justify-end gap-2">
-          <VbenButton class="w-[84px]" size="sm" @click="openAdd">
+        <div class="flex w-full items-center justify-end gap-2">
+          <!-- prettier-ignore -->
+          <VbenButton
+            class="w-[84px]"
+            size="sm"
+            @click="openAdd"
+          >
             <Plus class="mr-1 size-4" />
             {{ $t('tenant.action.add') }}
           </VbenButton>
@@ -209,14 +238,38 @@ function openEdit(record: BackendTenantItem) {
             size="sm"
             variant="ghost"
             class="text-primary"
+            @click="openDetail(row)"
+          >
+            {{ $t('tenant.action.detail') }}
+          </VbenButton>
+
+          <VbenButton
+            size="sm"
+            variant="ghost"
+            class="text-primary"
             @click="openEdit(row)"
           >
             {{ $t('tenant.action.edit') }}
+          </VbenButton>
+          <VbenButton
+            size="sm"
+            variant="ghost"
+            class="text-primary"
+            @click="openMenu(row)"
+          >
+            {{ $t('tenant.action.menuConfig') }}
           </VbenButton>
         </div>
       </template>
     </Grid>
 
-    <AddOrUpdate ref="addOrUpdateRef" @success="reloadTenantGrid()" />
+    <AddOrUpdate ref="addOrUpdateRef"
+@success="reloadTenantGrid()" />
+    <TenantDetail ref="tenantDetailRef" />
+    <!-- prettier-ignore -->
+    <TenantMenuConfig
+      ref="tenantMenuConfigRef"
+      @success="reloadTenantGrid()"
+    />
   </Page>
 </template>
