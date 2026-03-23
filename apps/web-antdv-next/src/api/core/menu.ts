@@ -1,7 +1,5 @@
 import type { RouteRecordStringComponent } from '@vben/types';
 
-import { preferences } from '@vben/preferences';
-
 import { requestClient } from '#/api/request';
 
 /** 后端返回的菜单数据结构 */
@@ -47,13 +45,11 @@ function mapMenuToRoute(item: BackendMenuItem): RouteRecordStringComponent {
     path: item.routePath,
     component: inferredComponent,
     meta: {
-      title:
-        preferences.app.locale === 'en-US' && item.featureNameEn
-          ? item.featureNameEn
-          : item.featureName,
+      /** 默认中文名；展示时由 resolveMenuTitle 按 locale + featureNameEn 解析 */
+      title: item.featureName,
       icon: item.featureIcon || undefined,
       order: item.sort,
-      // 额外业务字段
+      featureName: item.featureName,
       featureNameEn: item.featureNameEn,
     },
     children: hasChildren

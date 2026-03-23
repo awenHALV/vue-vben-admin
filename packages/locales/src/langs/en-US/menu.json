@@ -1,5 +1,5 @@
 {
-  "title": "Menu Management",
+  "title": "Feature Management",
   "list": {
     "featureName": "Feature Name",
     "featureNameEn": "English Name",
@@ -10,7 +10,7 @@
     "routePath": "Route Path",
     "action": "Action",
     "total": "{0} items in total",
-    "placeholder": "Please enter menu name"
+    "placeholder": "Please enter feature name"
   },
   "type": {
     "menu": "Menu",
@@ -37,7 +37,7 @@
     "routePathStartWithSlash": "Route path must start with /",
     "routePathOnlyEnglish": "Route path can only contain English letters, numbers, /, -, _",
     "sort": "Please enter sort order",
-    "parentId": "Please select parent menu"
+    "parentId": "Please select parent feature"
   },
   "placeholder": {
     "select": "Please select {0}",
@@ -53,8 +53,8 @@
     "batchDelete": "Batch Delete"
   },
   "message": {
-    "fetchFailed": "Failed to fetch menu list",
-    "deleteConfirm": "Are you sure you want to delete menu \"{0}\"? This action cannot be undone.",
+    "fetchFailed": "Failed to fetch feature list",
+    "deleteConfirm": "Are you sure you want to delete feature \"{0}\"? This action cannot be undone.",
     "deleted": "Deleted",
     "selectFirst": "Please select the menus to delete first",
     "batchDeleteConfirm": "Are you sure you want to delete the selected {0} menus?",

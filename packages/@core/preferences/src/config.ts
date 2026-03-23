@@ -18,7 +18,7 @@ const defaultPreferences: Preferences = {
     contentPaddingRight: 0,
     contentPaddingTop: 0,
     defaultAvatar: '/logo.webp',
-    defaultHomePath: '/analytics',
+    defaultHomePath: '/system/tenant',
     dynamicTitle: true,
     enableCheckUpdates: true,
     enableCopyPreferences: true,

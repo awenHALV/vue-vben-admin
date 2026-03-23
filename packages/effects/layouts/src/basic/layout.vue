@@ -8,14 +8,14 @@ import { computed, onMounted, useSlots, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { useRefresh } from '@vben/hooks';
-import { $t, $te, i18n } from '@vben/locales';
+import { $t, $te, i18n, useI18n } from '@vben/locales';
 import {
   preferences,
   updatePreferences,
   usePreferences,
 } from '@vben/preferences';
 import { useAccessStore, useTabbarStore, useTimezoneStore } from '@vben/stores';
-import { cloneDeep, mapTree } from '@vben/utils';
+import { cloneDeep, mapTree, resolveMenuTitle } from '@vben/utils';
 
 import { VbenAdminLayout } from '@vben-core/layout-ui';
 import { VbenBackTop, VbenLogo } from '@vben-core/shadcn-ui';
@@ -130,21 +130,37 @@ const {
   sidebarExtraVisible,
 } = useExtraMenu(mixHeaderMenus);
 
+const { locale } = useI18n();
+
+/** Logo / 侧栏副标题：preferences.app.name 为 i18n key（如 app.title）时按当前语言解析 */
+const resolvedAppName = computed(() => {
+  locale.value;
+  const key = preferences.app.name;
+  return $te(key) ? $t(key) : key;
+});
+
 /**
- * 包装菜单，翻译菜单名称
+ * 包装菜单，翻译菜单名称（支持 i18n key、纯文案、后端双语 featureName/featureNameEn）
  * @param menus 原始菜单数据
  * @param deep 是否深度包装。对于双列布局，只需要包装第一层，因为更深层的数据会在扩展菜单中重新包装
  */
 function wrapperMenus(menus: MenuRecordRaw[], deep: boolean = true) {
-  function resolveName(raw: string) {
-    return $te(raw) ? $t(raw) : raw;
+  function resolveItemName(item: MenuRecordRaw) {
+    return resolveMenuTitle(
+      {
+        title: item.name,
+        featureName: item.featureName,
+        featureNameEn: item.featureNameEn,
+      },
+      { locale: locale.value, t: $t, te: $te },
+    );
   }
   return deep
     ? mapTree(menus, (item) => {
-        return { ...cloneDeep(item), name: resolveName(item.name) };
+        return { ...cloneDeep(item), name: resolveItemName(item) };
       })
     : menus.map((item) => {
-        return { ...cloneDeep(item), name: resolveName(item.name) };
+        return { ...cloneDeep(item), name: resolveItemName(item) };
       });
 }
 
@@ -284,7 +300,7 @@ const headerSlots = computed(() => {
         :collapsed="logoCollapsed"
         :src="preferences.logo.source"
         :src-dark="preferences.logo.sourceDark"
-        :text="preferences.app.name"
+        :text="resolvedAppName"
         :theme="showHeaderNav ? headerTheme : theme"
         @click="clickLogo"
       >
@@ -375,7 +391,7 @@ const headerSlots = computed(() => {
       <VbenLogo
         v-if="preferences.logo.enable"
         :fit="preferences.logo.fit"
-        :text="preferences.app.name"
+        :text="resolvedAppName"
         :theme="theme"
       >
         <template v-if="$slots['logo-text']" #text>

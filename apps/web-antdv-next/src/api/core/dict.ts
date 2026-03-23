@@ -117,3 +117,149 @@ export async function deleteDictApi(
     ids,
   );
 }
+
+// ─── 字典项（某字典下的 option）────────────────────────────────────────
+
+/** 字典项列表行 */
+export interface DictOptionItem {
+  id: number | string;
+  dictCode?: string;
+  optionKey: string;
+  optionValue: string;
+  optionValueEn?: string;
+  remark?: string;
+  sort?: number;
+}
+
+/** 字典项分页查询参数 */
+export interface DictOptionPageParams {
+  current?: number;
+  size?: number;
+  /** 筛选：字典项键*/
+  optionKey?: string;
+  /** 筛选：字典项值 */
+  optionValue?: string;
+}
+
+/** 字典项分页结果 */
+export interface DictOptionPageResult {
+  items: DictOptionItem[];
+  total: number;
+}
+
+interface DictOptionPageData {
+  current?: number;
+  pages?: number;
+  records?: DictOptionItem[];
+  size?: number;
+  total?: number;
+}
+
+function dictOptionBasePath(dictId: number | string) {
+  return `/de-base-system/external/private/dict/${encodeURIComponent(String(dictId))}/option`;
+}
+
+function mapDictOptionRow(raw: Record<string, unknown>): DictOptionItem {
+  return {
+    id: raw.id as number | string,
+    dictCode: (raw.dictCode ?? raw.dict_code) as string | undefined,
+    optionKey: String(raw.optionKey ?? raw.option_key ?? ''),
+    optionValue: String(raw.optionValue ?? raw.option_value ?? ''),
+    optionValueEn: (raw.optionValueEn ?? raw.option_value_en) as
+      | string
+      | undefined,
+    remark: (raw.remark as string | undefined) ?? undefined,
+    sort: raw.sort !== undefined && raw.sort !== null ? Number(raw.sort) : 0,
+  };
+}
+
+/**
+ * 字典项分页
+ * GET /de-base-system/external/private/dict/{id}/option/page
+ */
+export async function getDictOptionPageApi(
+  dictId: number | string,
+  params: DictOptionPageParams = {},
+): Promise<DictOptionPageResult> {
+  const res = await requestClient.get<
+    DictOptionItem[] | DictOptionPageData | DictOptionPageResult
+  >(`${dictOptionBasePath(dictId)}/page`, { params } as any);
+
+  if (Array.isArray(res)) {
+    return {
+      items: res.map((r) => mapDictOptionRow(r as Record<string, unknown>)),
+      total: res.length,
+    };
+  }
+
+  if (res && typeof res === 'object') {
+    const paged = res as DictOptionPageData;
+    if (Array.isArray(paged.records)) {
+      return {
+        items: paged.records.map((r) =>
+          mapDictOptionRow(r as Record<string, unknown>),
+        ),
+        total: paged.total ?? paged.records.length,
+      };
+    }
+    const legacy = res as DictOptionPageResult;
+    if (Array.isArray(legacy.items)) {
+      return {
+        items: legacy.items.map((r) =>
+          mapDictOptionRow(r as Record<string, unknown>),
+        ),
+        total: legacy.total ?? legacy.items.length,
+      };
+    }
+  }
+
+  return { items: [], total: 0 };
+}
+
+/** 新增/更新字典项请求体 */
+export interface DictOptionBody {
+  /** 字典编码（可选，与截图一致可单独覆盖） */
+  dictCode?: string;
+  sort: number;
+  optionKey: string;
+  optionValue: string;
+  optionValueEn: string;
+  remark?: string;
+}
+
+/**
+ * 新增字典项
+ * POST /de-base-system/external/private/dict/{id}/option
+ */
+export async function createDictOptionApi(
+  dictId: number | string,
+  body: DictOptionBody,
+): Promise<void> {
+  await requestClient.post(dictOptionBasePath(dictId), body);
+}
+
+/**
+ * 更新字典项
+ * PUT /de-base-system/external/private/dict/{id}/option/{optionId}
+ */
+export async function updateDictOptionApi(
+  dictId: number | string,
+  optionId: number | string,
+  body: DictOptionBody,
+): Promise<void> {
+  await requestClient.put(
+    `${dictOptionBasePath(dictId)}/${encodeURIComponent(String(optionId))}`,
+    body,
+  );
+}
+
+/**
+ * 批量删除字典项
+ * POST /de-base-system/external/private/dict/{id}/option/batch/delete
+ */
+export async function batchDeleteDictOptionApi(
+  dictId: number | string,
+  ids: Array<number | string>,
+): Promise<void> {
+  await requestClient.post(`${dictOptionBasePath(dictId)}/batch/delete`, ids);
+}

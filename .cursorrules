@@ -39,6 +39,23 @@
 - 所有的 API 调用必须进行异常处理。
 - 页面代码需保持简洁，复杂的逻辑应抽离到 `use-xxx.ts` hook 中。
 
+## Vue 模板与格式化（对话约定，省 token）
+以下为与产品/协作对齐的固定写法，**写功能时默认遵守**：
+
+1. **优先 `vue/max-attributes-per-line`**  
+   - 以仓库内 `internal/lint-configs/eslint-config` 为准：`singleline.max: 1`、`multiline.max: 1`。  
+   - Vue 模板中**每个属性单独一行**，不要为了「好看」或迁就 Prettier 改成单行多属性。
+
+2. **不迁就 Prettier**  
+   - 若 Prettier 与 ESLint（尤其 Vue 模板规则）冲突，**以 ESLint 为准**，除非用户明确要求对齐 Prettier。  
+   - **不要**为迎合 Prettier 而滥用 `eslint-disable` / `prettier-ignore`。
+
+3. **禁止整文件格式化**  
+   - 不要对无关区域或整文件跑 Prettier / 大范围重排。  
+   - **只改与当前需求直接相关的代码块**，减少无意义 diff 与 token 消耗。
+
+4. **冲突处理**  
+   - 本地 ESLint 与 Prettier 不一致时：**Vue/TS 以 ESLint 通过为准**。
 
 ## 文件要求
 1、列表页为[module]/index.vue,新增的组件为[module]/create.vue,编辑的组件为[module]/edit.vue,详情页为[module]/detail.vue

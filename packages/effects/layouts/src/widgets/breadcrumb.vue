@@ -6,7 +6,8 @@ import type { IBreadcrumb } from '@vben-core/shadcn-ui';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import { $t, $te } from '@vben/locales';
+import { $t, $te, useI18n } from '@vben/locales';
+import { resolveMenuTitle } from '@vben/utils';
 
 import { VbenBreadcrumbView } from '@vben-core/shadcn-ui';
 
@@ -25,6 +26,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const route = useRoute();
 const router = useRouter();
+const { locale } = useI18n();
 
 const breadcrumbs = computed((): IBreadcrumb[] => {
   const matched = route.matched;
@@ -32,8 +34,8 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
   const resultBreadcrumb: IBreadcrumb[] = [];
 
   for (const match of matched) {
-    const { meta, path } = match;
-    const { hideChildrenInMenu, hideInBreadcrumb, icon, name, title } =
+    const { meta, name: routeName, path } = match;
+    const { featureName, featureNameEn, hideChildrenInMenu, hideInBreadcrumb, icon, title } =
       meta || {};
     if (hideInBreadcrumb || hideChildrenInMenu || !path) {
       continue;
@@ -42,11 +44,15 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
     resultBreadcrumb.push({
       icon,
       path: path || route.path,
-      title: (() => {
-        const raw = (title || name) as string | undefined;
-        if (!raw) return '';
-        return $te(raw) ? $t(raw) : raw;
-      })(),
+      title: resolveMenuTitle(
+        {
+          title: title as string | undefined,
+          name: routeName as string | undefined,
+          featureName: featureName as string | undefined,
+          featureNameEn: featureNameEn as string | undefined,
+        },
+        { locale: locale.value, t: $t, te: $te },
+      ),
     });
   }
   if (props.showHome) {

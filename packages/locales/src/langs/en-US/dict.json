@@ -24,5 +24,29 @@
     "dictCode": "Dictionary Code",
     "dictName": "Dictionary Name",
     "remark": "Remark"
+  },
+  "config": {
+    "title": "Dictionary configuration",
+    "seq": "No.",
+    "optionKey": "Item key",
+    "optionValue": "Item value",
+    "optionValueEn": "Item value (EN)",
+    "searchOptionValue": "Item value",
+    "deleteOneConfirm": "Delete this dictionary item \"{0}\"?",
+    "deleteSuccess": "Deleted successfully",
+    "batchDeleteEmpty": "Select items to delete first",
+    "batchDeleteConfirm": "Delete {0} selected item(s)?",
+    "batchDeleteSuccess": "Batch delete succeeded"
+  },
+  "optionModal": {
+    "add": "Add dictionary item",
+    "edit": "Edit dictionary item"
+  },
+  "optionForm": {
+    "sort": "Dictionary order",
+    "optionKey": "Item key",
+    "optionValue": "Item value",
+    "optionValueEn": "Item value (EN)",
+    "remark": "Remark"
   }
 }

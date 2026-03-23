@@ -13,10 +13,14 @@ import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteDictApi, getDictPageApi } from '#/api/core/dict';
 
 import AddOrUpdate from './AddOrUpdate.vue';
+import DictConfigModal from './DictConfigModal.vue';
 
 defineOptions({ name: 'SystemDict' });
 
 const addOrUpdateRef = ref<InstanceType<typeof AddOrUpdate> | null>(null);
+const dictConfigModalRef = ref<InstanceType<typeof DictConfigModal> | null>(
+  null,
+);
 
 /** 与菜单管理页一致的搜索条，条件通过 reload 传给 proxy */
 const searchDictName = ref('');
@@ -50,11 +54,6 @@ const [Grid, gridApi] = useVbenVxeGrid<DictListItem>({
       },
     },
     columns: [
-      {
-        field: 'id',
-        title: $t('dict.list.id'),
-        minWidth: 160,
-      },
       {
         field: 'dictName',
         title: $t('dict.list.dictName'),
@@ -126,13 +125,13 @@ function openDelete(record: DictListItem) {
     onOk: async () => {
       await deleteDictApi([record.id]);
       message.success($t('dict.list.batchDeleteSuccess', [record.dictName]));
-      await reloadDictGrid();
+      void reloadDictGrid();
     },
   });
 }
 
 function openDictConfig(record: DictListItem) {
-  console.log(record);
+  dictConfigModalRef.value?.open(record);
 }
 </script>
 
@@ -242,5 +241,7 @@ function openDictConfig(record: DictListItem) {
       ref="addOrUpdateRef"
       @success="reloadDictGrid()"
     />
+
+    <DictConfigModal ref="dictConfigModalRef" />
   </Page>
 </template>

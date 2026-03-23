@@ -23,7 +23,7 @@ import {
 } from '@vben/icons';
 import { $t, $te, useI18n } from '@vben/locales';
 import { getTabKey, useAccessStore, useTabbarStore } from '@vben/stores';
-import { filterTree } from '@vben/utils';
+import { filterTree, resolveMenuTitle } from '@vben/utils';
 
 export function useTabbar() {
   const router = useRouter();
@@ -86,12 +86,21 @@ export function useTabbar() {
   };
 
   function wrapperTabLocale(tab: RouteLocationNormalizedGeneric) {
-    const rawTitle = tab?.meta?.title as string | undefined;
+    const m = tab?.meta;
+    const title = resolveMenuTitle(
+      {
+        title: m?.title as string | undefined,
+        name: tab.name as string | undefined,
+        featureName: m?.featureName as string | undefined,
+        featureNameEn: m?.featureNameEn as string | undefined,
+      },
+      { locale: locale.value, t: $t, te: $te },
+    );
     return {
       ...tab,
       meta: {
         ...tab?.meta,
-        title: rawTitle ? ($te(rawTitle) ? $t(rawTitle) : rawTitle) : '',
+        title,
       },
     };
   }

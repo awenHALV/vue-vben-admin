@@ -62,11 +62,6 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendTenantItem>({
     },
     columns: [
       {
-        field: 'id',
-        title: $t('tenant.list.id'),
-        minWidth: 160,
-      },
-      {
         field: 'tenantName',
         title: $t('tenant.list.tenantName'),
         minWidth: 180,
@@ -263,8 +258,9 @@ function openMenu(record: BackendTenantItem) {
       </template>
     </Grid>
 
-    <AddOrUpdate ref="addOrUpdateRef"
-@success="reloadTenantGrid()" />
+    <AddOrUpdate
+ref="addOrUpdateRef" @success="reloadTenantGrid()"
+/>
     <TenantDetail ref="tenantDetailRef" />
     <!-- prettier-ignore -->
     <TenantMenuConfig

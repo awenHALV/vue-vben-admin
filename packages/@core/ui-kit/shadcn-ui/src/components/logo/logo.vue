@@ -66,7 +66,8 @@ const logoSrc = computed(() => {
 </script>
 
 <template>
-  <div :class="theme" class="flex h-full items-center text-lg">
+  <div :class="theme"
+class="flex h-full items-center text-lg">
     <a
       :class="$attrs.class"
       :href="href"

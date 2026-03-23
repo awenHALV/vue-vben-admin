@@ -125,6 +125,14 @@ interface RouteMeta {
    * 标题名称
    */
   title: string;
+  /**
+   * 后端菜单中文名（与 featureNameEn 配合，用于运行时切换语言）
+   */
+  featureName?: string;
+  /**
+   * 后端菜单英文名
+   */
+  featureNameEn?: string;
 }
 
 // 定义递归类型以将 RouteRecordRaw 的 component 属性更改为 string

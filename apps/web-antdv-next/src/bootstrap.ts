@@ -11,7 +11,7 @@ import { useTitle } from '@vueuse/core';
 // 注册微前端
 import WujieVue from 'wujie-vue3';
 
-import { $t, setupI18n } from '#/locales';
+import { $t, $te, i18n, setupI18n } from '#/locales';
 
 import { initComponentAdapter } from './adapter/component';
 import { initSetupVbenForm } from './adapter/form';
@@ -64,12 +64,16 @@ async function bootstrap(namespace: string) {
   const { MotionPlugin } = await import('@vben/plugins/motion');
   app.use(MotionPlugin);
 
-  // 动态更新标题
+  // 动态更新标题（应用名走 i18n：preferences.app.name 为 key，如 app.title）
   watchEffect(() => {
     if (preferences.app.dynamicTitle) {
+      i18n.global.locale.value;
       const routeTitle = router.currentRoute.value.meta?.title;
+      const appName = $te(preferences.app.name)
+        ? $t(preferences.app.name)
+        : preferences.app.name;
       const pageTitle =
-        (routeTitle ? `${$t(routeTitle)} - ` : '') + preferences.app.name;
+        (routeTitle ? `${$t(String(routeTitle))} - ` : '') + appName;
       useTitle(pageTitle);
     }
   });

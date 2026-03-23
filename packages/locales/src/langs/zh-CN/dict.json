@@ -27,5 +27,30 @@
     "dictCode": "字典编码",
     "dictName": "字典名称",
     "remark": "备注"
+  },
+  "config": {
+    "title": "字典配置",
+    "seq": "序号",
+    "optionKey": "字典项键",
+    "optionValue": "字典项值",
+    "optionValueEn": "字典项值（英文）",
+    "searchOptionValue": "字典项值",
+    "searchOptionKey": "字典项键",
+    "deleteOneConfirm": "确定删除该字典项「{0}」吗？",
+    "deleteSuccess": "删除成功",
+    "batchDeleteEmpty": "请先勾选要删除的字典项",
+    "batchDeleteConfirm": "确定删除选中的 {0} 条字典项吗？",
+    "batchDeleteSuccess": "批量删除成功"
+  },
+  "optionModal": {
+    "add": "新增字典项",
+    "edit": "编辑字典项"
+  },
+  "optionForm": {
+    "sort": "字典排序",
+    "optionKey": "字典项键",
+    "optionValue": "字典项值",
+    "optionValueEn": "字典项值(英文)",
+    "remark": "备注"
   }
 }
