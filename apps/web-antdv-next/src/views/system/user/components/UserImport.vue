@@ -28,9 +28,23 @@ const fileList = ref<any[]>([]);
 
 // ==================== 方法 ====================
 
-const handleDownloadTemplate = () => {
-  const url = getUserImportTemplateUrl();
-  window.open(url, '_blank');
+const handleDownloadTemplate = async () => {
+  try {
+    const blob = await getUserImportTemplateUrl();
+    if (blob) {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = '用户导入模板.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }
+  } catch (error) {
+    console.error('下载模板失败:', error);
+    message.error('下载模板失败');
+  }
 };
 
 const beforeUpload: UploadProps['beforeUpload'] = (file) => {

@@ -50,13 +50,13 @@ const columns: TableColumnsType = [
     align: 'center',
     ellipsis: true,
   },
-  {
-    title: $t('system.org.orgAttribute'),
-    dataIndex: 'internal',
-    width: 120,
-    align: 'center',
-    ellipsis: true,
-  },
+  // {
+  //   title: $t('system.org.orgAttribute'),
+  //   dataIndex: 'internal',
+  //   width: 120,
+  //   align: 'center',
+  //   ellipsis: true,
+  // },
   {
     title: $t('system.common.remarks'),
     dataIndex: 'remark',

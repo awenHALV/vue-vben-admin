@@ -166,8 +166,18 @@ const rules = computed(() => {
 
   // 编辑时的状态必填规则
   if (isEdit.value) {
-    baseRules.status = [{ required: true, message: $t('system.common.selectPlaceholder'), trigger: 'change' }];
-
+    baseRules.status = [
+      {
+        required: true,
+        validator: (_: any, value: number) => {
+          if (value === undefined || value === null || value === '') {
+            return Promise.reject($t('system.common.selectPlaceholder'));
+          }
+          return Promise.resolve();
+        },
+        trigger: 'change',
+      },
+    ];
   }
 
   return baseRules;
@@ -282,7 +292,7 @@ watch(
           email: props.data.email || '',
           deptId: props.data.deptId || '',
           roleId: props.data.roleId ? props.data.roleId.split(',') : [],
-          status: props.data.status == 1 ? 1 : 0,
+          status: props.data.status !== undefined ? props.data.status : 1,
         };
         if (props.data.deptId) {
           loadRoles(props.data.deptId);
@@ -378,7 +388,6 @@ watch(
                 { label: $t('system.common.normal'), value: 1 },
                 { label: $t('system.common.disabled'), value: 0 }
               ]"
-              allow-clear
           />
         </FormItem>
             <FormItem :label="$t('system.user.name')" name="name" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">

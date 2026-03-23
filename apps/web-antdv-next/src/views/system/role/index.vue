@@ -39,7 +39,6 @@ const deptTreeData = ref<OrgInfo[]>([]);
 const searchKey = ref('');
 const expandedKeys = ref<string[]>([]);
 const selectedKeys = ref<string[]>([]);
-const checkedKeys = ref<string[]>([]);
 
 // 搜索表单
 const searchForm = reactive({
@@ -265,10 +264,8 @@ watch(selectedDeptId, () => {
         <Tree
           v-model:expandedKeys="expandedKeys"
           v-model:selectedKeys="selectedKeys"
-          v-model:checkedKeys="checkedKeys"
           :tree-data="filteredDeptTree"
           :field-names="{ title: 'deptName', key: 'id', children: 'children' }"
-          checkable
           block-node
           class="h-[calc(100%-60px)]"
           @select="handleDeptSelect"
@@ -326,7 +323,9 @@ watch(selectedDeptId, () => {
               <template v-if="column.key === 'action'">
                 <Space v-if="record.roleAlias !== 'admin'">
                   <a @click="handleEdit(record)">{{ $t('system.common.edit') }}</a>
-                  <a style="color: #ef4444" @click="handleDelete(record)">{{ $t('system.common.delete') }}</a>
+                  <a style="color: #ef4444" @click="handleDelete(record)">{{
+                    $t('system.common.delete')
+                  }}</a>
                   <a @click="handlePermission(record)">{{ $t('system.role.permission') }}</a>
                 </Space>
               </template>
