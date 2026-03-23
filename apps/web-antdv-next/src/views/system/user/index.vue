@@ -21,10 +21,7 @@ import {
 } from 'antdv-next';
 import type { TableColumnsType, TreeProps } from 'antdv-next';
 
-import {
-  getDeptTreeApi,
-  getUserPageApi,
-} from '#/api/system/user';
+import { getDeptTreeApi, getUserPageApi } from '#/api/system/user';
 import UserDetail from './components/UserDetail.vue';
 import UserForm from './components/UserForm.vue';
 import UserImport from './components/UserImport.vue';
@@ -40,7 +37,6 @@ const deptTreeData = ref<DeptTreeNode[]>([]);
 const searchKey = ref('');
 const expandedKeys = ref<string[]>([]);
 const selectedKeys = ref<string[]>([]);
-const checkedKeys = ref<string[]>([]);
 
 // 搜索表单
 const searchForm = reactive({
@@ -232,7 +228,7 @@ const handleEdit = (record: UserInfo) => {
 
 const handleView = (record: UserInfo) => {
   userDetailData.value = { ...record };
-  console.log('handleView', userDetailData.value)
+  console.log('handleView', userDetailData.value);
   userDetailVisible.value = true;
 };
 
@@ -283,10 +279,8 @@ watch(selectedDeptId, () => {
         <Tree
           v-model:expandedKeys="expandedKeys"
           v-model:selectedKeys="selectedKeys"
-          v-model:checkedKeys="checkedKeys"
           :tree-data="filteredDeptTree"
           :field-names="{ title: 'deptName', key: 'id', children: 'children' }"
-          checkable
           block-node
           class="h-[calc(100%-60px)]"
           @select="handleDeptSelect"
@@ -329,8 +323,6 @@ watch(selectedDeptId, () => {
           </div>
         </Card>
 
-
-
         <!-- 用户列表 -->
         <Card class="flex-1 min-h-0">
           <!-- 操作按钮 -->
@@ -361,15 +353,13 @@ watch(selectedDeptId, () => {
                 {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
               </template>
               <template v-else-if="column.dataIndex === 'status'">
-                {{ record.status === 1 ? $t('system.common.normal') : $t('system.common.disabled') }}
+                {{
+                  record.status === 1 ? $t('system.common.normal') : $t('system.common.disabled')
+                }}
               </template>
               <template v-else-if="column.dataIndex === 'roleName'">
                 <template v-if="record.roleName">
-                  <Tag
-                    v-for="(role, idx) in record.roleName.split(',')"
-                    :key="idx"
-                    color="blue"
-                  >
+                  <Tag v-for="(role, idx) in record.roleName.split(',')" :key="idx" color="blue">
                     {{ role }}
                   </Tag>
                 </template>
@@ -396,16 +386,10 @@ watch(selectedDeptId, () => {
     />
 
     <!-- 用户详情弹窗 -->
-    <UserDetail
-      v-model:visible="userDetailVisible"
-      :data="userDetailData"
-    />
+    <UserDetail v-model:visible="userDetailVisible" :data="userDetailData" />
 
     <!-- 用户导入弹窗 -->
-    <UserImport
-      v-model:visible="userImportVisible"
-      @success="handleImportSuccess"
-    />
+    <UserImport v-model:visible="userImportVisible" @success="handleImportSuccess" />
   </Page>
 </template>
 

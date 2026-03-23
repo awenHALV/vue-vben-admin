@@ -182,6 +182,6 @@ export async function getDeptRolesApi(deptId: string) {
 /**
  * 下载用户导入模板
  */
-export function getUserImportTemplateUrl() {
-  return '/api/de-base-system/external/private/user/import/template';
+export function getUserImportTemplateUrl(): Promise<Blob> {
+  return requestClient.download('/de-base-system/external/private/user/import/template');
 }
