@@ -12,6 +12,7 @@ import {
 } from '#/api/system/user';
 
 import { $t } from '#/locales';
+import { encryptByMd5 } from '#/utils/cipher';
 
 import {
   Button,
@@ -204,6 +205,7 @@ const handleOk = async () => {
     if (isAdd.value) {
       await createUserApi({
         ...formData.value,
+        pwd: encryptByMd5(formData.value.pwd),
         roleId: formData.value.roleId.join(','),
       });
       message.success($t('system.common.addSuccess'));
@@ -216,7 +218,7 @@ const handleOk = async () => {
     } else if (isPasswordReset.value) {
       await editPasswordApi({
         id: formData.value.id,
-        pwd: formData.value.pwd,
+        pwd: encryptByMd5(formData.value.pwd),
         phone: formData.value.phone,
       });
       message.success($t('system.user.editPassword') + $t('system.common.addSuccess'));

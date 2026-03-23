@@ -129,8 +129,8 @@ export async function getAppFeatureTreeApi(appId: string) {
 }
 
 /**
- * 获取全部应用功能树（不需要 appId）
+ * 获取全部功能树（不需要 appId）
  */
 export async function getAllFeatureTreeApi() {
-  return requestClient.get<FeatureInfo[]>('/de-base-system/external/private/app-feature/tree');
+  return requestClient.get<FeatureInfo[]>('/de-base-system/external/private/mine/feature');
 }
