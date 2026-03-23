@@ -62,6 +62,11 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendTenantItem>({
     },
     columns: [
       {
+        field: 'tenantId',
+        title: $t('tenant.list.tenantId'),
+        minWidth: 180,
+      },
+      {
         field: 'tenantName',
         title: $t('tenant.list.tenantName'),
         minWidth: 180,

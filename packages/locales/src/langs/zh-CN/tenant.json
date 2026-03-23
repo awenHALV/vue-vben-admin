@@ -2,6 +2,7 @@
   "title": "租户管理",
   "list": {
     "id": "租户ID",
+    "tenantId": "租户ID",
     "tenantName": "租户名称",
     "tenantNameEn": "英文名称",
     "tenantCode": "租户编码",

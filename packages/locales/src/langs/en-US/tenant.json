@@ -2,6 +2,7 @@
   "title": "Tenant Management",
   "list": {
     "id": "Tenant ID",
+    "tenantId": "Tenant ID",
     "tenantName": "Tenant Name",
     "tenantNameEn": "English Name",
     "tenantCode": "Tenant Code",
