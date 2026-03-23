@@ -8,7 +8,7 @@ import { $t } from '#/locales';
 
 import {
   Button, Divider,
-  Form, FormInstance,
+  Form,
   FormItem,
   Input,
   InputNumber,
@@ -18,7 +18,7 @@ import {
   TextArea,
   TreeSelect,
 } from 'antdv-next';
-// import type { FormInstance } from 'ant-design-vue';
+import type { FormInstance } from 'antdv-next';
 import {createRoleApi, updateRoleApi} from "#/api/system/role";
 
 // ==================== Props & Emits ====================

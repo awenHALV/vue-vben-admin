@@ -17,7 +17,7 @@ import {
   Button,
   Col,
   Divider,
-  Form, FormInstance,
+  Form,
   FormItem,
   Input,
   InputPassword,
@@ -27,7 +27,7 @@ import {
   Select,
   TreeSelect,
 } from 'antdv-next';
-// import type { FormInstance } from 'ant-design-vue';
+import type { FormInstance } from 'antdv-next';
 
 // ==================== Props & Emits ====================
 

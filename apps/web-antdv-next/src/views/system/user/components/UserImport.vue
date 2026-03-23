@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 
 import {Button, Divider, Form, FormItem, message, Modal, Upload} from 'antdv-next';
-import type { UploadProps } from 'ant-design-vue';
+import type { UploadProps } from 'antdv-next';
 
 import { getUserImportTemplateUrl, importUserApi } from '#/api/system/user';
 

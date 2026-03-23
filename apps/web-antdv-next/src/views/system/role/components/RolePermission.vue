@@ -6,7 +6,7 @@ import { ref, watch } from 'vue';
 import { $t } from '#/locales';
 
 import {
-  Button, Divider,
+  Divider,
   message,
   Modal,
   Spin,
@@ -14,8 +14,7 @@ import {
 } from 'antdv-next';
 
 import {
-  getAppListApi,
-  getAppFeatureTreeApi,
+  getAllFeatureTreeApi,
   getRolePermissionApi,
   saveRolePermissionApi,
 } from '#/api/system/role';
@@ -52,28 +51,14 @@ const loadData = async () => {
   try {
     loading.value = true;
 
-    // 获取应用列表
-    const appRes = await getAppListApi();
-    const apps = appRes?.records || [];
-
-    // 获取每个应用的功能树
-    const featurePromises = apps.map((app: any) => getAppFeatureTreeApi(app.id));
-    const featureResults = await Promise.all(featurePromises);
-
-    // 组装树数据
-    treeData.value = apps.map((app: any, index: number) => ({
-      id: `${app.id}appIds`,
-      appName: app.appName,
-      appNameEn: app.appNameEn,
-      children: formatFeatureTree(featureResults[index] || []),
-    }));
+    // 直接获取全部功能树
+    const featureTree = await getAllFeatureTreeApi();
+    treeData.value = formatFeatureTree(featureTree || []);
 
     // 获取角色权限
     const permissionRes = await getRolePermissionApi(props.data.id);
     if (permissionRes) {
-      const appIds = permissionRes.appIds?.split(',').map((id: string) => `${id}appIds`) || [];
-      const featureIds = permissionRes.featureIds?.split(',') || [];
-      checkedKeys.value = [...appIds, ...featureIds];
+      checkedKeys.value = permissionRes.featureIds?.split(',').filter(Boolean) || [];
     }
   } catch (error) {
     console.error('加载权限数据失败:', error);
@@ -85,8 +70,7 @@ const loadData = async () => {
 const formatFeatureTree = (features: any[]): any[] => {
   return features.map((feature: any) => ({
     id: feature.id,
-    appName: feature.featureName,
-    appNameEn: feature.featureNameEn,
+    featureName: feature.featureName,
     children: feature.children ? formatFeatureTree(feature.children) : [],
   }));
 };
@@ -99,20 +83,11 @@ const handleOk = async () => {
 
   try {
     okLoading.value = true;
-   console.log('checkedKeys', checkedKeys.value);
-    // 分离 appIds 和 featureIds
-    const appIds = checkedKeys.value
-      .filter((key) => key.endsWith('appIds'))
-      .map((key) => key.replace('appIds', ''))
-      .join(',');
 
-    const featureIds = checkedKeys.value
-      .filter((key) => !key.endsWith('appIds'))
-      .join(',');
+    const featureIds = checkedKeys.value.join(',');
 
     await saveRolePermissionApi({
       roleId: props.data?.id || '',
-      appIds,
       featureIds,
     });
 
@@ -159,7 +134,7 @@ watch(
       <Tree
         v-model:checkedKeys="checkedKeys"
         :tree-data="treeData"
-        :field-names="{ title: 'appName', key: 'id', children: 'children' }"
+        :field-names="{ title: 'featureName', key: 'id', children: 'children' }"
         checkable
         block-node
         :height="400"

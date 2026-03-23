@@ -8,7 +8,7 @@ import { $t } from '#/locales';
 
 import {
   Button, Divider,
-  Form, FormInstance,
+  Form,
   FormItem,
   Input,
   message,
@@ -17,7 +17,7 @@ import {
   TextArea,
   TreeSelect,
 } from 'antdv-next';
-// import type { FormInstance } from 'ant-design-vue';
+import type { FormInstance } from 'antdv-next';
 import { createOrgApi, getOrgTreeApi, updateOrgApi } from '#/api/system/org';
 import { getDictOptionsApi } from '#/api/system/dict';
 

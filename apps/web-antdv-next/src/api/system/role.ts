@@ -108,7 +108,7 @@ export async function getRolePermissionApi(roleId: string) {
 /**
  * 保存角色权限
  */
-export async function saveRolePermissionApi(data: { roleId: string; appIds: string; featureIds: string }) {
+export async function saveRolePermissionApi(data: { roleId: string; featureIds: string; appIds?: string }) {
   return requestClient.post('/de-base-system/external/private/role/feature/update', data);
 }
 
@@ -126,4 +126,11 @@ export async function getAppListApi() {
  */
 export async function getAppFeatureTreeApi(appId: string) {
   return requestClient.get<FeatureInfo[]>('/de-base-system/external/private/app-feature/tree', { params: { appId } });
+}
+
+/**
+ * 获取全部应用功能树（不需要 appId）
+ */
+export async function getAllFeatureTreeApi() {
+  return requestClient.get<FeatureInfo[]>('/de-base-system/external/private/app-feature/tree');
 }

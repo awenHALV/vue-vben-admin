@@ -95,7 +95,7 @@
     "organizationRequired": "所属组织不能为空",
     "addRole": "新增角色",
     "editRole": "编辑角色",
-    "permissionConfig": "权限配置",
+    "permissionConfig": "菜单权限",
     "deleteTip": "请确定是否删除数据？",
     "deleteContent": "删除数据也会删除所有与其相关的数据,请慎重选择",
     "configSuccess": "配置成功",
