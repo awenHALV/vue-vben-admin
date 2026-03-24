@@ -15,12 +15,12 @@ import {
   Input,
   InputSearch,
   Space,
-  Table,
   Tag,
   Tree,
 } from 'antdv-next';
-import type { TableColumnsType, TreeProps } from 'antdv-next';
+import type { TreeProps } from 'antdv-next';
 
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getDeptTreeApi, getUserPageApi } from '#/api/system/user';
 import UserDetail from './components/UserDetail.vue';
 import UserForm from './components/UserForm.vue';
@@ -28,8 +28,6 @@ import UserImport from './components/UserImport.vue';
 
 // ==================== 状态定义 ====================
 
-const loading = ref(false);
-const tableData = ref<UserInfo[]>([]);
 const selectedDeptId = ref<string>('');
 
 // 部门树相关
@@ -42,16 +40,6 @@ const selectedKeys = ref<string[]>([]);
 const searchForm = reactive({
   account: '',
   name: '',
-});
-
-// 分页
-const pagination = reactive({
-  current: 1,
-  pageSize: 10,
-  total: 0,
-  showSizeChanger: true,
-  showQuickJumper: true,
-  pageSizeOptions: ['10', '20', '30', '50', '100'],
 });
 
 // 弹窗状态
@@ -71,50 +59,86 @@ const filteredDeptTree = computed(() => {
   return filterTree(deptTreeData.value, searchKey.value.toLowerCase());
 });
 
-const columns: TableColumnsType = [
-  {
-    title: $t('system.user.num') || '序号',
-    dataIndex: 'index',
-    width: 60,
+// ==================== VxeGrid 配置 ====================
+
+const [Grid, gridApi] = useVbenVxeGrid<UserInfo>({
+  showSearchForm: false,
+  separator: false,
+  gridOptions: {
+    height: 'auto',
+    rowConfig: { isHover: true },
+    proxyConfig: {
+      ajax: {
+        query: async (proxyParams: any) => {
+          if (!selectedDeptId.value) {
+            return { records: [], total: 0 };
+          }
+          const params = {
+            current: proxyParams?.page?.currentPage,
+            size: proxyParams?.page?.pageSize,
+            deptId: selectedDeptId.value,
+            ...searchForm,
+          };
+          const res = await getUserPageApi(params);
+          return {
+            records: res?.records || [],
+            total: res?.total || 0,
+          };
+        },
+      },
+      response: {
+        result: 'records',
+        total: 'total',
+        list: 'records',
+      },
+    },
+    columns: [
+      {
+        type: 'seq',
+        title: $t('system.user.num') || '序号',
+        width: 60,
+      },
+      {
+        field: 'account',
+        title: $t('system.user.account'),
+        minWidth: 120,
+      },
+      {
+        field: 'name',
+        title: $t('system.user.name'),
+        minWidth: 100,
+      },
+      {
+        field: 'roleName',
+        title: $t('system.user.role'),
+        minWidth: 180,
+        align: 'left',
+        slots: { default: 'roleName' },
+      },
+      {
+        field: 'deptName',
+        title: $t('system.user.org'),
+        minWidth: 150,
+        align: 'left',
+      },
+      {
+        field: 'status',
+        title: $t('system.common.status'),
+        width: 80,
+        formatter: ({ cellValue }: any) => {
+          return cellValue === 1 ? $t('system.common.normal') : $t('system.common.disabled');
+        },
+      },
+      {
+        title: $t('system.common.operation'),
+        width: 200,
+        fixed: 'right',
+        align: 'center',
+        slots: { default: 'action' },
+      },
+    ],
   },
-  {
-    title: $t('system.user.account'),
-    dataIndex: 'account',
-    width: 120,
-    align: 'center',
-  },
-  {
-    title: $t('system.user.name'),
-    dataIndex: 'name',
-    width: 100,
-    align: 'center',
-  },
-  {
-    title: $t('system.user.role'),
-    dataIndex: 'roleName',
-    width: 180,
-    align: 'left',
-  },
-  {
-    title: $t('system.user.org'),
-    dataIndex: 'deptName',
-    width: 150,
-    align: 'left',
-  },
-  {
-    title: $t('system.common.status'),
-    dataIndex: 'status',
-    width: 80,
-    align: 'center',
-  },
-  {
-    title: $t('system.common.operation'),
-    key: 'action',
-    width: 200,
-    align: 'center',
-    fixed: 'right',
-  },
-];
+});
 
 // ==================== 方法 ====================
 
@@ -169,41 +193,14 @@ function getFirstKey(data: DeptTreeNode[]): string | null {
   return data[0].id;
 }
 
-const getUserList = async () => {
-  if (!selectedDeptId.value) return;
-  try {
-    loading.value = true;
-    const res = await getUserPageApi({
-      current: pagination.current,
-      size: pagination.pageSize,
-      deptId: selectedDeptId.value,
-      ...searchForm,
-    });
-    tableData.value = res?.records || [];
-    pagination.total = res?.total || 0;
-  } catch (error) {
-    console.error('获取用户列表失败:', error);
-  } finally {
-    loading.value = false;
-  }
-};
-
 const handleSearch = () => {
-  pagination.current = 1;
-  getUserList();
+  void gridApi.reload();
 };
 
 const handleReset = () => {
   searchForm.account = '';
   searchForm.name = '';
-  pagination.current = 1;
-  getUserList();
-};
-
-const handleTableChange = (pag: any) => {
-  pagination.current = pag.current;
-  pagination.pageSize = pag.pageSize;
-  getUserList();
+  void gridApi.reload();
 };
 
 const handleDeptSelect: TreeProps['onSelect'] = (keys) => {
@@ -244,12 +241,12 @@ const handleImport = () => {
 
 const handleFormSuccess = () => {
   userFormVisible.value = false;
-  getUserList();
+  void gridApi.reload();
 };
 
 const handleImportSuccess = () => {
   userImportVisible.value = false;
-  getUserList();
+  void gridApi.reload();
 };
 
 // ==================== 生命周期 ====================
@@ -259,8 +256,7 @@ onMounted(() => {
 });
 
 watch(selectedDeptId, () => {
-  pagination.current = 1;
-  getUserList();
+  void gridApi.reload();
 });
 </script>
 
@@ -324,56 +320,40 @@ watch(selectedDeptId, () => {
         </Card>
 
         <!-- 用户列表 -->
-        <Card class="flex-1 min-h-0">
-          <!-- 操作按钮 -->
-          <div class="mb-4 flex justify-end">
-            <Space>
-              <Button type="primary" class="w-21" @click="handleAdd">
-                <template #icon><IconifyIcon icon="lucide:plus" /></template>
-                {{ $t('system.common.add') }}
-              </Button>
-              <Button class="w-26" @click="handleImport">
-                <template #icon><IconifyIcon icon="lucide:upload" /></template>
-                {{ $t('system.user.batchImport') }}
-              </Button>
-            </Space>
-          </div>
-          <Table
-            :columns="columns"
-            :data-source="tableData"
-            :loading="loading"
-            :pagination="pagination"
-            :scroll="{ x: 900 }"
-            row-key="id"
-            size="middle"
-            @change="handleTableChange"
-          >
-            <template #bodyCell="{ column, record, index }">
-              <template v-if="column.dataIndex === 'index'">
-                {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
-              </template>
-              <template v-else-if="column.dataIndex === 'status'">
-                {{
-                  record.status === 1 ? $t('system.common.normal') : $t('system.common.disabled')
-                }}
-              </template>
-              <template v-else-if="column.dataIndex === 'roleName'">
-                <template v-if="record.roleName">
-                  <Tag v-for="(role, idx) in record.roleName.split(',')" :key="idx" color="blue">
-                    {{ role }}
-                  </Tag>
-                </template>
-              </template>
-              <template v-else-if="column.key === 'action'">
-                <Space>
-                  <a @click="handleView(record)">{{ $t('system.common.view') }}</a>
-                  <a @click="handleEdit(record)">{{ $t('system.common.edit') }}</a>
-                  <a @click="handlePasswordReset(record)">{{ $t('system.user.editPassword') }}</a>
-                </Space>
-              </template>
+        <div class="flex-1 min-h-0">
+          <Grid>
+          <template #toolbar-actions>
+            <div class="flex w-full justify-end">
+              <Space>
+                <Button type="primary" class="w-21" @click="handleAdd">
+                  <template #icon><IconifyIcon icon="lucide:plus" /></template>
+                  {{ $t('system.common.add') }}
+                </Button>
+                <Button class="w-26" @click="handleImport">
+                  <template #icon><IconifyIcon icon="lucide:upload" /></template>
+                  {{ $t('system.user.batchImport') }}
+                </Button>
+              </Space>
+            </div>
+          </template>
+
+          <template #roleName="{ row }">
+            <template v-if="row.roleName">
+              <Tag v-for="(role, idx) in row.roleName.split(',')" :key="idx" color="blue">
+                {{ role }}
+              </Tag>
             </template>
-          </Table>
-        </Card>
+          </template>
+
+          <template #action="{ row }">
+            <Space>
+              <a @click="handleView(row)">{{ $t('system.common.view') }}</a>
+              <a @click="handleEdit(row)">{{ $t('system.common.edit') }}</a>
+              <a @click="handlePasswordReset(row)">{{ $t('system.user.editPassword') }}</a>
+            </Space>
+          </template>
+        </Grid>
+        </div>
       </div>
     </div>
 
@@ -394,28 +374,34 @@ watch(selectedDeptId, () => {
 </template>
 
 <style scoped>
-:deep(.ant-btn),
-:deep(.ant-input),
-:deep(.ant-select-selector),
-:deep(.ant-card),
-:deep(.ant-tag),
-:deep(.ant-pagination-item),
-:deep(.ant-pagination-prev),
-:deep(.ant-pagination-next),
-:deep(.ant-tree),
-:deep(.ant-table-wrapper) {
-  border-radius: 0 !important;
+/* 使用系统设置的圆角 */
+</style>
+
+<style>
+/* Grid 填满容器高度 - 分页固定在底部 */
+.flex-1.min-h-0 > div:has(.vxe-grid) {
+  height: 100%;
 }
 
-:deep(.ant-input-affix-wrapper),
-:deep(.ant-input-search .ant-input-group-addon) {
-  border-radius: 0 !important;
+.flex-1.min-h-0 .vxe-grid {
+  height: 100% !important;
+  display: flex;
+  flex-direction: column;
 }
 
-:deep(.ant-select-focused .ant-select-selector),
-:deep(.ant-select-selector:hover),
-:deep(.ant-input:hover),
-:deep(.ant-input:focus) {
-  border-radius: 0 !important;
+.flex-1.min-h-0 .vxe-grid--main-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-1.min-h-0 .vxe-table--main-wrapper {
+  flex: 1;
+}
+
+.flex-1.min-h-0 .vxe-table--body-wrapper {
+  flex: 1;
+  overflow-y: auto;
 }
 </style>

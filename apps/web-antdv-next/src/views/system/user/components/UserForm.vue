@@ -310,7 +310,7 @@ watch(
     :title="modalTitle"
     :width="700"
     :confirm-loading="loading"
-    class="system-modal-no-radius"
+    class="user-form-modal"
     @ok="handleOk"
     @cancel="handleClose"
   >
@@ -428,34 +428,14 @@ watch(
 </template>
 
 <style>
-.system-modal-no-radius .ant-btn,
-.system-modal-no-radius .ant-input,
-.system-modal-no-radius .ant-select-selector,
-.system-modal-no-radius .ant-input-affix-wrapper,
-.system-modal-no-radius .ant-input-password,
-.system-modal-no-radius .ant-tree-select {
-  border-radius: 0 !important;
-}
-
-.system-modal-no-radius .ant-select-focused .ant-select-selector,
-.system-modal-no-radius .ant-select-selector:hover,
-.system-modal-no-radius .ant-input:hover,
-.system-modal-no-radius .ant-input:focus {
-  border-radius: 0 !important;
-}
-
-.system-modal-no-radius.ant-modal,
-.system-modal-no-radius .ant-modal-content {
-  border-radius: 0 !important;
-}
-
-.system-modal-no-radius .ant-form-item-label {
+/* 表单标签对齐 */
+.user-form-modal .ant-form-item-label {
   display: flex;
   align-items: center;
   justify-content: flex-end;
 }
 
-.system-modal-no-radius .ant-form-item-label > label {
+.user-form-modal .ant-form-item-label > label {
   justify-content: flex-end;
 }
 </style>

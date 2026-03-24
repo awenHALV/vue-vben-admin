@@ -186,7 +186,7 @@ watch(
     :title="modalTitle"
     :width="600"
     :confirm-loading="okLoading"
-    class="system-modal-no-radius"
+    
     @ok="handleOk"
     @cancel="handleClose"
   >
@@ -253,25 +253,5 @@ watch(
 </template>
 
 <style>
-.system-modal-no-radius .ant-btn,
-.system-modal-no-radius .ant-input,
-.system-modal-no-radius .ant-select-selector,
-.system-modal-no-radius .ant-input-affix-wrapper,
-.system-modal-no-radius .ant-input-number,
-.system-modal-no-radius .ant-tree-select,
-.system-modal-no-radius textarea.ant-input {
-  border-radius: 0 !important;
-}
-
-.system-modal-no-radius .ant-select-focused .ant-select-selector,
-.system-modal-no-radius .ant-select-selector:hover,
-.system-modal-no-radius .ant-input:hover,
-.system-modal-no-radius .ant-input:focus {
-  border-radius: 0 !important;
-}
-
-.system-modal-no-radius.ant-modal,
-.system-modal-no-radius .ant-modal-content {
-  border-radius: 0 !important;
-}
+/* 使用系统设置的圆角（通过 --radius CSS 变量） */
 </style>
