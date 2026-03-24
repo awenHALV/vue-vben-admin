@@ -133,6 +133,14 @@ interface RouteMeta {
    * 后端菜单英文名
    */
   featureNameEn?: string;
+  /**
+   * Wujie 子应用 name（与基座 website.projectCodes 中的 projectCode 一致）
+   */
+  microName?: string;
+  /**
+   * Wujie 子应用完整加载地址（子应用 origin + 子应用内 path）
+   */
+  microUrl?: string;
 }
 
 // 定义递归类型以将 RouteRecordRaw 的 component 属性更改为 string

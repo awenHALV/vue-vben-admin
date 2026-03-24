@@ -1,11 +1,18 @@
 <script setup lang="ts">
+import type { Recordable } from '@vben/types';
+
 import type { VbenFormSchema } from '#/adapter/form';
 
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 import { ProfilePasswordSetting, z } from '@vben/common-ui';
 
 import { message } from 'antdv-next';
+
+import { updateMinePasswordApi } from '#/api/core/user';
+import { encryptByMd5 } from '#/utils/cipher';
+
+const passwordSettingRef = ref<InstanceType<typeof ProfilePasswordSetting>>();
 
 const formSchema = computed((): VbenFormSchema[] => {
   return [
@@ -50,13 +57,29 @@ const formSchema = computed((): VbenFormSchema[] => {
   ];
 });
 
-function handleSubmit() {
-  message.success('密码修改成功');
+const submitting = ref(false);
+
+async function handleSubmit(values: Recordable<string>) {
+  if (submitting.value) {
+    return;
+  }
+  submitting.value = true;
+  try {
+    await updateMinePasswordApi({
+      oldPwd: encryptByMd5(String(values.oldPassword ?? '')),
+      newPwd: encryptByMd5(String(values.newPassword ?? '')),
+    });
+    message.success('密码修改成功');
+    passwordSettingRef.value?.getFormApi()?.resetForm();
+  } finally {
+    submitting.value = false;
+  }
 }
 </script>
 <template>
   <ProfilePasswordSetting
-    class="w-1/3"
+    ref="passwordSettingRef"
+    class="w-1/2"
     :form-schema="formSchema"
     @submit="handleSubmit"
   />

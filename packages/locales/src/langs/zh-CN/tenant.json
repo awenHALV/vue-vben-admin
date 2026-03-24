@@ -22,7 +22,8 @@
     "addTenant": "新增租户",
     "editTenant": "编辑租户",
     "detailTenant": "租户详情",
-    "menuConfig": "菜单配置"
+    "menuConfig": "菜单配置",
+    "switchTenant": "切换租户"
   },
   "detail": {
     "sectionTenant": "租户信息",
@@ -78,7 +79,8 @@
     "detail": "查看",
     "delete": "删除",
     "batchDelete": "批量删除",
-    "menuConfig": "菜单配置"
+    "menuConfig": "菜单配置",
+    "changeTenant": "切换租户"
   },
   "message": {
     "selectFirst": "请先选择要删除的租户",
@@ -91,6 +93,10 @@
     "menuConfigSuccess": "菜单配置已保存",
     "menuConfigEmptyTree": "暂无功能菜单数据",
     "menuConfigMissingCode": "租户编码缺失，无法保存",
-    "saveSuccess": "保存成功"
+    "saveSuccess": "保存成功",
+    "switchTenantConfirm": "您确定以{0}（租户id：{1}）的管理员身份（管理员姓名：{2}）登录系统？",
+    "switchTenantSuccess": "租户切换成功",
+    "switchTenantFailed": "租户切换失败",
+    "switchTenantMissingId": "租户主键缺失，无法切换"
   }
 }

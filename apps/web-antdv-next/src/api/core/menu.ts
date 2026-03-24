@@ -1,6 +1,7 @@
 import type { RouteRecordStringComponent } from '@vben/types';
 
 import { requestClient } from '#/api/request';
+import website from '#/wujie-config/website';
 
 /** 后端返回的菜单数据结构 */
 export interface BackendMenuItem {
@@ -17,32 +18,132 @@ export interface BackendMenuItem {
 }
 
 /**
+ * routePath 首段是否在基座配置的子应用 projectCode 列表中（与 wujie website.projectCodes 一致）
+ * 例如 /vpp/park/child → 首段 vpp 表示子应用，由 Wujie 加载，而非主应用 views 下的页面
+ */
+function getMicroProjectCodeFromRoutePath(routePath: string): null | string {
+  const segments = routePath.replace(/^\//, '').split('/').filter(Boolean);
+  if (segments.length === 0) {
+    return null;
+  }
+  const first = segments[0] ?? '';
+  if (!first) {
+    return null;
+  }
+  return website.projectCodes.includes(first) ? first : null;
+}
+
+/** 基座 path 去掉 /{projectCode} 前缀，得到子应用内 path（子应用 router 配置为 /xxx/yy） */
+function stripMicroProjectPrefix(
+  routePath: string,
+  projectCode: string,
+): string {
+  const normalized = routePath.startsWith('/') ? routePath : `/${routePath}`;
+  const prefix = `/${projectCode}`;
+  if (normalized === prefix) {
+    return '/';
+  }
+  if (normalized.startsWith(`${prefix}/`)) {
+    return normalized.slice(prefix.length) || '/';
+  }
+  return normalized;
+}
+
+/**
+ * 嵌套路由：子项应使用相对 path（如 tenant），不要用 /system/tenant，
+ * 否则在父级为 /system 时，部分环境下匹配异常导致 404。
+ * 组件路径仍用完整 routePath 推断 views 下的文件。
+ */
+function toNestedRoutePath(
+  absolutePath: string,
+  parentAbsolutePath?: string,
+): string {
+  const full = absolutePath.startsWith('/') ? absolutePath : `/${absolutePath}`;
+  if (!parentAbsolutePath) {
+    return full;
+  }
+  const parent = parentAbsolutePath.startsWith('/')
+    ? parentAbsolutePath
+    : `/${parentAbsolutePath}`;
+  const parentNorm = parent.replace(/\/$/, '') || '/';
+  if (full === parentNorm) {
+    return '';
+  }
+  if (full.startsWith(`${parentNorm}/`)) {
+    return full.slice(parentNorm.length + 1);
+  }
+  return full.replace(/^\//, '');
+}
+
+function getMicroAppBaseUrl(projectCode: string): string {
+  const envKey = `VITE_APP_${projectCode.toUpperCase()}` as keyof ImportMetaEnv;
+  const raw = import.meta.env[envKey];
+  if (typeof raw !== 'string' || !raw) {
+    console.warn(
+      `[menu] 子应用「${projectCode}」未配置环境变量 ${String(envKey)}，Wujie 无法拼接加载地址`,
+    );
+    return '';
+  }
+  return raw.replace(/\/$/, '');
+}
+
+/** 子应用完整入口 URL：env 根地址 + 子应用内 path */
+function buildMicroUrl(routePath: string, projectCode: string): string {
+  const base = getMicroAppBaseUrl(projectCode);
+  const childPath = stripMicroProjectPrefix(routePath, projectCode);
+  if (!base) {
+    return '';
+  }
+  if (childPath === '/' || childPath === '') {
+    return `${base}/`;
+  }
+  return `${base}${childPath.startsWith('/') ? childPath : `/${childPath}`}`;
+}
+
+/**
  * 将后端菜单数据映射为 Vben 路由格式
  * - featureCode → name
  * - routePath   → path
  * - featureName / featureIcon / featureNameEn → meta
  * - 有子菜单的父级节点使用 BasicLayout，叶子节点根据 routePath 推断 component
+ * - 叶子且 routePath 首段 ∈ website.projectCodes → 使用 micro/index（Wujie），并写入 meta.microName / meta.microUrl
  */
-function mapMenuToRoute(item: BackendMenuItem): RouteRecordStringComponent {
+function mapMenuToRoute(
+  item: BackendMenuItem,
+  parentAbsoluteRoutePath?: string,
+): RouteRecordStringComponent {
   const menuChildren = (item.children ?? []).filter(
     (child) => child.featureType === 'MENU',
   );
   const hasChildren = menuChildren.length > 0;
 
-  // 叶子路由：根据 routePath 推断 component 路径
-  // 例如 /system/menu → views/system/menu/index.vue → 归一化后为 system/menu/index.vue
+  let rawPath = '';
+  if (item.routePath) {
+    rawPath = item.routePath.startsWith('/')
+      ? item.routePath
+      : `/${item.routePath}`;
+  }
+
+  const pathForRouter = toNestedRoutePath(rawPath, parentAbsoluteRoutePath);
+
+  const microCode =
+    !hasChildren && rawPath ? getMicroProjectCodeFromRoutePath(rawPath) : null;
+
+  // 叶子路由：本地页面按「完整」routePath 推断 views/.../index.vue；子应用走 Wujie 承载页 micro/index.vue
   let inferredComponent: string;
   if (hasChildren) {
     inferredComponent = 'BasicLayout';
-  } else if (item.routePath) {
-    inferredComponent = `${item.routePath.replace(/^\//, '')}/index`;
+  } else if (rawPath) {
+    inferredComponent = microCode
+      ? 'micro/index'
+      : `${rawPath.replace(/^\//, '')}/index`;
   } else {
     inferredComponent = '/';
   }
 
   return {
     name: item.featureCode,
-    path: item.routePath,
+    path: pathForRouter,
     component: inferredComponent,
     meta: {
       /** 默认中文名；展示时由 resolveMenuTitle 按 locale + featureNameEn 解析 */
@@ -51,9 +152,15 @@ function mapMenuToRoute(item: BackendMenuItem): RouteRecordStringComponent {
       order: item.sort,
       featureName: item.featureName,
       featureNameEn: item.featureNameEn,
+      ...(microCode
+        ? {
+            microName: microCode,
+            microUrl: buildMicroUrl(rawPath, microCode),
+          }
+        : {}),
     },
     children: hasChildren
-      ? menuChildren.map((child) => mapMenuToRoute(child))
+      ? menuChildren.map((child) => mapMenuToRoute(child, rawPath))
       : [],
   } as RouteRecordStringComponent;
 }

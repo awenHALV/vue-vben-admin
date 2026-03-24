@@ -71,8 +71,6 @@ const [Grid, gridApi] = useVbenVxeGrid<DictListItem>({
       },
       {
         title: $t('dict.list.action'),
-        width: 160,
-        fixed: 'right',
         align: 'center',
         slots: { default: 'action' },
       },

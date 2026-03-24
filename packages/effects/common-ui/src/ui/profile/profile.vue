@@ -34,10 +34,10 @@ const tabsValue = defineModel<string>('modelValue');
             class="size-20"
           />
           <span class="text-lg font-semibold">
-            {{ userInfo?.realName ?? '' }}
+            {{ userInfo?.name ?? '' }}
           </span>
           <span class="text-sm text-foreground/80">
-            {{ userInfo?.username ?? '' }}
+            {{ userInfo?.account ?? '' }}
           </span>
         </div>
         <Separator class="my-4" />
@@ -47,7 +47,7 @@ const tabsValue = defineModel<string>('modelValue');
               v-for="tab in tabs"
               :key="tab.value"
               :value="tab.value"
-              class="h-12 justify-start data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              class="h-10 justify-start data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               {{ tab.label }}
             </TabsTrigger>

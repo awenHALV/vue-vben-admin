@@ -40,17 +40,6 @@ export default {
    * ...
    * 在此添加新的前端仓库，key值为projectCode
    */
-  projectCodes: [
-    'admin',
-    'resource',
-    'maintenance',
-    'template',
-    'operations',
-    'energyStorage',
-    'operationsnext',
-    'virtualPowerPlant',
-    'microGrid',
-    'configuration',
-    'hm',
-  ],
+  // 子应用 projectCode：与 routePath 首段一致（如 /vpp/... 需在此配置 vpp，并配置 VITE_APP_VPP）
+  projectCodes: ['vpp'],
 };
