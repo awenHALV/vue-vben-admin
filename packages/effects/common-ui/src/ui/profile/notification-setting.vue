@@ -5,12 +5,10 @@ import type { SettingProps } from './types';
 
 import {
   Form,
-  FormControl,
   FormDescription,
   FormField,
   FormItem,
   FormLabel,
-  Switch,
 } from '@vben-core/shadcn-ui';
 
 withDefaults(defineProps<SettingProps>(), {
@@ -28,8 +26,10 @@ function handleChange(fieldName: string, value: boolean) {
 <template>
   <Form class="space-y-8">
     <div class="space-y-4">
-      <template v-for="item in formSchema" :key="item.fieldName">
-        <FormField type="checkbox" :name="item.fieldName">
+      <template v-for="item in formSchema"
+:key="item.fieldName">
+        <FormField type="checkbox"
+:name="item.fieldName">
           <FormItem
             class="flex flex-row items-center justify-between rounded-lg border p-4"
           >
@@ -39,12 +39,12 @@ function handleChange(fieldName: string, value: boolean) {
                 {{ item.description }}
               </FormDescription>
             </div>
-            <FormControl>
+            <!-- <FormControl>
               <Switch
                 :model-value="item.value"
                 @update:model-value="handleChange(item.fieldName, $event)"
               />
-            </FormControl>
+            </FormControl> -->
           </FormItem>
         </FormField>
       </template>

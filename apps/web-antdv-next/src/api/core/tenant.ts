@@ -1,6 +1,8 @@
 import { requestClient } from '#/api/request';
 
 export interface BackendTenantItem {
+  /** 列表/详情中与 id 可能同时存在的租户业务 id */
+  tenantId?: number | string;
   /** 后端可能返回的菜单 id 列表（逗号分隔） */
   adminAccount?: string;
   adminName?: string;
@@ -166,5 +168,23 @@ export async function updateConfigApi(
   await requestClient.post(
     '/de-base-system/external/private/tenant/feature/update',
     params,
+  );
+}
+
+/** GET /de-base-system/external/private/tenant/{id}/auth-code */
+export async function getTenantAuthCodeApi(
+  tenantId: number | string,
+): Promise<{ code: string }> {
+  return requestClient.post<{ code: string }>(
+    `/de-base-system/external/private/tenant/${tenantId}/auth-code`,
+  );
+}
+
+/** POST /de-base-system/external/public/tenant/switch，返回新 token */
+export async function switchTenantApi(code: string): Promise<{ token: string }> {
+  return requestClient.post<{ token: string }>(
+    '/de-base-system/external/public/tenant/switch',
+    { code },
+    { skipReAuthenticate: true },
   );
 }

@@ -22,7 +22,8 @@
     "addTenant": "Add Tenant",
     "editTenant": "Edit Tenant",
     "detailTenant": "Tenant Details",
-    "menuConfig": "Menu Configuration"
+    "menuConfig": "Menu Configuration",
+    "switchTenant": "Switch Tenant"
   },
   "detail": {
     "sectionTenant": "Tenant Information",
@@ -78,7 +79,8 @@
     "detail": "Details",
     "delete": "Delete",
     "batchDelete": "Batch Delete",
-    "menuConfig": "Menu Config"
+    "menuConfig": "Menu Config",
+    "changeTenant": "Change Tenant"
   },
   "message": {
     "selectFirst": "Please select tenants to delete first",
@@ -90,6 +92,11 @@
     "detailFailed": "Failed to load tenant details",
     "menuConfigSuccess": "Menu configuration saved",
     "menuConfigEmptyTree": "No feature menu data",
-    "menuConfigMissingCode": "Tenant code is missing; cannot save"
+    "menuConfigMissingCode": "Tenant code is missing; cannot save",
+    "saveSuccess": "Saved successfully",
+    "switchTenantConfirm": "Are you sure you want to log in as the administrator (name: {2}) of tenant \"{0}\" (tenant id: {1})?",
+    "switchTenantSuccess": "Tenant switched successfully",
+    "switchTenantFailed": "Failed to switch tenant",
+    "switchTenantMissingId": "Tenant id is missing; cannot switch"
   }
 }

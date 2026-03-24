@@ -2,21 +2,88 @@
 import type { BackendTenantItem, TenantPageParams } from '#/api/core/tenant';
 
 import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { Page, VbenButton, VbenInput } from '@vben/common-ui';
 import { Plus } from '@vben/icons';
 import { $t } from '@vben/locales';
+import { preferences } from '@vben/preferences';
+import { useAccessStore, useUserStore } from '@vben/stores';
+import { setCookie, TOKEN_KEY } from '@vben/utils';
 
-import { Space } from 'antdv-next';
+import { message, Modal, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getTenantPageApi } from '#/api/core/tenant';
+import {
+  getTenantAuthCodeApi,
+  getTenantPageApi,
+  switchTenantApi,
+} from '#/api/core/tenant';
+import { generateAccess } from '#/router/access';
+import { accessRoutes } from '#/router/routes';
+import { useAuthStore } from '#/store';
 
 import AddOrUpdate from './AddOrUpdate.vue';
 import TenantDetail from './TenantDetail.vue';
 import TenantMenuConfig from './TenantMenuConfig.vue';
 
 defineOptions({ name: 'SystemTenant' });
+
+const router = useRouter();
+const accessStore = useAccessStore();
+const userStore = useUserStore();
+const authStore = useAuthStore();
+
+interface AccessMenuItem {
+  children?: AccessMenuItem[];
+  path?: string;
+}
+
+function getFirstMenuPath(menus: AccessMenuItem[]): string {
+  for (const menu of menus) {
+    const children = menu.children ?? [];
+    if (children.length > 0) {
+      const childPath = getFirstMenuPath(children);
+      if (childPath) {
+        return childPath;
+      }
+    }
+    const path = menu.path ?? '';
+    if (path && !path.startsWith('http')) {
+      return path;
+    }
+  }
+  return '';
+}
+
+function hasMenuPath(menus: AccessMenuItem[], targetPath: string): boolean {
+  for (const menu of menus) {
+    if (menu.path === targetPath) {
+      return true;
+    }
+    const children = menu.children ?? [];
+    if (children.length > 0 && hasMenuPath(children, targetPath)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function extractTokenFromSwitchPayload(data: unknown): string | undefined {
+  if (typeof data === 'string') {
+    return data;
+  }
+  if (data && typeof data === 'object') {
+    const d = data as Record<string, unknown>;
+    if (typeof d.token === 'string') {
+      return d.token;
+    }
+    if (typeof d.accessToken === 'string') {
+      return d.accessToken;
+    }
+  }
+  return undefined;
+}
 
 const addOrUpdateRef = ref<InstanceType<typeof AddOrUpdate> | null>(null);
 const tenantDetailRef = ref<InstanceType<typeof TenantDetail> | null>(null);
@@ -159,6 +226,101 @@ function openDetail(record: BackendTenantItem) {
 function openMenu(record: BackendTenantItem) {
   tenantMenuConfigRef.value?.open(record);
 }
+
+const switchingTenant = ref(false);
+
+async function applyTenantTokenAndRefresh(token: string) {
+  accessStore.setAccessToken(token);
+  setCookie(TOKEN_KEY, token);
+  if (accessStore.loginExpired) {
+    accessStore.setLoginExpired(false);
+  }
+  await authStore.fetchUserInfo();
+  const userRoles = userStore.userInfo?.roles ?? [];
+  const { accessibleMenus, accessibleRoutes } = await generateAccess({
+    roles: userRoles,
+    router,
+    routes: accessRoutes,
+  });
+  accessStore.setAccessMenus(accessibleMenus);
+  accessStore.setAccessRoutes(accessibleRoutes);
+  accessStore.setIsAccessChecked(true);
+
+  const currentPath = router.currentRoute.value.path;
+  if (!hasMenuPath(accessibleMenus as AccessMenuItem[], currentPath)) {
+    const firstMenuPath = getFirstMenuPath(accessibleMenus as AccessMenuItem[]);
+    const fallbackPath =
+      firstMenuPath ||
+      userStore.userInfo?.homePath ||
+      preferences.app.defaultHomePath;
+    if (fallbackPath && fallbackPath !== currentPath) {
+      await router.replace(fallbackPath);
+    }
+  }
+}
+
+/**
+ * 切换租户流程
+ * 1）拉授权码 → 2）调切换接口 → 3）从返回里取 token（支持 token / accessToken 或整段为字符串）
+4）setAccessToken + setCookie(TOKEN_KEY)
+5）fetchUserInfo()
+6）generateAccess 刷新菜单与动态路由并写回 accessStore
+7）若当前路由在新菜单里不存在，则跳到首个可访问菜单或首页。
+ * @param record 
+ */
+async function runSwitchTenant(record: BackendTenantItem) {
+  const tenantPk = record.id ?? record.tenantId;
+  if (tenantPk === undefined || tenantPk === null) {
+    message.error($t('tenant.message.switchTenantMissingId'));
+    return;
+  }
+  switchingTenant.value = true;
+  try {
+    const authPayload = await getTenantAuthCodeApi(tenantPk);
+    const raw = authPayload as { authCode?: string; code?: string };
+    let authCode: string | undefined;
+    if (typeof raw?.code === 'string') {
+      authCode = raw.code;
+    } else if (typeof raw?.authCode === 'string') {
+      authCode = raw.authCode;
+    }
+    if (!authCode) {
+      message.error($t('tenant.message.switchTenantFailed'));
+      return;
+    }
+    const switchPayload = await switchTenantApi(authCode);
+    const token = extractTokenFromSwitchPayload(switchPayload);
+    if (!token) {
+      message.error($t('tenant.message.switchTenantFailed'));
+      return;
+    }
+    await applyTenantTokenAndRefresh(token);
+    message.success($t('tenant.message.switchTenantSuccess'));
+  } finally {
+    switchingTenant.value = false;
+  }
+}
+
+function openChangeTenant(record: BackendTenantItem) {
+  const tenantName = String(record.tenantName ?? '');
+  const tenantId = String(record.tenantId ?? record.id ?? '');
+  const adminName = String(
+    record.adminName ?? record.admin_name ?? record.adminAccount ?? '',
+  );
+  Modal.confirm({
+    title: $t('tenant.modal.switchTenant'),
+    content: $t('tenant.message.switchTenantConfirm', [
+      tenantName,
+      tenantId,
+      adminName,
+    ]),
+    okText: $t('common.confirm'),
+    cancelText: $t('common.cancel'),
+    async onOk() {
+      await runSwitchTenant(record);
+    },
+  });
+}
 </script>
 
 <template>
@@ -259,13 +421,24 @@ function openMenu(record: BackendTenantItem) {
           >
             {{ $t('tenant.action.menuConfig') }}
           </VbenButton>
+          <VbenButton
+            size="sm"
+            variant="ghost"
+            class="text-primary"
+            :disabled="switchingTenant"
+            @click="openChangeTenant(row)"
+          >
+            {{ $t('tenant.action.changeTenant') }}
+          </VbenButton>
         </div>
       </template>
     </Grid>
 
+    <!-- prettier-ignore -->
     <AddOrUpdate
-ref="addOrUpdateRef" @success="reloadTenantGrid()"
-/>
+      ref="addOrUpdateRef"
+      @success="reloadTenantGrid()"
+    />
     <TenantDetail ref="tenantDetailRef" />
     <!-- prettier-ignore -->
     <TenantMenuConfig

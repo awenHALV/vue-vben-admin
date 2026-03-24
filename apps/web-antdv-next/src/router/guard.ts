@@ -33,6 +33,17 @@ function getFirstMenuPath(menus: AccessMenuItem[]): string {
   return '';
 }
 
+/** Vue Router 的 query 可能为 string | string[] */
+function normalizeQueryParam(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  return undefined;
+}
+
 /**
  * 通用守卫配置
  * @param router
@@ -73,6 +84,21 @@ function setupAccessGuard(router: Router) {
     const userStore = useUserStore();
     const authStore = useAuthStore();
 
+    // 个人中心挂在 core 下，但仍需登录（避免与「基本路由免 token」冲突）
+    if (to.name === 'Profile' && !accessStore.accessToken) {
+      if (to.fullPath !== LOGIN_PATH) {
+        return {
+          path: LOGIN_PATH,
+          query:
+            to.fullPath === preferences.app.defaultHomePath
+              ? {}
+              : { redirect: encodeURIComponent(to.fullPath) },
+          replace: true,
+        };
+      }
+      return to;
+    }
+
     // 基本路由，这些路由不需要进入权限拦截
     if (coreRouteNames.includes(to.name as string)) {
       if (to.path === LOGIN_PATH && accessStore.accessToken) {
@@ -82,7 +108,15 @@ function setupAccessGuard(router: Router) {
             preferences.app.defaultHomePath,
         );
       }
-      return true;
+      // 个人中心挂在 BasicLayout 下，侧栏依赖 generateAccess 写入的菜单；刷新直达时若尚未生成权限，
+      // 不可在此提前 return，否则 accessMenus 为空，左侧菜单空白。
+      const profileNeedsMenus =
+        to.name === 'Profile' &&
+        accessStore.accessToken &&
+        !accessStore.isAccessChecked;
+      if (!profileNeedsMenus) {
+        return true;
+      }
     }
 
     // accessToken 检查
@@ -136,13 +170,57 @@ function setupAccessGuard(router: Router) {
       to.path === preferences.app.defaultHomePath ||
       to.fullPath === preferences.app.defaultHomePath;
 
-    const redirectPath = (from.query.redirect ??
+    const rawRedirect = normalizeQueryParam(from.query.redirect);
+    let pathFromQuery: string | undefined;
+    if (rawRedirect) {
+      try {
+        pathFromQuery = decodeURIComponent(rawRedirect);
+      } catch {
+        pathFromQuery = rawRedirect;
+      }
+    }
+
+    let redirectPath =
+      pathFromQuery ||
       (requestedDefaultHome
         ? userInfo.homePath || firstMenuPath || preferences.app.defaultHomePath
-        : to.fullPath)) as string;
+        : to.fullPath);
+
+    // 已登录时若目标仍是登录页，改去首页，避免与「登录页带 token 再跳首页」逻辑打架形成死循环
+    if (
+      redirectPath === LOGIN_PATH ||
+      redirectPath.startsWith(`${LOGIN_PATH}?`)
+    ) {
+      redirectPath =
+        userInfo.homePath || firstMenuPath || preferences.app.defaultHomePath;
+    }
+
+    let resolved: ReturnType<Router['resolve']>;
+    try {
+      resolved = router.resolve(redirectPath);
+    } catch {
+      resolved = router.resolve(preferences.app.defaultHomePath);
+    }
+
+    // 目标与当前导航一致时勿再 replace，否则会触发 pushWithRedirect 无限递归
+    if (resolved.fullPath === to.fullPath) {
+      // 首次进入时 URL 往往先命中顶层兜底 `/:path(.*)*`（FallbackNotFound），动态路由尚未注册；
+      // 注册后同一 fullPath 应对应真实页面，若仍直接 return true，会沿用旧的 404 匹配结果。
+      if (to.name !== resolved.name) {
+        return {
+          path: resolved.path,
+          query: resolved.query,
+          hash: resolved.hash,
+          replace: true,
+        };
+      }
+      return true;
+    }
 
     return {
-      ...router.resolve(decodeURIComponent(redirectPath)),
+      path: resolved.path,
+      query: resolved.query,
+      hash: resolved.hash,
       replace: true,
     };
   });

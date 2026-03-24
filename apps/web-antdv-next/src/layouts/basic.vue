@@ -154,7 +154,7 @@ watch(
       await updateWatermark({
         content:
           content ||
-          `${userStore.userInfo?.username} - ${userStore.userInfo?.realName}`,
+          `${userStore.userInfo?.name} - ${userStore.userInfo?.account}`,
       });
     } else {
       destroyWatermark();
@@ -170,11 +170,10 @@ watch(
   <BasicLayout @clear-preferences-and-logout="handleLogout">
     <template #user-dropdown>
       <UserDropdown
-        :avatar
+        :avatar="userStore.userInfo?.avatar"
         :menus
-        :text="userStore.userInfo?.realName"
-        description="ann.vben@gmail.com"
-        tag-text="Pro"
+        :text="userStore.userInfo?.name"
+        :description="userStore.userInfo?.account"
         @logout="handleLogout"
       />
     </template>
@@ -197,7 +196,8 @@ watch(
       </AuthenticationLoginExpiredModal>
     </template>
     <template #lock-screen>
-      <LockScreen :avatar @to-login="handleLogout" />
+      <LockScreen :avatar
+@to-login="handleLogout" />
     </template>
   </BasicLayout>
 </template>
