@@ -23,3 +23,10 @@ export async function getUserInfoApi() {
 export async function updateMinePasswordApi(data: UpdateMinePasswordParams) {
   return requestClient.put('/de-base-system/external/private/mine/pwd', data);
 }
+
+/**
+ * 更新用户信息
+ */
+export async function updateMineInfoApi(data: UserInfo) {
+  return requestClient.put('/de-base-system/external/private/mine/info', data);
+}
