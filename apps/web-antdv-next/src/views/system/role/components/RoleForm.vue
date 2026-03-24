@@ -144,7 +144,7 @@ watch(
     :title="modalTitle"
     :width="500"
     :confirm-loading="okLoading"
-    class="system-modal-no-radius"
+    
     @ok="handleOk"
     @cancel="handleClose"
   >

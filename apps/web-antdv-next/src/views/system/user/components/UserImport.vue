@@ -92,7 +92,6 @@ const handleClose = () => {
     title="批量导入"
     :width="500"
     :footer="null"
-    class="system-modal-no-radius"
     @cancel="handleClose"
   >
     <Divider/>
@@ -122,12 +121,5 @@ const handleClose = () => {
 </template>
 
 <style>
-.system-modal-no-radius .ant-btn {
-  border-radius: 0 !important;
-}
-
-.system-modal-no-radius.ant-modal,
-.system-modal-no-radius .ant-modal-content {
-  border-radius: 0 !important;
-}
+/* 使用系统设置的圆角（通过 --radius CSS 变量） */
 </style>

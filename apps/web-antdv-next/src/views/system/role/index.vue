@@ -18,11 +18,11 @@ import {
   message,
   Modal,
   Space,
-  Table,
   Tree,
 } from 'antdv-next';
-import type { TableColumnsType, TreeProps } from 'antdv-next';
+import type { TreeProps } from 'antdv-next';
 
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getRolePageApi, deleteRoleApi } from '#/api/system/role';
 import { getOrgTreeApi } from '#/api/system/org';
 import RoleForm from './components/RoleForm.vue';
@@ -30,8 +30,6 @@ import RolePermission from './components/RolePermission.vue';
 
 // ==================== 状态定义 ====================
 
-const loading = ref(false);
-const tableData = ref<RoleInfo[]>([]);
 const selectedDeptId = ref<string>('');
 
 // 部门树相关
@@ -43,16 +41,6 @@ const selectedKeys = ref<string[]>([]);
 // 搜索表单
 const searchForm = reactive({
   roleName: '',
-});
-
-// 分页
-const pagination = reactive({
-  current: 1,
-  pageSize: 10,
-  total: 0,
-  showSizeChanger: true,
-  showQuickJumper: true,
-  pageSizeOptions: ['10', '20', '30', '50', '100'],
 });
 
 // 弹窗状态
@@ -70,29 +58,60 @@ const filteredDeptTree = computed(() => {
   return filterTree(deptTreeData.value, searchKey.value.toLowerCase());
 });
 
-const columns: TableColumnsType = [
-  {
-    title: $t('system.role.roleName'),
-    dataIndex: 'roleName',
-    width: 150,
-    ellipsis: true,
-    align: 'center',
+// ==================== VxeGrid 配置 ====================
+
+const [Grid, gridApi] = useVbenVxeGrid<RoleInfo>({
+  showSearchForm: false,
+  separator: false,
+  gridOptions: {
+    height: 'auto',
+    rowConfig: { isHover: true },
+    proxyConfig: {
+      ajax: {
+        query: async (proxyParams: any) => {
+          if (!selectedDeptId.value) {
+            return { records: [], total: 0 };
+          }
+          const params = {
+            current: proxyParams?.page?.currentPage,
+            size: proxyParams?.page?.pageSize,
+            deptId: selectedDeptId.value,
+            ...searchForm,
+          };
+          const res = await getRolePageApi(params);
+          return {
+            records: res?.records || [],
+            total: res?.total || 0,
+          };
+        },
+      },
+      response: {
+        result: 'records',
+        total: 'total',
+        list: 'records',
+      },
+    },
+    columns: [
+      {
+        field: 'roleName',
+        title: $t('system.role.roleName'),
+        minWidth: 150,
+      },
+      {
+        field: 'deptName',
+        title: $t('system.role.organization'),
+        minWidth: 150,
+      },
+      {
+        title: $t('system.common.operation'),
+        width: 200,
+        fixed: 'right',
+        align: 'center',
+        slots: { default: 'action' },
+      },
+    ],
   },
-  {
-    title: $t('system.role.organization'),
-    dataIndex: 'deptName',
-    width: 150,
-    ellipsis: true,
-    align: 'center',
-  },
-  {
-    title: $t('system.common.operation'),
-    key: 'action',
-    width: 200,
-    align: 'center',
-    fixed: 'right',
-  },
-];
+});
 
 // ==================== 方法 ====================
 
@@ -145,40 +164,13 @@ function getFirstKey(data: OrgInfo[]): string | null {
   return data[0].id;
 }
 
-const getRoleList = async () => {
-  if (!selectedDeptId.value) return;
-  try {
-    loading.value = true;
-    const res = await getRolePageApi({
-      current: pagination.current,
-      size: pagination.pageSize,
-      deptId: selectedDeptId.value,
-      ...searchForm,
-    });
-    tableData.value = res?.records || [];
-    pagination.total = res?.total || 0;
-  } catch (error) {
-    console.error('获取角色列表失败:', error);
-  } finally {
-    loading.value = false;
-  }
-};
-
 const handleSearch = () => {
-  pagination.current = 1;
-  getRoleList();
+  void gridApi.reload();
 };
 
 const handleReset = () => {
   searchForm.roleName = '';
-  pagination.current = 1;
-  getRoleList();
-};
-
-const handleTableChange = (pag: any) => {
-  pagination.current = pag.current;
-  pagination.pageSize = pag.pageSize;
-  getRoleList();
+  void gridApi.reload();
 };
 
 const handleDeptSelect: TreeProps['onSelect'] = (keys) => {
@@ -215,7 +207,7 @@ const handleDelete = async (record: RoleInfo) => {
       try {
         await deleteRoleApi(record.id);
         message.success($t('system.common.deleteSuccess'));
-        getRoleList();
+        void gridApi.reload();
       } catch (error: any) {
         message.error(error?.message || $t('system.common.deleteFailed'));
       }
@@ -230,7 +222,7 @@ const handlePermission = (record: RoleInfo) => {
 
 const handleFormSuccess = () => {
   formVisible.value = false;
-  getRoleList();
+  void gridApi.reload();
 };
 
 const handlePermissionSuccess = () => {
@@ -244,8 +236,7 @@ onMounted(() => {
 });
 
 watch(selectedDeptId, () => {
-  pagination.current = 1;
-  getRoleList();
+  void gridApi.reload();
 });
 </script>
 
@@ -301,37 +292,28 @@ watch(selectedDeptId, () => {
         </Card>
 
         <!-- 角色列表 -->
-        <Card class="flex-1 min-h-0">
-          <!-- 操作按钮 -->
-          <div class="mb-4 flex justify-end">
-            <Button type="primary" class="w-21" @click="handleAdd">
-              <template #icon><IconifyIcon icon="lucide:plus" /></template>
-              {{ $t('system.common.add') }}
-            </Button>
-          </div>
-          <Table
-            :columns="columns"
-            :data-source="tableData"
-            :loading="loading"
-            :pagination="pagination"
-            :scroll="{ x: 500 }"
-            row-key="id"
-            size="middle"
-            @change="handleTableChange"
-          >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'action'">
-                <Space v-if="record.roleAlias !== 'admin'">
-                  <a @click="handleEdit(record)">{{ $t('system.common.edit') }}</a>
-                  <a style="color: #ef4444" @click="handleDelete(record)">{{
-                    $t('system.common.delete')
-                  }}</a>
-                  <a @click="handlePermission(record)">{{ $t('system.role.permission') }}</a>
-                </Space>
-              </template>
+        <div class="flex-1 min-h-0">
+          <Grid>
+            <template #toolbar-actions>
+              <div class="flex w-full justify-end">
+                <Button type="primary" class="w-21" @click="handleAdd">
+                  <template #icon><IconifyIcon icon="lucide:plus" /></template>
+                  {{ $t('system.common.add') }}
+                </Button>
+              </div>
             </template>
-          </Table>
-        </Card>
+
+            <template #action="{ row }">
+              <Space v-if="row.roleAlias !== 'admin'">
+                <a @click="handleEdit(row)">{{ $t('system.common.edit') }}</a>
+                <a style="color: #ef4444" @click="handleDelete(row)">{{
+                  $t('system.common.delete')
+                }}</a>
+                <a @click="handlePermission(row)">{{ $t('system.role.permission') }}</a>
+              </Space>
+            </template>
+          </Grid>
+        </div>
       </div>
     </div>
 
@@ -353,28 +335,34 @@ watch(selectedDeptId, () => {
 </template>
 
 <style scoped>
-:deep(.ant-btn),
-:deep(.ant-input),
-:deep(.ant-select-selector),
-:deep(.ant-card),
-:deep(.ant-tag),
-:deep(.ant-pagination-item),
-:deep(.ant-pagination-prev),
-:deep(.ant-pagination-next),
-:deep(.ant-tree),
-:deep(.ant-table-wrapper) {
-  border-radius: 0 !important;
+/* 使用系统设置的圆角 */
+</style>
+
+<style>
+/* Grid 填满容器高度 - 分页固定在底部 */
+.flex-1.min-h-0 > div:has(.vxe-grid) {
+  height: 100%;
 }
 
-:deep(.ant-input-affix-wrapper),
-:deep(.ant-input-search .ant-input-group-addon) {
-  border-radius: 0 !important;
+.flex-1.min-h-0 .vxe-grid {
+  height: 100% !important;
+  display: flex;
+  flex-direction: column;
 }
 
-:deep(.ant-select-focused .ant-select-selector),
-:deep(.ant-select-selector:hover),
-:deep(.ant-input:hover),
-:deep(.ant-input:focus) {
-  border-radius: 0 !important;
+.flex-1.min-h-0 .vxe-grid--main-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-1.min-h-0 .vxe-table--main-wrapper {
+  flex: 1;
+}
+
+.flex-1.min-h-0 .vxe-table--body-wrapper {
+  flex: 1;
+  overflow-y: auto;
 }
 </style>

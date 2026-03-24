@@ -225,26 +225,5 @@ onMounted(() => {
 </template>
 
 <style scoped>
-:deep(.ant-btn),
-:deep(.ant-input),
-:deep(.ant-select-selector),
-:deep(.ant-card),
-:deep(.ant-tag),
-:deep(.ant-pagination-item),
-:deep(.ant-pagination-prev),
-:deep(.ant-pagination-next),
-:deep(.ant-table-wrapper) {
-  border-radius: 0 !important;
-}
-
-:deep(.ant-input-affix-wrapper) {
-  border-radius: 0 !important;
-}
-
-:deep(.ant-select-focused .ant-select-selector),
-:deep(.ant-select-selector:hover),
-:deep(.ant-input:hover),
-:deep(.ant-input:focus) {
-  border-radius: 0 !important;
-}
+/* 使用系统设置的圆角（通过 --radius CSS 变量） */
 </style>

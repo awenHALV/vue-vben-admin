@@ -190,7 +190,7 @@ watch(
     :title="$t('system.role.permissionConfig')"
     :width="500"
     :confirm-loading="okLoading"
-    class="system-modal-no-radius"
+    
     @ok="handleOk"
     @cancel="handleClose"
   >
@@ -212,13 +212,5 @@ watch(
 </template>
 
 <style>
-.system-modal-no-radius .ant-btn,
-.system-modal-no-radius .ant-tree {
-  border-radius: 0 !important;
-}
-
-.system-modal-no-radius.ant-modal,
-.system-modal-no-radius .ant-modal-content {
-  border-radius: 0 !important;
-}
+/* 使用系统设置的圆角（通过 --radius CSS 变量） */
 </style>
