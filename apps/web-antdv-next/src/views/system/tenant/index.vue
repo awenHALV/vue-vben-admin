@@ -331,7 +331,7 @@ function openChangeTenant(record: BackendTenantItem) {
   >
     <!-- 搜索区域：与 system/menu 同一套布局与按钮样式 -->
     <div
-      class="flex flex-nowrap items-center justify-between gap-4 overflow-x-auto rounded-lg border border-border bg-background p-6"
+      class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-border bg-background p-6"
     >
       <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-6 gap-y-2">
         <div class="flex items-center gap-2">

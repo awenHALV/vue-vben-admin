@@ -57,4 +57,9 @@ vite.config.ts.*
 .agents
 .claude
 .codex
+.opencode
+.openspec
+.cursorignore
+.github
+openspec
 skills-lock.json
