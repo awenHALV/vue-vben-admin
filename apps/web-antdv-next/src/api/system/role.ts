@@ -65,6 +65,8 @@ export interface FeatureInfo {
   id: string;
   featureName: string;
   featureNameEn?: string;
+  featureType?: 'MENU' | 'BUTTON'; // 功能类型：MENU-菜单，BUTTON-按钮
+  parentId?: string;
   children?: FeatureInfo[];
 }
 
@@ -74,7 +76,9 @@ export interface FeatureInfo {
  * 获取角色分页列表
  */
 export async function getRolePageApi(params: RolePageParams) {
-  return requestClient.get<PageResult<RoleInfo>>('/de-base-system/external/private/role/page', { params });
+  return requestClient.get<PageResult<RoleInfo>>('/de-base-system/external/private/role/page', {
+    params,
+  });
 }
 
 /**
@@ -102,13 +106,19 @@ export async function deleteRoleApi(id: string) {
  * 获取角色权限
  */
 export async function getRolePermissionApi(roleId: string) {
-  return requestClient.get<RolePermissionInfo>('/de-base-system/external/private/role/feature', { params: { roleId } });
+  return requestClient.get<RolePermissionInfo>('/de-base-system/external/private/role/feature', {
+    params: { roleId },
+  });
 }
 
 /**
  * 保存角色权限
  */
-export async function saveRolePermissionApi(data: { roleId: string; featureIds: string; appIds?: string }) {
+export async function saveRolePermissionApi(data: {
+  roleId: string;
+  featureIds: string;
+  appIds?: string;
+}) {
   return requestClient.post('/de-base-system/external/private/role/feature/update', data);
 }
 
@@ -125,7 +135,9 @@ export async function getAppListApi() {
  * 获取应用功能树
  */
 export async function getAppFeatureTreeApi(appId: string) {
-  return requestClient.get<FeatureInfo[]>('/de-base-system/external/private/app-feature/tree', { params: { appId } });
+  return requestClient.get<FeatureInfo[]>('/de-base-system/external/private/app-feature/tree', {
+    params: { appId },
+  });
 }
 
 /**

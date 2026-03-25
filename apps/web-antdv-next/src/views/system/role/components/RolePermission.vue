@@ -1,17 +1,11 @@
 <script lang="ts" setup>
-import type { RoleInfo } from '#/api/system/role';
+import type { RoleInfo, FeatureInfo } from '#/api/system/role';
 
 import { computed, ref, watch } from 'vue';
 
 import { $t } from '#/locales';
 
-import {
-  Divider,
-  message,
-  Modal,
-  Spin,
-  Tree,
-} from 'antdv-next';
+import { Divider, message, Modal, Spin, Tree } from 'antdv-next';
 
 import {
   getAllFeatureTreeApi,
@@ -40,27 +34,82 @@ const emit = defineEmits<{
 
 const loading = ref(false);
 const okLoading = ref(false);
-const treeData = ref<any[]>([]);
-// 只存储叶子节点的选中状态
-const selectedLeafIds = ref<Set<string>>(new Set());
+const treeData = ref<FeatureInfo[]>([]);
+const selectedIds = ref<Set<string>>(new Set());
 
-// ==================== 方法 ====================
+const nodeMap = computed(() => {
+  const map = new Map<string, FeatureInfo & { parentId?: string }>();
+  const traverse = (nodes: FeatureInfo[], parentId?: string) => {
+    for (const node of nodes) {
+      map.set(node.id, { ...node, parentId });
+      if (node.children?.length) {
+        traverse(node.children, node.id);
+      }
+    }
+  };
+  traverse(treeData.value);
+  return map;
+});
+
+const getAllParentIds = (nodeId: string): string[] => {
+  const result: string[] = [];
+  let node = nodeMap.value.get(nodeId);
+  while (node?.parentId) {
+    result.push(node.parentId);
+    node = nodeMap.value.get(node.parentId);
+  }
+  return result;
+};
+
+const getAllChildIds = (nodeId: string): string[] => {
+  const result: string[] = [];
+  const node = nodeMap.value.get(nodeId);
+  if (node?.children?.length) {
+    const traverse = (children: FeatureInfo[]) => {
+      for (const child of children) {
+        result.push(child.id);
+        if (child.children?.length) {
+          traverse(child.children);
+        }
+      }
+    };
+    traverse(node.children);
+  }
+  return result;
+};
+
+const hasSelectedDescendant = (nodeId: string): boolean => {
+  const node = nodeMap.value.get(nodeId);
+  if (!node?.children?.length) return false;
+  for (const child of node.children) {
+    if (selectedIds.value.has(child.id)) return true;
+    if (hasSelectedDescendant(child.id)) return true;
+  }
+  return false;
+};
+
+const checkedKeys = computed(() => {
+  const result = new Set<string>(selectedIds.value);
+  for (const [id, node] of nodeMap.value) {
+    if (hasSelectedDescendant(id)) {
+      result.add(id);
+    }
+  }
+  return Array.from(result);
+});
 
 const loadData = async () => {
   if (!props.data?.id) return;
-
   try {
     loading.value = true;
-
-    // 直接获取全部功能树
     const featureTree = await getAllFeatureTreeApi();
-    treeData.value = formatFeatureTree(featureTree || []);
-
-    // 获取角色权限
+    treeData.value = featureTree || [];
     const permissionRes = await getRolePermissionApi(props.data.id);
-    if (permissionRes) {
-      const featureIds = permissionRes.featureIds?.split(',').filter(Boolean) || [];
-      selectedLeafIds.value = new Set(featureIds);
+    if (permissionRes?.featureIds) {
+      const featureIds = permissionRes.featureIds.split(',').filter(Boolean);
+      selectedIds.value = new Set(featureIds);
+    } else {
+      selectedIds.value = new Set();
     }
   } catch (error) {
     console.error('加载权限数据失败:', error);
@@ -69,93 +118,75 @@ const loadData = async () => {
   }
 };
 
-const formatFeatureTree = (features: any[]): any[] => {
-  return features.map((feature: any) => {
-    const children = feature.children ? formatFeatureTree(feature.children) : undefined;
-    return {
-      id: feature.id,
-      featureName: feature.featureName,
-      children,
-    };
-  });
-};
-
-// 计算选中的 keys（叶子节点 + 有选中子节点的父节点）
-const checkedKeys = computed(() => {
-  const result = new Set<string>(selectedLeafIds.value);
-  
-  // 构建节点映射
-  const allNodes = new Map<string, any>();
-  const traverse = (nodes: any[], parentId?: string) => {
-    for (const node of nodes) {
-      allNodes.set(node.id, { ...node, parentId });
-      if (node.children?.length) {
-        traverse(node.children, node.id);
-      }
-    }
-  };
-  traverse(treeData.value);
-  
-  // 为每个选中的叶子节点添加父节点
-  for (const leafId of selectedLeafIds.value) {
-    let node = allNodes.get(leafId);
-    while (node?.parentId) {
-      result.add(node.parentId);
-      node = allNodes.get(node.parentId);
-    }
-  }
-  
-  return Array.from(result);
-});
-
-// 获取节点下的所有叶子节点 ID
-const getChildLeafIds = (node: any): string[] => {
-  const leafIds: string[] = [];
-  if (node.children?.length) {
-    const traverse = (children: any[]) => {
-      for (const child of children) {
-        if (child.children?.length) {
-          traverse(child.children);
-        } else {
-          leafIds.push(child.id);
-        }
-      }
-    };
-    traverse(node.children);
-  } else {
-    leafIds.push(node.id);
-  }
-  return leafIds;
-};
-
-// 处理选中变化
 const handleCheck = (_keys: string[], info: { node: any; checked: boolean }) => {
   const { node, checked } = info;
-  const nodeLeafIds = getChildLeafIds(node);
-  
+  const nodeId = node.id;
+  const featureType = node.featureType;
+  const hasChildren = node.children?.length > 0;
+
   if (checked) {
-    nodeLeafIds.forEach(id => selectedLeafIds.value.add(id));
+    // 选中操作
+    if (featureType === 'BUTTON') {
+      selectedIds.value.add(nodeId);
+      const parentIds = getAllParentIds(nodeId);
+      parentIds.forEach((pid) => selectedIds.value.add(pid));
+    } else {
+      selectedIds.value.add(nodeId);
+      if (hasChildren) {
+        const childIds = getAllChildIds(nodeId);
+        childIds.forEach((id) => selectedIds.value.add(id));
+      }
+    }
   } else {
-    nodeLeafIds.forEach(id => selectedLeafIds.value.delete(id));
+    // 取消操作
+    selectedIds.value.delete(nodeId);
+
+    if (featureType === 'BUTTON') {
+      // 取消按钮：不级联取消父菜单
+    } else {
+      // 取消菜单：取消子节点并级联检查祖先
+      if (hasChildren) {
+        const childIds = getAllChildIds(nodeId);
+        childIds.forEach((id) => selectedIds.value.delete(id));
+      }
+
+      let currentId = nodeId;
+      let currentNode = nodeMap.value.get(currentId);
+      while (currentNode?.parentId) {
+        const parentId = currentNode.parentId;
+        const parentNode = nodeMap.value.get(parentId);
+        if (!parentNode) break;
+
+        const hasOtherSelected =
+          parentNode.children?.some((child: FeatureInfo) => {
+            if (child.id === currentId) return false;
+            if (selectedIds.value.has(child.id)) return true;
+            return hasSelectedDescendant(child.id);
+          }) ?? false;
+
+        if (!hasOtherSelected) {
+          selectedIds.value.delete(parentId);
+        }
+
+        currentId = parentId;
+        currentNode = parentNode;
+      }
+    }
   }
 };
 
 const handleOk = async () => {
-  if (selectedLeafIds.value.size === 0) {
+  if (checkedKeys.value.length === 0) {
     message.warning($t('system.role.selectAtLeastOne'));
     return;
   }
-
   try {
     okLoading.value = true;
-
-    const featureIds = Array.from(selectedLeafIds.value).join(',');
-
+    const featureIds = checkedKeys.value.join(',');
     await saveRolePermissionApi({
       roleId: props.data?.id || '',
       featureIds,
     });
-
     message.success($t('system.role.configSuccess'));
     emit('success');
     handleClose();
@@ -168,11 +199,9 @@ const handleOk = async () => {
 
 const handleClose = () => {
   emit('update:visible', false);
-  selectedLeafIds.value = new Set();
+  selectedIds.value = new Set();
   treeData.value = [];
 };
-
-// ==================== 监听 ====================
 
 watch(
   () => props.visible,
@@ -180,7 +209,7 @@ watch(
     if (visible) {
       loadData();
     }
-  },
+  }
 );
 </script>
 
@@ -190,11 +219,10 @@ watch(
     :title="$t('system.role.permissionConfig')"
     :width="500"
     :confirm-loading="okLoading"
-    
     @ok="handleOk"
     @cancel="handleClose"
   >
-    <Divider/>
+    <Divider />
     <Spin :spinning="loading">
       <Tree
         :checked-keys="checkedKeys"
