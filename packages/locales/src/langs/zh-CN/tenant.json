@@ -22,7 +22,7 @@
     "addTenant": "新增租户",
     "editTenant": "编辑租户",
     "detailTenant": "租户详情",
-    "menuConfig": "菜单配置",
+    "menuConfig": "功能配置",
     "switchTenant": "切换租户"
   },
   "detail": {
@@ -79,7 +79,7 @@
     "detail": "查看",
     "delete": "删除",
     "batchDelete": "批量删除",
-    "menuConfig": "菜单配置",
+    "menuConfig": "功能配置",
     "changeTenant": "切换租户"
   },
   "message": {

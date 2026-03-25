@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { BackendMenuItem, MenuPageParams } from '#/api/core/menu';
 
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { Page, VbenButton, VbenInput } from '@vben/common-ui';
@@ -10,8 +10,9 @@ import { $t } from '@vben/locales';
 import { preferences } from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
-import { message, Modal, Space, Table } from 'antdv-next';
+import { message, Modal, Space } from 'antdv-next';
 
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteFeatureApi, getRawMenusApi } from '#/api/core/menu';
 import { generateAccess } from '#/router/access';
 import { accessRoutes } from '#/router/routes';
@@ -25,22 +26,7 @@ const accessStore = useAccessStore();
 const userStore = useUserStore();
 
 // ─── 状态 ───────────────────────────────────────────────────────────────
-const loading = ref(false);
-const tableData = ref<BackendMenuItem[]>([]);
-const selectedRowKeys = ref<(number | string)[]>([]);
-
-const pagination = reactive({
-  current: 1,
-  pageSize: 10,
-  total: 0,
-  showSizeChanger: false,
-  showTotal: (total: number) => $t('menu.list.total', { 0: total }),
-});
-
-// 搜索条件
-const searchForm = reactive<{ featureName: string }>({
-  featureName: '',
-});
+const selectedRowIds = ref<(number | string)[]>([]);
 const inputKeyword = ref('');
 
 // ─── 新增/编辑弹窗 ───────────────────────────────────────────────────
@@ -54,44 +40,136 @@ function openEditModal(record: BackendMenuItem) {
   addOrUpdateRef.value?.open(undefined, record);
 }
 
-// ─── 数据加载 ─────────────────────────────────────────────────────────────
-async function fetchData(params: MenuPageParams = {}) {
-  loading.value = true;
-  try {
-    const res = await getRawMenusApi({
-      current: pagination.current,
-      size: pagination.pageSize,
-      ...params,
-    });
-    tableData.value = res.items ?? [];
-    pagination.total = res.total ?? 0;
-  } catch {
-    message.error($t('menu.message.fetchFailed'));
-  } finally {
-    loading.value = false;
-  }
-}
-
-onMounted(() => fetchData());
+const [Grid, gridApi] = useVbenVxeGrid<BackendMenuItem>({
+  showSearchForm: false,
+  separator: false,
+  gridOptions: {
+    height: 'auto',
+    rowConfig: {
+      isHover: true,
+      keyField: 'id',
+    },
+    checkboxConfig: {
+      highlight: true,
+      range: false,
+    },
+    treeConfig: {
+      childrenField: 'children',
+      rowField: 'id',
+      transform: false,
+    },
+    proxyConfig: {
+      ajax: {
+        query: async (proxyParams: any, mergedForm: any) => {
+          const params: MenuPageParams = {
+            current: proxyParams?.page?.currentPage,
+            size: proxyParams?.page?.pageSize,
+          };
+          if (mergedForm && typeof mergedForm === 'object') {
+            Object.assign(params, mergedForm);
+          }
+          try {
+            const res = await getRawMenusApi(params);
+            return {
+              records: res.items ?? [],
+              total: res.total ?? 0,
+            };
+          } catch {
+            message.error($t('menu.message.fetchFailed'));
+            return {
+              records: [],
+              total: 0,
+            };
+          }
+        },
+      },
+      response: {
+        list: 'records',
+        result: 'records',
+        total: 'total',
+      },
+    },
+    columns: [
+      {
+        type: 'checkbox',
+        width: 46,
+        align: 'center',
+      },
+      {
+        field: 'featureName',
+        title: $t('menu.list.featureName'),
+        minWidth: 180,
+        treeNode: true,
+      },
+      {
+        field: 'featureNameEn',
+        title: $t('menu.list.featureNameEn'),
+        minWidth: 180,
+        showOverflow: 'tooltip',
+      },
+      {
+        field: 'featureCode',
+        title: $t('menu.list.featureCode'),
+        minWidth: 140,
+        showOverflow: 'tooltip',
+      },
+      {
+        field: 'featureType',
+        title: $t('menu.list.featureType'),
+        width: 100,
+        align: 'center',
+      },
+      {
+        field: 'featureIcon',
+        title: $t('menu.list.featureIcon'),
+        width: 100,
+        align: 'center',
+      },
+      {
+        field: 'sort',
+        title: $t('menu.list.sort'),
+        width: 90,
+        align: 'center',
+      },
+      {
+        field: 'routePath',
+        title: $t('menu.list.routePath'),
+        minWidth: 160,
+        showOverflow: 'tooltip',
+      },
+      {
+        title: $t('menu.list.action'),
+        width: 220,
+        fixed: 'right',
+        align: 'center',
+        slots: { default: 'action' },
+      },
+    ],
+  },
+  gridEvents: {
+    checkboxAll: () => {
+      const records = (gridApi.grid as any).getCheckboxRecords?.() ?? [];
+      selectedRowIds.value = records
+        .map((item: BackendMenuItem) => item.id)
+        .filter((id) => id !== null && id !== undefined);
+    },
+    checkboxChange: () => {
+      const records = (gridApi.grid as any).getCheckboxRecords?.() ?? [];
+      selectedRowIds.value = records
+        .map((item: BackendMenuItem) => item.id)
+        .filter((id) => id !== null && id !== undefined);
+    },
+  },
+});
 
 // ─── 搜索 / 重置 ─────────────────────────────────────────────────────────
 function handleSearch() {
-  searchForm.featureName = inputKeyword.value;
-  pagination.current = 1;
-  fetchData({ featureName: searchForm.featureName });
+  void gridApi.reload(getSearchPayload());
 }
 
 function handleReset() {
   inputKeyword.value = '';
-  searchForm.featureName = '';
-  pagination.current = 1;
-  fetchData();
-}
-
-// ─── 分页变化 ─────────────────────────────────────────────────────────────
-function handlePageChange(page: number) {
-  pagination.current = page;
-  fetchData({ featureName: searchForm.featureName });
+  void gridApi.reload();
 }
 
 // ─── 行操作 ──────────────────────────────────────────────────────────────
@@ -123,14 +201,14 @@ function handleDelete(record: BackendMenuItem) {
 }
 
 function handleBatchDelete() {
-  if (selectedRowKeys.value.length === 0) {
+  if (selectedRowIds.value.length === 0) {
     message.warning($t('menu.message.selectFirst'));
     return;
   }
   const confirmModal = Modal.confirm({
     title: $t('menu.action.batchDelete'),
     content: $t('menu.message.batchDeleteConfirm', {
-      0: selectedRowKeys.value.length,
+      0: selectedRowIds.value.length,
     }),
     okType: 'danger',
     okText: $t('common.confirm'),
@@ -139,9 +217,9 @@ function handleBatchDelete() {
       confirmModal.destroy();
     },
     onOk: async () => {
-      await deleteFeatureApi(selectedRowKeys.value);
+      await deleteFeatureApi(selectedRowIds.value);
       message.success($t('menu.message.batchDeleteSuccess'));
-      selectedRowKeys.value = [];
+      selectedRowIds.value = [];
       await handleBatchDeleteSuccess();
       confirmModal.destroy();
     },
@@ -267,8 +345,7 @@ async function refreshMenuCacheIfNeeded() {
  * @returns {Promise<void>}
  */
 async function handleMenuChanged() {
-  // 根据功能名称获取数据列表
-  await fetchData({ featureName: searchForm.featureName });
+  await reloadMenuGrid();
   // 后台异步刷新左侧菜单/路由，不阻塞列表刷新
   void refreshMenuCacheIfNeeded();
 }
@@ -288,7 +365,7 @@ async function handleAddOrUpdateSuccess() {
  * @returns {Promise<void>}
  */
 async function handleDeleteSuccess(record: BackendMenuItem) {
-  await fetchData({ featureName: searchForm.featureName });
+  await reloadMenuGrid();
 
   // 删除场景不强制全量 generateAccess 重算：尽量做本地菜单缓存裁剪
   const cachedMenus = (accessStore.accessMenus ??
@@ -315,78 +392,26 @@ async function handleDeleteSuccess(record: BackendMenuItem) {
 }
 
 async function handleBatchDeleteSuccess() {
-  await fetchData({ featureName: searchForm.featureName });
+  await reloadMenuGrid();
   // 批量删除无法精确裁剪本地菜单树，改为后台异步全量刷新（不阻塞列表刷新）
   void refreshMenuCacheIfNeeded();
 }
 
-// ─── 行多选 ───────────────────────────────────────────────────────────────
-const rowSelection = {
-  get selectedRowKeys() {
-    return selectedRowKeys.value;
-  },
-  onChange: (keys: (number | string)[]) => {
-    selectedRowKeys.value = keys;
-  },
-};
+function getSearchPayload(): Partial<MenuPageParams> {
+  const featureName = inputKeyword.value.trim();
+  if (!featureName) {
+    return {};
+  }
+  return { featureName };
+}
 
-// ─── 表格列配置 ────────────────────────────────────────────────────────────
-const columns = [
-  {
-    title: $t('menu.list.featureName'),
-    dataIndex: 'featureName',
-    key: 'featureName',
-    width: 180,
-  },
-  {
-    title: $t('menu.list.featureNameEn'),
-    dataIndex: 'featureNameEn',
-    key: 'featureNameEn',
-    width: 180,
-    ellipsis: true,
-  },
-  {
-    title: $t('menu.list.featureCode'),
-    dataIndex: 'featureCode',
-    key: 'featureCode',
-    width: 140,
-    ellipsis: true,
-  },
-  {
-    title: $t('menu.list.featureType'),
-    dataIndex: 'featureType',
-    key: 'featureType',
-    width: 90,
-    align: 'center' as const,
-  },
-  {
-    title: $t('menu.list.featureIcon'),
-    dataIndex: 'featureIcon',
-    key: 'featureIcon',
-    width: 90,
-    align: 'center' as const,
-  },
-  {
-    title: $t('menu.list.sort'),
-    dataIndex: 'sort',
-    key: 'sort',
-    width: 90,
-    align: 'center' as const,
-  },
-  {
-    title: $t('menu.list.routePath'),
-    dataIndex: 'routePath',
-    key: 'routePath',
-    width: 140,
-    ellipsis: true,
-  },
-  {
-    title: $t('menu.list.action'),
-    key: 'action',
-    width: 220,
-    fixed: 'right' as const,
-  },
-];
+async function reloadMenuGrid() {
+  await gridApi.reload(getSearchPayload());
+}
+
+onMounted(() => {
+  void reloadMenuGrid();
+});
 </script>
 
 <template>
@@ -397,7 +422,7 @@ const columns = [
   >
     <!-- 搜索区域 -->
     <div
-      class="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3 shadow-sm"
+      class="flex items-center justify-between rounded-lg border border-border bg-background p-6"
     >
       <div class="flex items-center gap-2">
         <span class="shrink-0 text-sm text-muted-foreground">{{
@@ -419,7 +444,8 @@ const columns = [
         >
           {{ $t('menu.action.reset') }}
         </VbenButton>
-        <VbenButton class="w-[60px]" size="sm" @click="handleSearch">
+        <VbenButton class="w-[60px]"
+size="sm" @click="handleSearch">
           {{ $t('menu.action.search') }}
         </VbenButton>
       </Space>
@@ -427,20 +453,19 @@ const columns = [
 
     <!-- 表格卡片 -->
     <div
-      class="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-background shadow-sm"
+      class="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-background"
     >
       <!-- 操作栏 -->
-      <div
-        class="flex items-center justify-end gap-2 border-b border-border px-4 py-3"
-      >
-        <VbenButton class="w-[84px]" size="sm" @click="() => handleAdd()">
+      <div class="flex items-center justify-end gap-2 border-border p-6">
+        <VbenButton class="w-[84px]"
+size="sm" @click="() => handleAdd()">
           <Plus class="mr-1 size-4" />
           {{ $t('common.create') }}
         </VbenButton>
         <VbenButton
           size="sm"
           class="w-[84px]"
-          :disabled="selectedRowKeys.length === 0"
+          :disabled="selectedRowIds.length === 0"
           variant="outline-destructive"
           @click="handleBatchDelete"
         >
@@ -449,64 +474,32 @@ const columns = [
         </VbenButton>
       </div>
 
-      <!-- 树形表格 + 分页 -->
-      <Table
-        :columns="columns"
-        :data-source="tableData"
-        :loading="loading"
-        :pagination="{
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          showTotal: pagination.showTotal,
-          showSizeChanger: false,
-          onChange: handlePageChange,
-        }"
-        :row-key="(record) => String((record as BackendMenuItem).id)"
-        :row-selection="rowSelection"
-        :scroll="{ x: 1200 }"
-        child-row-key="children"
-        class="flex-1"
-        size="small"
-      >
-        <template #bodyCell="{ column, record }">
-          <!-- 操作 -->
-          <template v-if="column.key === 'action'">
-            <Space size="small">
-              <VbenButton
-                size="sm"
-                variant="ghost"
-                @click="handleEdit(record as BackendMenuItem)"
-              >
-                <span class="text-primary">
-                  {{ $t('menu.action.edit') }}
-                </span>
-              </VbenButton>
-              <VbenButton
-                size="sm"
-                variant="ghost"
-                @click="handleDelete(record as BackendMenuItem)"
-              >
-                <span class="text-destructive">{{
-                  $t('menu.action.delete')
-                }}</span>
-              </VbenButton>
-              <VbenButton
-                size="sm"
-                variant="ghost"
-                @click="handleAdd(record as BackendMenuItem)"
-              >
-                <span class="text-primary">{{
-                  $t('menu.action.addChild')
-                }}</span>
-              </VbenButton>
-            </Space>
-          </template>
+      <Grid>
+        <template #action="{ row }">
+          <Space size="small">
+            <VbenButton size="sm"
+variant="ghost" @click="handleEdit(row)">
+              <span class="text-primary">
+                {{ $t('menu.action.edit') }}
+              </span>
+            </VbenButton>
+            <VbenButton size="sm"
+variant="ghost" @click="handleDelete(row)">
+              <span class="text-destructive">{{
+                $t('menu.action.delete')
+              }}</span>
+            </VbenButton>
+            <VbenButton size="sm"
+variant="ghost" @click="handleAdd(row)">
+              <span class="text-primary">{{ $t('menu.action.addChild') }}</span>
+            </VbenButton>
+          </Space>
         </template>
-      </Table>
+      </Grid>
     </div>
 
     <!-- 新增/编辑弹窗 -->
-    <AddOrUpdate ref="addOrUpdateRef" @success="handleAddOrUpdateSuccess" />
+    <AddOrUpdate ref="addOrUpdateRef"
+@success="handleAddOrUpdateSuccess" />
   </Page>
 </template>
