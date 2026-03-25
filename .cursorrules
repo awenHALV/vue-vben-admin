@@ -58,4 +58,4 @@
    - 本地 ESLint 与 Prettier 不一致时：**Vue/TS 以 ESLint 通过为准**。
 
 ## 文件要求
-1、列表页为[module]/index.vue,新增的组件为[module]/create.vue,编辑的组件为[module]/edit.vue,详情页为[module]/detail.vue
+1、列表页为[module]/index.vue,新增和编辑的组件为[module]/AddOrUpdate.vue,详情页为[module]/detail.vue
