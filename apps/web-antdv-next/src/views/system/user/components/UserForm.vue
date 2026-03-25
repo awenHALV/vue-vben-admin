@@ -88,7 +88,14 @@ const isPasswordReset = computed(() => props.type === 'passwordReset');
 
 const rules = computed(() => {
   const baseRules: Record<string, any[]> = {
-    account: [{ required: true, message: $t('system.user.accountRequired'), trigger: 'blur' }],
+    account: [
+      { required: true, message: $t('system.user.accountRequired'), trigger: 'blur' },
+      {
+        pattern: /^[a-z][a-z0-9_]*$/,
+        message: $t('system.user.accountFormat'),
+        trigger: 'blur',
+      },
+    ],
     name: [{ required: true, message: $t('system.user.nameRequired'), trigger: 'blur' }],
     phone: [
       { required: true, message: $t('system.user.phoneRequired'), trigger: 'blur' },
