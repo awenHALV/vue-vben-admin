@@ -1,7 +1,10 @@
 import type { RouteRecordStringComponent } from '@vben/types';
 
 import { requestClient } from '#/api/request';
-import website from '#/wujie-config/website';
+import {
+  buildMicroUrl,
+  getMicroProjectCodeFromRoutePath,
+} from '#/wujie-config/micro-route';
 
 /** 后端返回的菜单数据结构 */
 export interface BackendMenuItem {
@@ -17,36 +20,12 @@ export interface BackendMenuItem {
   sort?: number;
 }
 
-/**
- * routePath 首段是否在基座配置的子应用 projectCode 列表中（与 wujie website.projectCodes 一致）
- * 例如 /vpp/park/child → 首段 vpp 表示子应用，由 Wujie 加载，而非主应用 views 下的页面
- */
-function getMicroProjectCodeFromRoutePath(routePath: string): null | string {
-  const segments = routePath.replace(/^\//, '').split('/').filter(Boolean);
-  if (segments.length === 0) {
-    return null;
-  }
-  const first = segments[0] ?? '';
-  if (!first) {
-    return null;
-  }
-  return website.projectCodes.includes(first) ? first : null;
-}
-
-/** 基座 path 去掉 /{projectCode} 前缀，得到子应用内 path（子应用 router 配置为 /xxx/yy） */
-function stripMicroProjectPrefix(
-  routePath: string,
-  projectCode: string,
-): string {
-  const normalized = routePath.startsWith('/') ? routePath : `/${routePath}`;
-  const prefix = `/${projectCode}`;
-  if (normalized === prefix) {
-    return '/';
-  }
-  if (normalized.startsWith(`${prefix}/`)) {
-    return normalized.slice(prefix.length) || '/';
-  }
-  return normalized;
+function isMenuFeatureType(featureType: string | undefined): boolean {
+  return (
+    String(featureType ?? '')
+      .toUpperCase()
+      .trim() === 'MENU'
+  );
 }
 
 /**
@@ -75,31 +54,6 @@ function toNestedRoutePath(
   return full.replace(/^\//, '');
 }
 
-function getMicroAppBaseUrl(projectCode: string): string {
-  const envKey = `VITE_APP_${projectCode.toUpperCase()}` as keyof ImportMetaEnv;
-  const raw = import.meta.env[envKey];
-  if (typeof raw !== 'string' || !raw) {
-    console.warn(
-      `[menu] 子应用「${projectCode}」未配置环境变量 ${String(envKey)}，Wujie 无法拼接加载地址`,
-    );
-    return '';
-  }
-  return raw.replace(/\/$/, '');
-}
-
-/** 子应用完整入口 URL：env 根地址 + 子应用内 path */
-function buildMicroUrl(routePath: string, projectCode: string): string {
-  const base = getMicroAppBaseUrl(projectCode);
-  const childPath = stripMicroProjectPrefix(routePath, projectCode);
-  if (!base) {
-    return '';
-  }
-  if (childPath === '/' || childPath === '') {
-    return `${base}/`;
-  }
-  return `${base}${childPath.startsWith('/') ? childPath : `/${childPath}`}`;
-}
-
 /**
  * 将后端菜单数据映射为 Vben 路由格式
  * - featureCode → name
@@ -112,8 +66,8 @@ function mapMenuToRoute(
   item: BackendMenuItem,
   parentAbsoluteRoutePath?: string,
 ): RouteRecordStringComponent {
-  const menuChildren = (item.children ?? []).filter(
-    (child) => child.featureType === 'MENU',
+  const menuChildren = (item.children ?? []).filter((child) =>
+    isMenuFeatureType(child.featureType),
   );
   const hasChildren = menuChildren.length > 0;
 
@@ -126,10 +80,15 @@ function mapMenuToRoute(
 
   const pathForRouter = toNestedRoutePath(rawPath, parentAbsoluteRoutePath);
 
+  /**
+   * 微前端：routePath 首段 ∈ website.projectCodes（与 featureCode 无关）；
+   * routePath 为 http/https 外链时不走微前端
+   */
   const microCode =
-    !hasChildren && rawPath ? getMicroProjectCodeFromRoutePath(rawPath) : null;
+    !hasChildren && rawPath && !rawPath.toLowerCase().startsWith('http')
+      ? getMicroProjectCodeFromRoutePath(rawPath)
+      : undefined;
 
-  // 叶子路由：本地页面按「完整」routePath 推断 views/.../index.vue；子应用走 Wujie 承载页 micro/index.vue
   let inferredComponent: string;
   if (hasChildren) {
     inferredComponent = 'BasicLayout';
@@ -140,6 +99,8 @@ function mapMenuToRoute(
   } else {
     inferredComponent = '/';
   }
+
+  const microUrl = microCode ? buildMicroUrl(microCode, rawPath) : undefined;
 
   return {
     name: item.featureCode,
@@ -152,10 +113,11 @@ function mapMenuToRoute(
       order: item.sort,
       featureName: item.featureName,
       featureNameEn: item.featureNameEn,
+      featureIcon: item.featureIcon || undefined,
       ...(microCode
         ? {
             microName: microCode,
-            microUrl: buildMicroUrl(rawPath, microCode),
+            microUrl: microUrl ?? '',
           }
         : {}),
     },
@@ -245,7 +207,7 @@ export function mapBackendMenusToFeatureTree(
 export async function getAllMenusApi(): Promise<RouteRecordStringComponent[]> {
   const rawList = await getMineFeaturesRawApi();
   return rawList
-    .filter((item) => item.featureType === 'MENU')
+    .filter((item) => isMenuFeatureType(item.featureType))
     .map((item) => mapMenuToRoute(item));
 }
 

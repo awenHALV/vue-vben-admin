@@ -2,6 +2,48 @@
 无界事件
 */
 
+import type { Preferences } from '@vben/preferences';
+
+/**
+ * 主应用向子应用推送的完整宿主状态（token / 明暗 / 内置主题）
+ * 子应用监听：window.$wujie?.bus?.$on(HOST_BRIDGE_HOST_STATE_PUSH, handler)
+ */
+export const HOST_BRIDGE_HOST_STATE_PUSH = 'hostBridge:hostStatePush';
+
+/**
+ * 子应用请求 token：bus.$emit(HOST_BRIDGE_REQUEST_TOKEN, (token: string) => void)
+ * 主应用已注册，通过回调回传（与 props.token 并存，便于子应用按需拉取）
+ */
+export const HOST_BRIDGE_REQUEST_TOKEN = 'hostBridge:requestToken';
+
+/**
+ * 子应用请求当前解析后的明暗：'dark' | 'light'（含 auto 时按系统解析）
+ * bus.$emit(HOST_BRIDGE_REQUEST_COLOR_MODE, (mode) => void)
+ */
+export const HOST_BRIDGE_REQUEST_COLOR_MODE = 'hostBridge:requestColorMode';
+
+/**
+ * 子应用请求当前内置主题类型（preferences.theme.builtinType，如 default、violet）
+ * bus.$emit(HOST_BRIDGE_REQUEST_BUILTIN_THEME, (builtinType) => void)
+ */
+export const HOST_BRIDGE_REQUEST_BUILTIN_THEME = 'hostBridge:requestBuiltinTheme';
+
+/**
+ * 子应用一次拉取完整状态（推荐）
+ * bus.$emit(HOST_BRIDGE_REQUEST_HOST_STATE, (state: HostBridgeState) => void)
+ */
+export const HOST_BRIDGE_REQUEST_HOST_STATE = 'hostBridge:requestHostState';
+
+/** 主应用通过 bus 回传给子应用的结构 */
+export interface HostBridgeState {
+  /** 访问令牌，可能为空字符串 */
+  token: string;
+  /** 已解析的明暗模式（非 preferences 原始 mode 字段） */
+  colorMode: 'dark' | 'light';
+  /** 内置主题类型，与基座 preferences.theme.builtinType 一致 */
+  builtinType: Preferences['theme']['builtinType'];
+}
+
 // 切换主题
 export const CHANGETHEME_EVENT = 'changeThemeEvent';
 // 中英文切换
@@ -20,13 +62,14 @@ export const SSO_LOGOUT_EVENT = 'ssoLogoutEvent';
 // 通知子应用退出登录事件
 // export const LOGOUT_CHILD_EVENT = 'logoutChildEvent';
 // 通知子应用路由跳转
-export const ROUTERCHANGE_EVENT = (projectCode) =>
+export const ROUTERCHANGE_EVENT = (projectCode: string) =>
   `${projectCode}:routerChangeEvent`;
 // 通知子应用跳转到静态路由
-export const JUMPROUTESTATIC_EVENT = (projectCode) =>
+export const JUMPROUTESTATIC_EVENT = (projectCode: string) =>
   `${projectCode}:jumpRouteStaticEvent`;
 // 子应用离开时触发
-export const DEACTIVATEDAPP = (projectCode) => `${projectCode}:deactivatedApp`;
+export const DEACTIVATEDAPP = (projectCode: string) =>
+  `${projectCode}:deactivatedApp`;
 // 切换租户
 export const SWITCHTENANT_EVENT = 'switchTenantEvent';
 // editior

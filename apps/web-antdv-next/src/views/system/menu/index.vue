@@ -40,6 +40,26 @@ function openEditModal(record: BackendMenuItem) {
   addOrUpdateRef.value?.open(undefined, record);
 }
 
+const FEATURE_TYPE_I18N_KEY: Record<string, string> = {
+  MENU: 'menu.type.menu',
+  BUTTON: 'menu.type.button',
+};
+
+function featureTypeLabel(
+  featureType: null | string | undefined,
+  t: (key: string) => string,
+): string {
+  const ft = String(featureType ?? '')
+    .toUpperCase()
+    .trim();
+  const i18nKey = FEATURE_TYPE_I18N_KEY[ft];
+  if (i18nKey) {
+    return t(i18nKey);
+  }
+  // 未知类型：原样显示或占位符，避免返回 undefined
+  return featureType ? String(featureType) : '-';
+}
+
 const [Grid, gridApi] = useVbenVxeGrid<BackendMenuItem>({
   showSearchForm: false,
   separator: false,
@@ -57,6 +77,8 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendMenuItem>({
       childrenField: 'children',
       rowField: 'id',
       transform: false,
+      // iconOpen: 'vxe-icon-caret-right',
+      // iconClose: 'vxe-icon-caret-left',
     },
     proxyConfig: {
       ajax: {
@@ -118,6 +140,8 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendMenuItem>({
         title: $t('menu.list.featureType'),
         width: 100,
         align: 'center',
+        formatter: ({ cellValue }: { cellValue?: null | string }) =>
+          featureTypeLabel(cellValue, $t),
       },
       {
         field: 'featureIcon',
