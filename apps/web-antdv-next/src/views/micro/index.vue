@@ -24,6 +24,7 @@ const microProps = computed(() => ({
 
 <template>
   <div class="size-full p-4">
+    <!-- sync 关闭：基座已通过 meta.microUrl 指定子应用完整地址，避免与 vue-router 冲突；且 wujie 1.0.29 在刷新时序下 sync 可能早于 __WUJIE 注入导致报错 -->
     <WujieVue
       v-if="microUrl"
       width="100%"
@@ -31,7 +32,7 @@ const microProps = computed(() => ({
       :name="microName"
       :url="microUrl"
       :props="microProps"
-      :sync="true"
+      :sync="false"
     />
     <!-- eslint-disable-next-line vue/max-attributes-per-line -->
     <div v-else class="text-muted-foreground">

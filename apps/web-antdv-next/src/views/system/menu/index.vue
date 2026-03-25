@@ -8,7 +8,12 @@ import { Page, VbenButton, VbenInput } from '@vben/common-ui';
 import { Plus, Trash2 } from '@vben/icons';
 import { $t } from '@vben/locales';
 import { preferences } from '@vben/preferences';
-import { useAccessStore, useUserStore } from '@vben/stores';
+import {
+  getTabKey,
+  useAccessStore,
+  useTabbarStore,
+  useUserStore,
+} from '@vben/stores';
 
 import { message, Modal, Space } from 'antdv-next';
 
@@ -24,6 +29,7 @@ defineOptions({ name: 'SystemMenu' });
 const router = useRouter();
 const accessStore = useAccessStore();
 const userStore = useUserStore();
+const tabbarStore = useTabbarStore();
 
 // ─── 状态 ───────────────────────────────────────────────────────────────
 const selectedRowIds = ref<(number | string)[]>([]);
@@ -77,8 +83,9 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendMenuItem>({
       childrenField: 'children',
       rowField: 'id',
       transform: false,
-      // iconOpen: 'vxe-icon-caret-right',
-      // iconClose: 'vxe-icon-caret-left',
+      // 配置自定义展开/收起图标
+      iconOpen: 'vxe-icon-square-minus',
+      iconClose: 'vxe-icon-square-plus',
     },
     proxyConfig: {
       ajax: {
@@ -241,10 +248,14 @@ function handleBatchDelete() {
       confirmModal.destroy();
     },
     onOk: async () => {
+      const grid = gridApi.grid as {
+        getCheckboxRecords?: () => BackendMenuItem[];
+      };
+      const selectedRecords = grid.getCheckboxRecords?.() ?? [];
       await deleteFeatureApi(selectedRowIds.value);
       message.success($t('menu.message.batchDeleteSuccess'));
       selectedRowIds.value = [];
-      await handleBatchDeleteSuccess();
+      await handleBatchDeleteSuccess(selectedRecords);
       confirmModal.destroy();
     },
   });
@@ -295,47 +306,119 @@ function hasMenuPath(menus: AccessMenuItem[], targetPath: string): boolean {
   return false;
 }
 
-/**
- * 递归移除菜单列表中指定路径的菜单项
- * @param menus - 原始菜单列表
- * @param targetPath - 需要移除的目标路径
- * @returns 过滤后的新菜单列表
- */
-function removeMenuByPath(
-  menus: AccessMenuItem[],
-  targetPath: string,
-): AccessMenuItem[] {
-  // 创建新数组存储过滤后的菜单项
-  const next: AccessMenuItem[] = [];
-  for (const menu of menus) {
-    // 跳过匹配目标路径的菜单项
-    if (menu.path === targetPath) continue;
-
-    const children = menu.children ?? [];
-    // 递归处理子菜单列表
-    const nextChildren =
-      children.length > 0 ? removeMenuByPath(children, targetPath) : [];
-    // 重构菜单对象并加入结果数组，若子菜单为空则移除 children 属性
-    next.push(
-      children.length > 0
-        ? {
-            ...menu,
-            children: nextChildren.length > 0 ? nextChildren : undefined,
-          }
-        : menu,
-    );
+function normalizeMenuRoutePath(routePath: string): string {
+  const p = String(routePath ?? '').trim();
+  if (!p) {
+    return '';
   }
-  return next;
+  return p.startsWith('/') ? p : `/${p}`;
+}
+
+function getTabPathnameForMatch(tab: {
+  fullPath?: string;
+  path: string;
+}): string {
+  const raw = (tab.fullPath ?? tab.path ?? '').split('?')[0] ?? '';
+  const p = raw.trim();
+  if (!p) {
+    return '';
+  }
+  return p.startsWith('/') ? p : `/${p}`;
+}
+
+function tabPathMatchesDeletedRoutes(
+  tabPathname: string,
+  deletedPathsNorm: string[],
+): boolean {
+  if (!tabPathname || deletedPathsNorm.length === 0) {
+    return false;
+  }
+  return deletedPathsNorm.some(
+    (del) => tabPathname === del || tabPathname.startsWith(`${del}/`),
+  );
+}
+
+function isTabAffix(tab: { meta?: { affixTab?: boolean } }): boolean {
+  return tab?.meta?.affixTab ?? false;
+}
+
+/**
+ * 关闭与已删除功能对应的标签页：
+ * - 优先按路由 name（后端 featureCode）匹配；
+ * - 再按 path 与已删除 routePath 相同或为子路径匹配。
+ * 固定标签不关闭（与 tabbar 一致）。
+ */
+async function closeTabsForDeletedMenus(
+  records: BackendMenuItem[],
+): Promise<void> {
+  const pathNorms = [
+    ...new Set(
+      records
+        .map((r) => normalizeMenuRoutePath(String(r.routePath ?? '')))
+        .filter((p) => p.length > 0),
+    ),
+  ];
+  const codeSet = new Set(
+    records
+      .map((r) => r.featureCode)
+      .filter((c) => c !== undefined && c !== null && String(c).length > 0)
+      .map(String),
+  );
+
+  if (pathNorms.length === 0 && codeSet.size === 0) {
+    return;
+  }
+
+  const tabsToClose = tabbarStore.getTabs.filter((tab) => {
+    if (isTabAffix(tab)) {
+      return false;
+    }
+    let routeName = '';
+    if (
+      tab.name !== undefined &&
+      tab.name !== null &&
+      String(tab.name).length > 0
+    ) {
+      routeName = String(tab.name);
+    }
+    if (routeName.length > 0 && codeSet.has(routeName)) {
+      return true;
+    }
+    if (pathNorms.length === 0) {
+      return false;
+    }
+    const pathname = getTabPathnameForMatch(tab);
+    return tabPathMatchesDeletedRoutes(pathname, pathNorms);
+  });
+
+  if (tabsToClose.length === 0) {
+    return;
+  }
+
+  const currentKey = getTabKey(router.currentRoute.value);
+  const closingKeys = tabsToClose.map((t) => t.key ?? getTabKey(t));
+  const inactiveKeys = [
+    ...new Set(closingKeys.filter((k) => k !== currentKey)),
+  ];
+  const shouldCloseActive = closingKeys.includes(currentKey);
+
+  for (const key of inactiveKeys) {
+    await tabbarStore.closeTabByKey(key, router);
+  }
+  if (shouldCloseActive) {
+    await tabbarStore.closeTabByKey(currentKey, router);
+  }
 }
 
 /**
  * 根据需要刷新菜单缓存
- * 检查权限状态，生成可访问菜单和路由，更新 store，并在当前路由不可访问时重定向
+ * 检查权限状态，生成可访问菜单和路由，更新 store，并在当前路由不可访问时重定向。
+ * 传入 `{ force: true }` 时（如菜单管理删除后）会跳过 isAccessChecked 并强制拉取最新菜单。
  *
  * @returns {Promise<void>}
  */
-async function refreshMenuCacheIfNeeded() {
-  if (!accessStore.isAccessChecked) return;
+async function refreshMenuCacheIfNeeded(options?: { force?: boolean }) {
+  if (!options?.force && !accessStore.isAccessChecked) return;
 
   // 获取用户角色并生成可访问的菜单和路由
   const userRoles = userStore.userInfo?.roles ?? [];
@@ -390,35 +473,14 @@ async function handleAddOrUpdateSuccess() {
  */
 async function handleDeleteSuccess(record: BackendMenuItem) {
   await reloadMenuGrid();
-
-  // 删除场景不强制全量 generateAccess 重算：尽量做本地菜单缓存裁剪
-  const cachedMenus = (accessStore.accessMenus ??
-    []) as unknown as AccessMenuItem[];
-  if (cachedMenus.length > 0 && record.routePath) {
-    const nextMenus = removeMenuByPath(cachedMenus, record.routePath);
-    accessStore.setAccessMenus(nextMenus as any);
-
-    // 仅当“当前路由失效”（刚删的是当前路由，或已不在菜单树里）才做跳转兜底
-    const currentPath = router.currentRoute.value.path;
-    const routeRemoved = currentPath === record.routePath;
-    const stillInMenus = hasMenuPath(nextMenus, currentPath);
-    if (routeRemoved || !stillInMenus) {
-      const firstMenuPath = getFirstMenuPath(nextMenus);
-      const fallbackPath =
-        firstMenuPath ||
-        preferences.app.defaultHomePath ||
-        userStore.userInfo?.homePath;
-      if (fallbackPath && fallbackPath !== currentPath) {
-        await router.replace(fallbackPath);
-      }
-    }
-  }
+  await closeTabsForDeletedMenus([record]);
+  await refreshMenuCacheIfNeeded({ force: true });
 }
 
-async function handleBatchDeleteSuccess() {
+async function handleBatchDeleteSuccess(deletedRecords: BackendMenuItem[]) {
   await reloadMenuGrid();
-  // 批量删除无法精确裁剪本地菜单树，改为后台异步全量刷新（不阻塞列表刷新）
-  void refreshMenuCacheIfNeeded();
+  await closeTabsForDeletedMenus(deletedRecords);
+  await refreshMenuCacheIfNeeded({ force: true });
 }
 
 function getSearchPayload(): Partial<MenuPageParams> {
@@ -468,8 +530,10 @@ onMounted(() => {
         >
           {{ $t('menu.action.reset') }}
         </VbenButton>
-        <VbenButton class="w-[60px]"
-size="sm" @click="handleSearch">
+        <VbenButton
+class="w-[60px]" size="sm"
+@click="handleSearch"
+>
           {{ $t('menu.action.search') }}
         </VbenButton>
       </Space>
@@ -481,8 +545,10 @@ size="sm" @click="handleSearch">
     >
       <!-- 操作栏 -->
       <div class="flex items-center justify-end gap-2 border-border p-6">
-        <VbenButton class="w-[84px]"
-size="sm" @click="() => handleAdd()">
+        <VbenButton
+class="w-[84px]" size="sm"
+@click="() => handleAdd()"
+>
           <Plus class="mr-1 size-4" />
           {{ $t('common.create') }}
         </VbenButton>
@@ -501,20 +567,26 @@ size="sm" @click="() => handleAdd()">
       <Grid>
         <template #action="{ row }">
           <Space size="small">
-            <VbenButton size="sm"
-variant="ghost" @click="handleEdit(row)">
+            <VbenButton
+size="sm" variant="ghost"
+@click="handleEdit(row)"
+>
               <span class="text-primary">
                 {{ $t('menu.action.edit') }}
               </span>
             </VbenButton>
-            <VbenButton size="sm"
-variant="ghost" @click="handleDelete(row)">
+            <VbenButton
+size="sm" variant="ghost"
+@click="handleDelete(row)"
+>
               <span class="text-destructive">{{
                 $t('menu.action.delete')
               }}</span>
             </VbenButton>
-            <VbenButton size="sm"
-variant="ghost" @click="handleAdd(row)">
+            <VbenButton
+size="sm" variant="ghost"
+@click="handleAdd(row)"
+>
               <span class="text-primary">{{ $t('menu.action.addChild') }}</span>
             </VbenButton>
           </Space>
@@ -523,7 +595,8 @@ variant="ghost" @click="handleAdd(row)">
     </div>
 
     <!-- 新增/编辑弹窗 -->
-    <AddOrUpdate ref="addOrUpdateRef"
-@success="handleAddOrUpdateSuccess" />
+    <AddOrUpdate
+ref="addOrUpdateRef" @success="handleAddOrUpdateSuccess"
+/>
   </Page>
 </template>

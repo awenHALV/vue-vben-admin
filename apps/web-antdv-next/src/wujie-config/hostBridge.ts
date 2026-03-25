@@ -1,16 +1,21 @@
+import type { HostBridgeState } from './event';
+
 import { watch } from 'vue';
 
 import { preferences } from '@vben/preferences';
 import { useAccessStore } from '@vben/stores';
+
 import WujieVue from 'wujie-vue3';
 
-import type { HostBridgeState } from './event';
 import {
+  CHANGELANUAGE_EVENT,
+  CHANGETHEME_EVENT,
   HOST_BRIDGE_HOST_STATE_PUSH,
   HOST_BRIDGE_REQUEST_BUILTIN_THEME,
   HOST_BRIDGE_REQUEST_COLOR_MODE,
   HOST_BRIDGE_REQUEST_HOST_STATE,
   HOST_BRIDGE_REQUEST_TOKEN,
+  NOTICECHILDAPPTOKEN_EVENT,
 } from './event';
 
 const { bus } = WujieVue;
@@ -32,7 +37,9 @@ function getResolvedColorMode(): 'dark' | 'light' {
   return 'light';
 }
 
-function buildHostState(accessStore: ReturnType<typeof useAccessStore>): HostBridgeState {
+function buildHostState(
+  accessStore: ReturnType<typeof useAccessStore>,
+): HostBridgeState {
   return {
     token: accessStore.accessToken ?? '',
     colorMode: getResolvedColorMode(),
@@ -84,6 +91,26 @@ export function setupWujieHostBridge() {
     bus.$emit(HOST_BRIDGE_HOST_STATE_PUSH, buildHostState(accessStore));
   }
 
+  function emitChangeThemeToChild() {
+    bus.$emit(CHANGETHEME_EVENT, {
+      builtinType: preferences.theme.builtinType,
+      colorMode: getResolvedColorMode(),
+      themeMode: preferences.theme.mode,
+    });
+  }
+
+  function emitChangeLanguageToChild() {
+    bus.$emit(CHANGELANUAGE_EVENT, {
+      locale: preferences.app.locale,
+    });
+  }
+
+  function emitNoticeChildToken() {
+    bus.$emit(NOTICECHILDAPPTOKEN_EVENT, {
+      token: accessStore.accessToken ?? '',
+    });
+  }
+
   watch(
     () => ({
       token: accessStore.accessToken,
@@ -91,6 +118,27 @@ export function setupWujieHostBridge() {
       builtinType: preferences.theme.builtinType,
     }),
     () => emitHostStatePush(),
+    { immediate: true },
+  );
+
+  watch(
+    () => ({
+      builtinType: preferences.theme.builtinType,
+      mode: preferences.theme.mode,
+    }),
+    () => emitChangeThemeToChild(),
+    { immediate: true },
+  );
+
+  watch(
+    () => preferences.app.locale,
+    () => emitChangeLanguageToChild(),
+    { immediate: true },
+  );
+
+  watch(
+    () => accessStore.accessToken,
+    () => emitNoticeChildToken(),
     { immediate: true },
   );
 }
