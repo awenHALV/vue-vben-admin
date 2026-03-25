@@ -106,7 +106,7 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendTenantItem>({
   separator: false,
   gridOptions: {
     height: 'auto',
-    rowConfig: { isHover: true },
+    rowConfig: { isHover: true, height: 46 },
     checkboxConfig: { highlight: true, range: true },
     proxyConfig: {
       ajax: {
@@ -331,7 +331,7 @@ function openChangeTenant(record: BackendTenantItem) {
   >
     <!-- 搜索区域：与 system/menu 同一套布局与按钮样式 -->
     <div
-      class="flex flex-nowrap items-center justify-between gap-3 overflow-x-auto rounded-lg border border-border bg-background px-4 py-3 shadow-sm"
+      class="flex flex-nowrap items-center justify-between gap-4 overflow-x-auto rounded-lg border border-border bg-background p-6"
     >
       <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-6 gap-y-2">
         <div class="flex items-center gap-2">

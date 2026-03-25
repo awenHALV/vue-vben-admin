@@ -15,7 +15,4 @@ function getDomins() {
 
 getDomins();
 
-// console.log('env', import.meta);
-console.log('domins', domins);
-
 export default domins;

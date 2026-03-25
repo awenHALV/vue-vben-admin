@@ -15,6 +15,8 @@ import { $t, $te, i18n, setupI18n } from '#/locales';
 
 import { initComponentAdapter } from './adapter/component';
 import { initSetupVbenForm } from './adapter/form';
+import { setupWujieHostBridge } from './wujie-config/hostBridge';
+import setupWujieApp from './wujie-config/setupApp';
 import App from './app.vue';
 import { router } from './router';
 
@@ -37,6 +39,7 @@ async function bootstrap(namespace: string) {
   const app = createApp(App);
 
   app.use(WujieVue);
+  setupWujieApp();
 
   // 注册v-loading指令
   registerLoadingDirective(app, {
@@ -49,6 +52,9 @@ async function bootstrap(namespace: string) {
 
   // 配置 pinia-tore
   await initStores(app, { namespace });
+
+  // 无界：子应用通过 bus 拉取 token / 明暗 / 内置主题，并在变更时推送
+  setupWujieHostBridge();
 
   // 安装权限指令
   registerAccessDirective(app);

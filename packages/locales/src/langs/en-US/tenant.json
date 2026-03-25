@@ -22,7 +22,7 @@
     "addTenant": "Add Tenant",
     "editTenant": "Edit Tenant",
     "detailTenant": "Tenant Details",
-    "menuConfig": "Menu Configuration",
+    "menuConfig": "Feature Configuration",
     "switchTenant": "Switch Tenant"
   },
   "detail": {
@@ -79,7 +79,7 @@
     "detail": "Details",
     "delete": "Delete",
     "batchDelete": "Batch Delete",
-    "menuConfig": "Menu Config",
+    "menuConfig": "Feature Config",
     "changeTenant": "Change Tenant"
   },
   "message": {

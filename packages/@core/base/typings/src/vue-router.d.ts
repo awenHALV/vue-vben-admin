@@ -48,6 +48,18 @@ interface RouteMeta {
    */
   domCached?: boolean;
   /**
+   * 后端菜单图标（与 icon 一致，便于微应用路由显式读取）
+   */
+  featureIcon?: string;
+  /**
+   * 后端菜单中文名（与 featureNameEn 配合，用于运行时切换语言）
+   */
+  featureName?: string;
+  /**
+   * 后端菜单英文名
+   */
+  featureNameEn?: string;
+  /**
    * 路由的完整路径作为key（默认true）
    */
   fullPathKey?: boolean;
@@ -106,6 +118,14 @@ interface RouteMeta {
    */
   menuVisibleWithForbidden?: boolean;
   /**
+   * Wujie 子应用 name（与基座 website.projectCodes 中的 projectCode 一致）
+   */
+  microName?: string;
+  /**
+   * Wujie 子应用完整加载地址（子应用 origin + 子应用内 path）
+   */
+  microUrl?: string;
+  /**
    * 不使用基础布局（仅在顶级生效）
    */
   noBasicLayout?: boolean;
@@ -125,22 +145,6 @@ interface RouteMeta {
    * 标题名称
    */
   title: string;
-  /**
-   * 后端菜单中文名（与 featureNameEn 配合，用于运行时切换语言）
-   */
-  featureName?: string;
-  /**
-   * 后端菜单英文名
-   */
-  featureNameEn?: string;
-  /**
-   * Wujie 子应用 name（与基座 website.projectCodes 中的 projectCode 一致）
-   */
-  microName?: string;
-  /**
-   * Wujie 子应用完整加载地址（子应用 origin + 子应用内 path）
-   */
-  microUrl?: string;
 }
 
 // 定义递归类型以将 RouteRecordRaw 的 component 属性更改为 string
