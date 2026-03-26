@@ -30,6 +30,36 @@ const checkedKeys = ref<string[]>([]);
 const currentRow = ref<BackendTenantItem | null>(null);
 const detailRef = ref<BackendTenantItem | null>(null);
 
+/**
+ * 过滤掉所有包含子节点的 Key，只保留叶子节点
+ * @param keys 接口返回的所有 ID 数组
+ * @param treeData 格式化后的树形数据
+ */
+function filterOnlyLeafKeys(
+  keys: string[],
+  treeData: TreeDataNode[],
+): string[] {
+  const leafKeys: string[] = [];
+
+  // 建立一个简单的递归查找
+  const findLeaf = (nodes: TreeDataNode[]) => {
+    nodes.forEach((node) => {
+      if (node.children && node.children.length > 0) {
+        // 如果有子节点，递归进去
+        findLeaf(node.children);
+      } else {
+        // 如果是叶子节点（没有子节点），且在接口返回的 keys 中，则记录
+        if (keys.includes(node.key)) {
+          leafKeys.push(node.key);
+        }
+      }
+    });
+  };
+
+  findLeaf(treeData);
+  return leafKeys;
+}
+
 function normalizeFeatureIds(v: unknown): string[] | undefined {
   if (Array.isArray(v)) {
     return v
@@ -106,7 +136,9 @@ const [VbenModal, modalApi] = useVbenModal({
       });
       treeData.value = mapNodesToTreeData(tree);
       const rawFeatures = detail.featureIds;
-      checkedKeys.value = normalizeFeatureIds(rawFeatures) ?? [];
+      const allIdsFromApi = normalizeFeatureIds(rawFeatures) ?? [];
+      // 【核心修改】不要直接赋值，先过滤掉父级 ID
+      checkedKeys.value = filterOnlyLeafKeys(allIdsFromApi, treeData.value);
       await nextTick();
     } catch {
       message.error($t('tenant.message.detailFailed'));
@@ -122,12 +154,13 @@ const [VbenModal, modalApi] = useVbenModal({
 
     modalApi.setState({ confirmLoading: true });
     try {
-      const featureIds = Array.isArray(checkedKeys.value)
-        ? checkedKeys.value.filter(
-            (id) => id !== null && id !== undefined && String(id).trim(),
-          )
-        : [];
-      const appFeatureIds = featureIds.map(String).join(',');
+      // 合并全选和半选的 ID
+      const allSelectedIds = [...checkedKeys.value, ...halfCheckedKeys.value];
+      // 去重并过滤空值
+      const finalFeatureIds = [...new Set(allSelectedIds)].filter(
+        (id) => id && String(id).trim(),
+      );
+      const appFeatureIds = finalFeatureIds.join(',');
 
       const createBody: UpdateConfigParams = {
         tenantId: row.tenantId,
@@ -150,8 +183,12 @@ function open(record: BackendTenantItem) {
   modalApi.open();
 }
 
-function updateCheckedKeys(keys: (number | string)[]) {
+// 定义一个变量存储半选状态
+const halfCheckedKeys = ref<(number | string)[]>([]);
+
+function updateCheckedKeys(keys: (number | string)[], infos: any) {
   checkedKeys.value = keys.map(String);
+  halfCheckedKeys.value = infos.halfCheckedKeys;
 }
 
 defineExpose({ open });
@@ -168,7 +205,7 @@ defineExpose({ open });
           checkable
           default-expand-all
           :tree-data="treeData"
-          @update:checked-keys="updateCheckedKeys"
+          @check="(keys, infos) => updateCheckedKeys(keys, infos)"
         />
         <div
           v-else-if="!loading"
