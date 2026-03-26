@@ -3,6 +3,24 @@ import type {
   VbenAdminProAppConfigRaw,
 } from '@vben/types/global';
 
+/** 与 .env 中 `VITE_GLOB_API_URL` 配合：打包后按当前访问站点解析接口根路径 */
+const CURRENT_ORIGIN_MARKER = '__USE_CURRENT_ORIGIN__';
+
+function resolveViteGlobApiUrl(url: string): string {
+  if (!url.startsWith(CURRENT_ORIGIN_MARKER)) {
+    return url;
+  }
+  if (typeof window === 'undefined') {
+    return url;
+  }
+  const suffix =
+    url === CURRENT_ORIGIN_MARKER
+      ? '/api'
+      : url.slice(CURRENT_ORIGIN_MARKER.length);
+  const path = suffix.startsWith('/') ? suffix : `/${suffix}`;
+  return `${window.location.origin}${path}`;
+}
+
 /**
  * 由 vite-inject-app-config 注入的全局配置
  */
@@ -22,7 +40,7 @@ export function useAppConfig(
   } = config;
 
   const applicationConfig: ApplicationConfig = {
-    apiURL: VITE_GLOB_API_URL,
+    apiURL: resolveViteGlobApiUrl(VITE_GLOB_API_URL),
     auth: {},
   };
   if (VITE_GLOB_AUTH_DINGDING_CORP_ID && VITE_GLOB_AUTH_DINGDING_CLIENT_ID) {
