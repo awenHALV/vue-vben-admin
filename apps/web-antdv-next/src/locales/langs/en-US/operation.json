@@ -1,0 +1,12 @@
+{
+  "consultation": {
+    "title": "Consultation Management",
+    "name": "Name",
+    "phone": "Phone",
+    "company": "Company",
+    "description": "Description",
+    "namePlaceholder": "Please enter name",
+    "phonePlaceholder": "Please enter phone",
+    "companyPlaceholder": "Please enter company"
+  }
+}
