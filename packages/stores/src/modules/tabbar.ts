@@ -7,7 +7,7 @@ import type {
   RouteRecordNormalized,
 } from 'vue-router';
 
-import type { TabDefinition } from '@vben-core/typings';
+import type { MenuRecordRaw, TabDefinition } from '@vben-core/typings';
 
 import { markRaw, toRaw } from 'vue';
 
@@ -21,6 +21,77 @@ import {
 } from '@vben-core/shared/utils';
 
 import { acceptHMRUpdate, defineStore } from 'pinia';
+
+/**
+ * 与 accessibleMenus 比对 tab 路径的辅助函数（供 pruneTabsNotInMenus 使用）。
+ * normalizePathForMenuMatch：统一前缀斜杠、去掉末尾多余 `/`。
+ * collectMenuPaths：递归收集菜单树中可导航 path（不含 http 外链）。
+ * pathIsUnderMenu：path 命中菜单或为其子路径（如列表下详情）。
+ * getFirstMenuPathFromMenus：侧栏顺序第一个叶子 path，作兜底跳转。
+ */
+function normalizePathForMenuMatch(p: string): string {
+  const s = p.trim();
+  if (!s) {
+    return '';
+  }
+  const withSlash = s.startsWith('/') ? s : `/${s}`;
+  if (withSlash.length > 1) {
+    return withSlash.replace(/\/+$/, '');
+  }
+  return withSlash;
+}
+
+function collectMenuPaths(menus: MenuRecordRaw[]): Set<string> {
+  const set = new Set<string>();
+  function walk(items: MenuRecordRaw[]) {
+    for (const item of items) {
+      const raw = item.path;
+      if (raw && typeof raw === 'string' && !raw.startsWith('http')) {
+        set.add(normalizePathForMenuMatch(raw));
+      }
+      if (item.children?.length) {
+        walk(item.children);
+      }
+    }
+  }
+  walk(menus);
+  return set;
+}
+
+function pathIsUnderMenu(tabPath: string, allowed: Set<string>): boolean {
+  const p = normalizePathForMenuMatch(tabPath);
+  if (!p) {
+    return false;
+  }
+  if (allowed.has(p)) {
+    return true;
+  }
+  for (const m of allowed) {
+    if (!m || m === '/') {
+      continue;
+    }
+    if (p.startsWith(`${m}/`)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getFirstMenuPathFromMenus(menus: MenuRecordRaw[]): string {
+  for (const item of menus) {
+    if (item.children?.length) {
+      const sub = getFirstMenuPathFromMenus(item.children);
+      if (sub) {
+        return sub;
+      }
+    }
+    const raw = item.path ?? '';
+    if (raw && !raw.startsWith('http')) {
+      return normalizePathForMenuMatch(raw);
+    }
+  }
+  return '';
+}
 
 interface RouteCached {
   component: VNode;
@@ -209,6 +280,71 @@ export const useTabbarStore = defineStore('core-tabbar', {
       }
       await this._goToDefaultTab(router);
       this.updateCacheTabs();
+    },
+    /**
+     * 菜单接口无可用菜单时清空标签（含固定标签）与访问历史，避免残留无权限页签
+     */
+    async clearTabsForEmptyMenus() {
+      this.tabs = [];
+      if (isVisitHistory()) {
+        this.visitHistory.clear();
+      }
+      this.cachedRoutes.clear();
+      await this.updateCacheTabs();
+    },
+    /**
+     * 菜单变更后移除「路径已不在新菜单树中」的标签（含固定标签），避免切换租户等场景残留旧页签。
+     * @param menus 本次 generateAccess 得到的 accessibleMenus
+     * @param router 用于在关闭当前激活 tab 时 replace 到剩余 tab 或首菜单
+     */
+    async pruneTabsNotInMenus(menus: MenuRecordRaw[], router: Router) {
+      const allowed = collectMenuPaths(menus);
+      const keysToRemove: string[] = [];
+
+      for (const tab of this.tabs) {
+        const raw = tab.path ?? '';
+        // 外链新窗口类不在侧栏菜单树中比对，保留不删
+        if (!raw || raw.startsWith('http')) {
+          continue;
+        }
+        if (pathIsUnderMenu(raw, allowed)) {
+          continue;
+        }
+        keysToRemove.push(getTabKeyFromTab(tab));
+      }
+
+      if (keysToRemove.length === 0) {
+        return;
+      }
+
+      const currentKey = getTabKey(router.currentRoute.value);
+      const removeSet = new Set(keysToRemove);
+      const willRemoveCurrent = removeSet.has(currentKey);
+
+      // 若即将关掉当前页，先记下剩余第一个 tab，便于批量关闭后立刻跳转
+      let fallbackTab: TabDefinition | undefined;
+      if (willRemoveCurrent) {
+        fallbackTab = this.tabs.find(
+          (t) => !removeSet.has(getTabKeyFromTab(t)),
+        );
+      }
+
+      await this._bulkCloseByKeys(keysToRemove);
+
+      if (willRemoveCurrent) {
+        if (fallbackTab) {
+          await this._goToTab(fallbackTab, router);
+        } else {
+          // 所有 tab 均不在新菜单中：进入新菜单第一个可用路由或全局默认首页
+          const path =
+            getFirstMenuPathFromMenus(menus) || preferences.app.defaultHomePath;
+          try {
+            await router.replace(path);
+          } catch {
+            await router.replace(preferences.app.defaultHomePath);
+          }
+        }
+      }
     },
     /**
      * @zh_CN 关闭左侧标签页

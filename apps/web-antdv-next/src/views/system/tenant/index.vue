@@ -59,19 +59,6 @@ function getFirstMenuPath(menus: AccessMenuItem[]): string {
   return '';
 }
 
-function hasMenuPath(menus: AccessMenuItem[], targetPath: string): boolean {
-  for (const menu of menus) {
-    if (menu.path === targetPath) {
-      return true;
-    }
-    const children = menu.children ?? [];
-    if (children.length > 0 && hasMenuPath(children, targetPath)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 function extractTokenFromSwitchPayload(data: unknown): string | undefined {
   if (typeof data === 'string') {
     return data;
@@ -254,16 +241,29 @@ async function applyTenantTokenAndRefresh(token: string) {
   accessStore.setAccessRoutes(accessibleRoutes);
   accessStore.setIsAccessChecked(true);
 
-  const currentPath = router.currentRoute.value.path;
-  if (!hasMenuPath(accessibleMenus as AccessMenuItem[], currentPath)) {
-    const firstMenuPath = getFirstMenuPath(accessibleMenus as AccessMenuItem[]);
-    const fallbackPath =
-      firstMenuPath ||
-      userStore.userInfo?.homePath ||
-      preferences.app.defaultHomePath;
-    if (fallbackPath && fallbackPath !== currentPath) {
-      await router.replace(fallbackPath);
-    }
+  /**
+   * 与 router/guard 登录后首次 generateAccess 一致：homePath → 侧栏第一个可访问菜单 → 默认首页
+   * 切换租户成功后始终进入该目标，与重新登录进入体验一致。
+   */
+  const firstMenuPath = getFirstMenuPath(accessibleMenus as AccessMenuItem[]);
+  const targetPath =
+    userStore.userInfo?.homePath ||
+    firstMenuPath ||
+    preferences.app.defaultHomePath;
+
+  let resolved: ReturnType<typeof router.resolve>;
+  try {
+    resolved = router.resolve(targetPath);
+  } catch {
+    resolved = router.resolve(preferences.app.defaultHomePath);
+  }
+
+  if (resolved.fullPath !== router.currentRoute.value.fullPath) {
+    await router.replace({
+      path: resolved.path,
+      query: resolved.query,
+      hash: resolved.hash,
+    });
   }
 }
 
@@ -273,7 +273,7 @@ async function applyTenantTokenAndRefresh(token: string) {
 4）setAccessToken + setCookie(TOKEN_KEY)
 5）fetchUserInfo()
 6）generateAccess 刷新菜单与动态路由并写回 accessStore
-7）若当前路由在新菜单里不存在，则跳到首个可访问菜单或首页。
+7）按登录后首次进入逻辑跳转：homePath → 第一个菜单路径 → 默认首页（与 router/guard 一致）。
  * @param record 
  */
 async function runSwitchTenant(record: BackendTenantItem) {

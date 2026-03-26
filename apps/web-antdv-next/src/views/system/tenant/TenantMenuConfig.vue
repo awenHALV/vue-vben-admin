@@ -139,6 +139,10 @@ const [VbenModal, modalApi] = useVbenModal({
       const allIdsFromApi = normalizeFeatureIds(rawFeatures) ?? [];
       // 【核心修改】不要直接赋值，先过滤掉父级 ID
       checkedKeys.value = filterOnlyLeafKeys(allIdsFromApi, treeData.value);
+      // 可选：将那些在 allIdsFromApi 中但不在 checkedKeys 中的 ID 存入 halfCheckedKeys
+      halfCheckedKeys.value = allIdsFromApi.filter(
+        (id) => !checkedKeys.value.includes(id),
+      );
       await nextTick();
     } catch {
       message.error($t('tenant.message.detailFailed'));

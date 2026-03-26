@@ -35,6 +35,7 @@ const coreRoutes: RouteRecordRaw[] = [
     },
     name: 'Root',
     path: '/',
+    // 必须指向真实业务子路径；若与 path 同为 `/` 会与自身 redirect 形成死循环（Maximum call stack）
     redirect: preferences.app.defaultHomePath,
     children: [
       {

@@ -78,12 +78,14 @@ export const useAuthStore = defineStore('auth', () => {
 
         if (accessStore.loginExpired) {
           accessStore.setLoginExpired(false);
+        }
+        // 登录成功均需进入业务页；此前 loginExpired 分支未 push，会导致「过期后重新登录」不跳转
+        if (onSuccess) {
+          await onSuccess?.();
         } else {
-          onSuccess
-            ? await onSuccess?.()
-            : await router.push(
-                userInfo.homePath || preferences.app.defaultHomePath,
-              );
+          await router.push(
+            userInfo.homePath || preferences.app.defaultHomePath,
+          );
         }
 
         if (userInfo?.realName) {
