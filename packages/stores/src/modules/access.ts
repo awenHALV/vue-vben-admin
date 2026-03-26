@@ -8,7 +8,7 @@ type AccessToken = null | string;
 
 interface AccessState {
   /**
-   * 权限码
+   * 权限码（含后端 MENU 下直接子 BUTTON 的 featureCode）
    */
   accessCodes: string[];
   /**
@@ -39,6 +39,10 @@ interface AccessState {
    * 登录是否过期
    */
   loginExpired: boolean;
+  /**
+   * 菜单绝对 routePath（规范化）→ 该菜单下直接子 BUTTON 的 featureCode 列表
+   */
+  menuPathToDirectButtonCodes: Record<string, string[]>;
   /**
    * 登录 accessToken
    */
@@ -91,6 +95,9 @@ export const useAccessStore = defineStore('core-access', {
     setLoginExpired(loginExpired: boolean) {
       this.loginExpired = loginExpired;
     },
+    setMenuPathToDirectButtonCodes(map: Record<string, string[]>) {
+      this.menuPathToDirectButtonCodes = map;
+    },
     setRefreshToken(token: AccessToken) {
       this.refreshToken = token;
     },
@@ -118,6 +125,7 @@ export const useAccessStore = defineStore('core-access', {
     isLockScreen: false,
     lockScreenPassword: undefined,
     loginExpired: false,
+    menuPathToDirectButtonCodes: {},
     refreshToken: null,
   }),
 });

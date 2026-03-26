@@ -11,11 +11,15 @@ import { message, Modal, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteDictApi, getDictPageApi } from '#/api/core/dict';
+import { usePageButtonAccess } from '#/composables/use-page-button-access';
 
 import AddOrUpdate from './AddOrUpdate.vue';
+import { DICT_PAGE_BUTTON_CODES } from './button-permissions';
 import DictConfigModal from './DictConfigModal.vue';
 
 defineOptions({ name: 'SystemDict' });
+
+const { canButton } = usePageButtonAccess();
 
 const addOrUpdateRef = ref<InstanceType<typeof AddOrUpdate> | null>(null);
 const dictConfigModalRef = ref<InstanceType<typeof DictConfigModal> | null>(
@@ -197,6 +201,7 @@ function openDictConfig(record: DictListItem) {
         <div class="flex w-full items-center justify-end gap-2">
           <!-- prettier-ignore -->
           <VbenButton
+            v-if="canButton(DICT_PAGE_BUTTON_CODES.add)"
             class="w-[84px]"
             size="sm"
             @click="openAdd"
@@ -210,6 +215,7 @@ function openDictConfig(record: DictListItem) {
       <template #action="{ row }">
         <div class="flex-center gap-2">
           <VbenButton
+            v-if="canButton(DICT_PAGE_BUTTON_CODES.edit)"
             size="sm"
             variant="ghost"
             class="text-primary"
@@ -218,6 +224,7 @@ function openDictConfig(record: DictListItem) {
             {{ $t('dict.list.edit') }}
           </VbenButton>
           <VbenButton
+            v-if="canButton(DICT_PAGE_BUTTON_CODES.delete)"
             size="sm"
             variant="ghost"
             class="text-primary"
@@ -226,6 +233,7 @@ function openDictConfig(record: DictListItem) {
             {{ $t('dict.list.delete') }}
           </VbenButton>
           <VbenButton
+            v-if="canButton(DICT_PAGE_BUTTON_CODES.dictConfig)"
             size="sm"
             variant="ghost"
             class="text-primary"

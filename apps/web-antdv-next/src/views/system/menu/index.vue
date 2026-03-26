@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { BackendMenuItem, MenuPageParams } from '#/api/core/menu';
 
-import { onMounted, ref } from 'vue';
+import { nextTick, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { Page, VbenButton, VbenInput } from '@vben/common-ui';
@@ -19,10 +19,12 @@ import { message, Modal, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteFeatureApi, getRawMenusApi } from '#/api/core/menu';
+import { usePageButtonAccess } from '#/composables/use-page-button-access';
 import { generateAccess } from '#/router/access';
 import { accessRoutes } from '#/router/routes';
 
 import AddOrUpdate from './AddOrUpdate.vue';
+import { FEATURE_PAGE_BUTTON_CODES } from './button-permissions';
 
 defineOptions({ name: 'SystemMenu' });
 
@@ -30,7 +32,7 @@ const router = useRouter();
 const accessStore = useAccessStore();
 const userStore = useUserStore();
 const tabbarStore = useTabbarStore();
-
+const { canButton } = usePageButtonAccess();
 // ─── 状态 ───────────────────────────────────────────────────────────────
 const selectedRowIds = ref<(number | string)[]>([]);
 const inputKeyword = ref('');
@@ -76,6 +78,7 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendMenuItem>({
       keyField: 'id',
     },
     checkboxConfig: {
+      checkStrictly: true,
       highlight: true,
       range: false,
     },
@@ -195,12 +198,12 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendMenuItem>({
 
 // ─── 搜索 / 重置 ─────────────────────────────────────────────────────────
 function handleSearch() {
-  void gridApi.reload(getSearchPayload());
+  void reloadMenuGrid();
 }
 
 function handleReset() {
   inputKeyword.value = '';
-  void gridApi.reload();
+  void reloadMenuGrid();
 }
 
 // ─── 行操作 ──────────────────────────────────────────────────────────────
@@ -446,24 +449,74 @@ async function refreshMenuCacheIfNeeded(options?: { force?: boolean }) {
   }
 }
 
-/**
- * 处理菜单变更事件
- * 依次执行数据获取与菜单缓存刷新
- * @returns {Promise<void>}
- */
-async function handleMenuChanged() {
-  await reloadMenuGrid();
-  // 后台异步刷新左侧菜单/路由，不阻塞列表刷新
-  void refreshMenuCacheIfNeeded();
+type MenuGridExpandSnapshot = Set<number | string>;
+
+interface VxeMenuGridTreeApi {
+  getFullData?: () => BackendMenuItem[];
+  getTreeExpandRecords?: () => BackendMenuItem[];
+  setTreeExpand?: (
+    row: BackendMenuItem,
+    expanded: boolean,
+  ) => Promise<void> | void;
+}
+
+function snapshotExpandedMenuRowIds(): MenuGridExpandSnapshot {
+  const grid = gridApi.grid as VxeMenuGridTreeApi;
+  const expanded = grid.getTreeExpandRecords?.() ?? [];
+  return new Set(
+    expanded
+      .map((r) => r.id)
+      .filter((id): id is number | string => id !== null && id !== undefined),
+  );
+}
+
+async function restoreMenuTreeExpand(expandedIds: MenuGridExpandSnapshot) {
+  if (expandedIds.size === 0) {
+    return;
+  }
+  const grid = gridApi.grid as VxeMenuGridTreeApi;
+  const fullData = grid.getFullData?.() ?? [];
+  async function walk(rows: BackendMenuItem[]) {
+    for (const row of rows) {
+      const id = row.id;
+      if (id !== null && id !== undefined && expandedIds.has(id)) {
+        await grid.setTreeExpand?.(row, true);
+      }
+      const children = row.children ?? [];
+      if (children.length > 0) {
+        await walk(children);
+      }
+    }
+  }
+  await walk(fullData);
+}
+
+async function reloadMenuGrid(extraExpandIds?: MenuGridExpandSnapshot) {
+  const expandedIds = snapshotExpandedMenuRowIds();
+  if (extraExpandIds) {
+    for (const id of extraExpandIds) {
+      expandedIds.add(id);
+    }
+  }
+  await gridApi.reload(getSearchPayload());
+  await nextTick();
+  await restoreMenuTreeExpand(expandedIds);
 }
 
 /**
- * 处理添加或更新成功后的逻辑
- * 执行菜单变更处理
- * @returns {Promise} 异步操作 Promise
+ * 处理添加或更新成功后的逻辑：刷新列表并保持/补全树展开状态，再异步刷新侧栏菜单缓存
  */
-async function handleAddOrUpdateSuccess() {
-  await handleMenuChanged();
+async function handleAddOrUpdateSuccess(payload?: {
+  expandParentId?: null | number | string;
+}) {
+  const extraExpand =
+    payload?.expandParentId !== undefined &&
+    payload?.expandParentId !== null &&
+    payload.expandParentId !== 0
+      ? new Set<number | string>([payload.expandParentId])
+      : undefined;
+  await reloadMenuGrid(extraExpand);
+  void refreshMenuCacheIfNeeded();
 }
 
 /**
@@ -489,10 +542,6 @@ function getSearchPayload(): Partial<MenuPageParams> {
     return {};
   }
   return { featureName };
-}
-
-async function reloadMenuGrid() {
-  await gridApi.reload(getSearchPayload());
 }
 
 onMounted(() => {
@@ -546,13 +595,16 @@ class="w-[60px]" size="sm"
       <!-- 操作栏 -->
       <div class="flex items-center justify-end gap-2 border-border p-6">
         <VbenButton
-class="w-[84px]" size="sm"
-@click="() => handleAdd()"
->
+          v-if="canButton(FEATURE_PAGE_BUTTON_CODES.add)"
+          class="w-[84px]"
+          size="sm"
+          @click="() => handleAdd()"
+        >
           <Plus class="mr-1 size-4" />
           {{ $t('common.create') }}
         </VbenButton>
         <VbenButton
+          v-if="canButton(FEATURE_PAGE_BUTTON_CODES.batchDelete)"
           size="sm"
           class="w-[84px]"
           :disabled="selectedRowIds.length === 0"
@@ -568,25 +620,31 @@ class="w-[84px]" size="sm"
         <template #action="{ row }">
           <Space size="small">
             <VbenButton
-size="sm" variant="ghost"
-@click="handleEdit(row)"
->
+              v-if="canButton(FEATURE_PAGE_BUTTON_CODES.edit)"
+              size="sm"
+              variant="ghost"
+              @click="handleEdit(row)"
+            >
               <span class="text-primary">
                 {{ $t('menu.action.edit') }}
               </span>
             </VbenButton>
             <VbenButton
-size="sm" variant="ghost"
-@click="handleDelete(row)"
->
+              v-if="canButton(FEATURE_PAGE_BUTTON_CODES.delete)"
+              size="sm"
+              variant="ghost"
+              @click="handleDelete(row)"
+            >
               <span class="text-destructive">{{
                 $t('menu.action.delete')
               }}</span>
             </VbenButton>
             <VbenButton
-size="sm" variant="ghost"
-@click="handleAdd(row)"
->
+              v-if="canButton(FEATURE_PAGE_BUTTON_CODES.addSub)"
+              size="sm"
+              variant="ghost"
+              @click="handleAdd(row)"
+            >
               <span class="text-primary">{{ $t('menu.action.addChild') }}</span>
             </VbenButton>
           </Space>

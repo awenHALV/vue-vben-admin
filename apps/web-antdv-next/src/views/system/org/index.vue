@@ -1,11 +1,12 @@
 <script lang="ts" setup>
+import type { TableColumnsType } from 'antdv-next';
+
 import type { OrgInfo } from '#/api/system/org';
 
 import { onMounted, reactive, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
-import { $t } from '#/locales';
 
 import {
   Button,
@@ -19,10 +20,15 @@ import {
   Table,
   Tag,
 } from 'antdv-next';
-import type { TableColumnsType } from 'antdv-next';
 
 import { deleteOrgApi, getOrgTreeApi } from '#/api/system/org';
+import { usePageButtonAccess } from '#/composables/use-page-button-access';
+import { $t } from '#/locales';
+
+import { ORG_PAGE_BUTTON_CODES } from './button-permissions';
 import OrgForm from './components/OrgForm.vue';
+
+const { canButton } = usePageButtonAccess();
 
 // ==================== 状态定义 ====================
 
@@ -36,7 +42,7 @@ const searchForm = reactive({
 
 // 弹窗状态
 const formVisible = ref(false);
-const formType = ref<'add' | 'edit' | 'addChild'>('add');
+const formType = ref<'add' | 'addChild' | 'edit'>('add');
 const formData = ref<Partial<OrgInfo> & { parentInternal?: string }>({});
 const rootId = ref('');
 
@@ -99,7 +105,6 @@ const handleReset = () => {
   getTableData();
 };
 
-
 const handleEdit = (record: OrgInfo) => {
   formType.value = 'edit';
   formData.value = { ...record };
@@ -110,7 +115,7 @@ const handleAddChild = (record: OrgInfo) => {
   formType.value = 'addChild';
   formData.value = {
     parentId: record.id,
-    parentInternal: record.internal == null ? "" : record.internal,
+    parentInternal: record.internal == null ? '' : record.internal,
   };
   formVisible.value = true;
 };
@@ -151,11 +156,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <Page auto-content-height :title="$t('system.org.title')">
-    <div class="flex flex-col h-full gap-4">
+  <Page auto-content-height
+:title="$t('system.org.title')">
+    <div class="flex h-full flex-col gap-4">
       <!-- 搜索表单 -->
       <Card>
-        <div class="flex justify-between items-start">
+        <div class="flex items-start justify-between">
           <Form layout="inline">
             <FormItem :label="$t('system.org.orgName')">
               <Input
@@ -167,12 +173,16 @@ onMounted(() => {
             </FormItem>
           </Form>
           <Space>
-            <Button type="primary" class="w-21" @click="handleSearch">
+            <Button type="primary"
+class="w-21" @click="handleSearch">
               <template #icon><IconifyIcon icon="lucide:search" /></template>
               {{ $t('system.common.search') }}
             </Button>
-            <Button class="w-21" @click="handleReset">
-              <template #icon><IconifyIcon icon="lucide:rotate-ccw" /></template>
+            <Button class="w-21"
+@click="handleReset">
+              <template #icon>
+                <IconifyIcon icon="lucide:rotate-ccw" />
+              </template>
               {{ $t('system.common.reset') }}
             </Button>
           </Space>
@@ -180,7 +190,7 @@ onMounted(() => {
       </Card>
 
       <!-- 组织列表 -->
-      <Card class="flex-1 min-h-0">
+      <Card class="min-h-0 flex-1">
         <Table
           :columns="columns"
           :data-source="tableData"
@@ -191,24 +201,37 @@ onMounted(() => {
           size="middle"
           :default-expand-all-rows="true"
         >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'internal'">
-            <Tag v-if="record.internal" color="blue">{{ record.internal }}</Tag>
-            <span v-else>-</span>
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.dataIndex === 'internal'">
+              <Tag v-if="record.internal" color="blue">
+                {{ record.internal }}
+              </Tag>
+              <span v-else>-</span>
+            </template>
+            <template v-else-if="column.key === 'action'">
+              <Space>
+                <a
+                  v-if="canButton(ORG_PAGE_BUTTON_CODES.edit)"
+                  @click="handleEdit(record)"
+                  >{{ $t('system.common.edit') }}</a>
+                <a
+                  v-if="canButton(ORG_PAGE_BUTTON_CODES.delete)"
+                  :style="
+                    !record.parentId || record.parentId === '0'
+                      ? { color: '#9ca3af', cursor: 'not-allowed' }
+                      : { color: '#ef4444' }
+                  "
+                  @click="handleDelete(record)"
+                >
+                  {{ $t('system.common.delete') }}
+                </a>
+                <a
+                  v-if="canButton(ORG_PAGE_BUTTON_CODES.addSub)"
+                  @click="handleAddChild(record)"
+                  >{{ $t('system.org.addSubitem') }}</a>
+              </Space>
+            </template>
           </template>
-          <template v-else-if="column.key === 'action'">
-            <Space>
-              <a @click="handleEdit(record)">{{ $t('system.common.edit') }}</a>
-              <a
-                :style="(!record.parentId || record.parentId === '0') ? { color: '#9ca3af', cursor: 'not-allowed' } : { color: '#ef4444' }"
-                @click="handleDelete(record)"
-              >
-                {{ $t('system.common.delete') }}
-              </a>
-              <a @click="handleAddChild(record)">{{ $t('system.org.addSubitem') }}</a>
-            </Space>
-          </template>
-        </template>
         </Table>
       </Card>
     </div>

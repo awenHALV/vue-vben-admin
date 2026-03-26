@@ -14,7 +14,10 @@ import { createFeatureApi, updateFeatureApi } from '#/api/core/menu';
 defineOptions({ name: 'MenuAddOrUpdate' });
 
 const emit = defineEmits<{
-  (e: 'success'): void;
+  (
+    e: 'success',
+    payload?: { expandParentId?: null | number | string },
+  ): void;
 }>();
 
 const isEdit = ref(false);
@@ -104,9 +107,6 @@ const [Form, formApi] = useVbenForm({
                 message: $t('menu.formRules.routePathOnlyEnglish'),
               });
           }
-          return z.string().refine((v) => !v || ROUTE_PATH_REGEXP.test(v), {
-            message: $t('menu.formRules.routePathOnlyEnglish'),
-          });
         },
         triggerFields: ['featureType'],
       },
@@ -189,7 +189,11 @@ const [VbenModal, modalApi] = useVbenModal({
           })
         : await createFeatureApi(payload);
       modalApi.close();
-      emit('success');
+      const expandParentId =
+        isEdit.value || !payload.parentId
+          ? undefined
+          : (payload.parentId as number | string);
+      emit('success', { expandParentId });
     } finally {
       modalApi.setState({ confirmLoading: false });
     }
