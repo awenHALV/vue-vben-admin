@@ -17,6 +17,17 @@ import { useAuthStore } from '#/store';
 
 defineOptions({ name: 'Login' });
 
+/** 登录失败（如密码错误）时需刷新图形验证码 */
+const USER_LOGIN_FAILED_CODE = 'sys.user_login_failed';
+
+function isUserLoginFailedError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null || !('data' in error)) {
+    return false;
+  }
+  const data = error as { code?: string };
+  return data?.code === USER_LOGIN_FAILED_CODE;
+}
+
 const authStore = useAuthStore();
 
 const captchaId = ref('');
@@ -173,15 +184,23 @@ async function handleSubmit(values: any) {
     ...values,
     captchaId: captchaId.value,
   };
-  const result: any = await authStore.authLogin(params);
+  try {
+    const result: any = await authStore.authLogin(params);
 
-  if (result?.needTenantSelection) {
-    tenantList.value = result.tenantList || [];
-    currentLoginParams.value = result.loginParams;
-    if (tenantList.value.length > 0) {
-      selectedTenant.value = tenantList.value[0].tenantId;
+    if (result?.needTenantSelection) {
+      tenantList.value = result.tenantList || [];
+      currentLoginParams.value = result.loginParams;
+      const [firstTenant] = tenantList.value;
+      if (firstTenant) {
+        selectedTenant.value = firstTenant.tenantId;
+      }
+      modalApi.setState({ isOpen: true });
     }
-    modalApi.setState({ isOpen: true });
+  } catch (error: unknown) {
+    console.log(error);
+    if (loginType.value === 'account' && isUserLoginFailedError(error)) {
+      await fetchCaptcha();
+    }
   }
 }
 
@@ -194,6 +213,10 @@ async function handleTenantConfirm() {
       ...currentLoginParams.value,
       tenantId: selectedTenant.value,
     });
+  } catch (error: unknown) {
+    if (loginType.value === 'account' && isUserLoginFailedError(error)) {
+      await fetchCaptcha();
+    }
   } finally {
     authStore.loginLoading = false;
   }
@@ -266,7 +289,8 @@ function handleTenantCancel() {
             >
               取消
             </VbenButton>
-            <VbenButton class="h-10 flex-1" @click="handleTenantConfirm">
+            <VbenButton class="h-10 flex-1"
+@click="handleTenantConfirm">
               确定
             </VbenButton>
           </div>
