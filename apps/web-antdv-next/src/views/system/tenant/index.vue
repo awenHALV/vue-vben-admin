@@ -19,11 +19,13 @@ import {
   getTenantPageApi,
   switchTenantApi,
 } from '#/api/core/tenant';
+import { usePageButtonAccess } from '#/composables/use-page-button-access';
 import { generateAccess } from '#/router/access';
 import { accessRoutes } from '#/router/routes';
 import { useAuthStore } from '#/store';
 
 import AddOrUpdate from './AddOrUpdate.vue';
+import { TENANT_PAGE_BUTTON_CODES } from './button-permissions';
 import TenantDetail from './TenantDetail.vue';
 import TenantMenuConfig from './TenantMenuConfig.vue';
 
@@ -33,6 +35,7 @@ const router = useRouter();
 const accessStore = useAccessStore();
 const userStore = useUserStore();
 const authStore = useAuthStore();
+const { canButton } = usePageButtonAccess();
 
 interface AccessMenuItem {
   children?: AccessMenuItem[];
@@ -107,7 +110,12 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendTenantItem>({
   gridOptions: {
     height: 'auto',
     rowConfig: { isHover: true, height: 46 },
-    checkboxConfig: { highlight: true, range: true },
+    checkboxConfig: {
+      highlight: true,
+      range: true,
+      // 树节点勾选互不级联—
+      checkStrictly: true,
+    },
     proxyConfig: {
       ajax: {
         /**
@@ -360,6 +368,7 @@ function openChangeTenant(record: BackendTenantItem) {
       <div class="ml-auto flex shrink-0 items-center justify-end">
         <Space>
           <VbenButton
+            v-if="canButton(TENANT_PAGE_BUTTON_CODES.reset)"
             class="w-[60px]"
             size="sm"
             variant="outline"
@@ -369,6 +378,7 @@ function openChangeTenant(record: BackendTenantItem) {
           </VbenButton>
           <!-- prettier-ignore -->
           <VbenButton
+            v-if="canButton(TENANT_PAGE_BUTTON_CODES.search)"
             class="w-[60px]"
             size="sm"
             @click="handleSearch"
@@ -384,6 +394,7 @@ function openChangeTenant(record: BackendTenantItem) {
         <div class="flex w-full items-center justify-end gap-2">
           <!-- prettier-ignore -->
           <VbenButton
+            v-if="canButton(TENANT_PAGE_BUTTON_CODES.add)"
             class="w-[84px]"
             size="sm"
             @click="openAdd"
@@ -397,6 +408,7 @@ function openChangeTenant(record: BackendTenantItem) {
       <template #action="{ row }">
         <div class="flex-center gap-2">
           <VbenButton
+            v-if="canButton(TENANT_PAGE_BUTTON_CODES.detail)"
             size="sm"
             variant="ghost"
             class="text-primary"
@@ -406,6 +418,7 @@ function openChangeTenant(record: BackendTenantItem) {
           </VbenButton>
 
           <VbenButton
+            v-if="canButton(TENANT_PAGE_BUTTON_CODES.edit)"
             size="sm"
             variant="ghost"
             class="text-primary"
@@ -414,6 +427,7 @@ function openChangeTenant(record: BackendTenantItem) {
             {{ $t('tenant.action.edit') }}
           </VbenButton>
           <VbenButton
+            v-if="canButton(TENANT_PAGE_BUTTON_CODES.menuConfig)"
             size="sm"
             variant="ghost"
             class="text-primary"
@@ -422,6 +436,7 @@ function openChangeTenant(record: BackendTenantItem) {
             {{ $t('tenant.action.menuConfig') }}
           </VbenButton>
           <VbenButton
+            v-if="canButton(TENANT_PAGE_BUTTON_CODES.changeTenant)"
             size="sm"
             variant="ghost"
             class="text-primary"

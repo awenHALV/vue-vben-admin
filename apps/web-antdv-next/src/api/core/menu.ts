@@ -28,6 +28,100 @@ function isMenuFeatureType(featureType: string | undefined): boolean {
   );
 }
 
+function isButtonFeatureType(featureType: string | undefined): boolean {
+  return (
+    String(featureType ?? '')
+      .toUpperCase()
+      .trim() === 'BUTTON'
+  );
+}
+
+/**
+ * 与页面权限 map 的 key、当前路由 path 比对时统一使用
+ */
+export function normalizeMenuPermissionPath(routePath: string): string {
+  const t = String(routePath ?? '').trim();
+  if (!t) {
+    return '';
+  }
+  const withSlash = t.startsWith('/') ? t : `/${t}`;
+  const noTrail = withSlash.replace(/\/+$/, '');
+  return noTrail || '/';
+}
+
+export interface MenuButtonPermissionSnapshot {
+  allButtonCodes: string[];
+  menuPathToDirectButtonCodes: Record<string, string[]>;
+}
+
+/** 最近一次 {@link getAllMenusApi} 解析出的按钮权限，供路由模块写入 accessStore */
+let menuButtonPermissionSnapshot: MenuButtonPermissionSnapshot | null = null;
+
+/**
+ * 取出并清空快照（避免重复应用到旧数据）
+ */
+export function takeMenuButtonPermissionSnapshot(): MenuButtonPermissionSnapshot | null {
+  const s = menuButtonPermissionSnapshot;
+  menuButtonPermissionSnapshot = null;
+  return s;
+}
+
+/**
+ * 遍历功能树：每个 MENU 只收集其直接子级中的 BUTTON，不把子 MENU 下的 BUTTON 归到父级。
+ */
+export function collectMenuButtonPermissionsFromRaw(
+  items: BackendMenuItem[],
+): MenuButtonPermissionSnapshot {
+  const pathToCodes = new Map<string, Set<string>>();
+  const allCodes = new Set<string>();
+
+  function visitMenuNode(menu: BackendMenuItem): void {
+    let rawPath = '';
+    if (menu.routePath) {
+      rawPath = menu.routePath.startsWith('/')
+        ? menu.routePath
+        : `/${menu.routePath}`;
+    }
+    const pathKey = normalizeMenuPermissionPath(rawPath);
+    const children = menu.children ?? [];
+    for (const child of children) {
+      if (!child) {
+        continue;
+      }
+      if (isButtonFeatureType(child.featureType)) {
+        const code = String(child.featureCode ?? '').trim();
+        if (code && pathKey) {
+          allCodes.add(code);
+          let set = pathToCodes.get(pathKey);
+          if (!set) {
+            set = new Set<string>();
+            pathToCodes.set(pathKey, set);
+          }
+          set.add(code);
+        }
+      } else if (isMenuFeatureType(child.featureType)) {
+        visitMenuNode(child);
+      }
+    }
+  }
+
+  for (const item of items ?? []) {
+    if (item && isMenuFeatureType(item.featureType)) {
+      visitMenuNode(item);
+    }
+  }
+
+  const menuPathToDirectButtonCodes: Record<string, string[]> = {};
+  for (const [path, set] of pathToCodes) {
+    menuPathToDirectButtonCodes[path] = [...set];
+  }
+
+  return {
+    allButtonCodes: [...allCodes],
+    menuPathToDirectButtonCodes,
+  };
+}
+
 /**
  * 嵌套路由：子项应使用相对 path（如 tenant），不要用 /system/tenant，
  * 否则在父级为 /system 时，部分环境下匹配异常导致 404。
@@ -206,6 +300,7 @@ export function mapBackendMenusToFeatureTree(
  */
 export async function getAllMenusApi(): Promise<RouteRecordStringComponent[]> {
   const rawList = await getMineFeaturesRawApi();
+  menuButtonPermissionSnapshot = collectMenuButtonPermissionsFromRaw(rawList);
   return rawList
     .filter((item) => isMenuFeatureType(item.featureType))
     .map((item) => mapMenuToRoute(item));

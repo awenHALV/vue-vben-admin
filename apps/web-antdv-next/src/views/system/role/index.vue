@@ -1,12 +1,13 @@
 <script lang="ts" setup>
-import type { RoleInfo } from '#/api/system/role';
+import type { TreeProps } from 'antdv-next';
+
 import type { OrgInfo } from '#/api/system/org';
+import type { RoleInfo } from '#/api/system/role';
 
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
-import { $t } from '#/locales';
 
 import {
   Button,
@@ -20,13 +21,18 @@ import {
   Space,
   Tree,
 } from 'antdv-next';
-import type { TreeProps } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getRolePageApi, deleteRoleApi } from '#/api/system/role';
 import { getOrgTreeApi } from '#/api/system/org';
+import { deleteRoleApi, getRolePageApi } from '#/api/system/role';
+import { usePageButtonAccess } from '#/composables/use-page-button-access';
+import { $t } from '#/locales';
+
+import { ROLE_PAGE_BUTTON_CODES } from './button-permissions';
 import RoleForm from './components/RoleForm.vue';
 import RolePermission from './components/RolePermission.vue';
+
+const { canButton } = usePageButtonAccess();
 
 // ==================== 状态定义 ====================
 
@@ -122,7 +128,7 @@ function filterTree(data: OrgInfo[], keyword: string): OrgInfo[] {
       result.push({ ...item });
     } else if (item.children?.length) {
       const children = filterTree(item.children, keyword);
-      if (children.length) {
+      if (children.length > 0) {
         result.push({ ...item, children });
       }
     }
@@ -159,7 +165,7 @@ function getAllKeys(data: OrgInfo[]): string[] {
   return keys;
 }
 
-function getFirstKey(data: OrgInfo[]): string | null {
+function getFirstKey(data: OrgInfo[]): null | string {
   if (data.length === 0) return null;
   return data[0].id;
 }
@@ -241,10 +247,11 @@ watch(selectedDeptId, () => {
 </script>
 
 <template>
-  <Page auto-content-height :title="$t('system.role.title')">
+  <Page auto-content-height
+:title="$t('system.role.title')">
     <div class="flex h-full gap-4">
       <!-- 左侧组织树 -->
-      <Card class="w-80 flex-shrink-0">
+      <Card class="w-80 shrink-0">
         <div class="mb-3">
           <InputSearch
             v-model:value="searchKey"
@@ -253,8 +260,8 @@ watch(selectedDeptId, () => {
           />
         </div>
         <Tree
-          v-model:expandedKeys="expandedKeys"
-          v-model:selectedKeys="selectedKeys"
+          v-model:expanded-keys="expandedKeys"
+          v-model:selected-keys="selectedKeys"
           :tree-data="filteredDeptTree"
           :field-names="{ title: 'deptName', key: 'id', children: 'children' }"
           block-node
@@ -264,10 +271,10 @@ watch(selectedDeptId, () => {
       </Card>
 
       <!-- 右侧内容区 -->
-      <div class="flex-1 flex flex-col min-w-0 gap-4">
+      <div class="flex min-w-0 flex-1 flex-col gap-4">
         <!-- 搜索表单 -->
         <Card>
-          <div class="flex justify-between items-start">
+          <div class="flex items-start justify-between">
             <Form layout="inline">
               <FormItem :label="$t('system.role.roleName')">
                 <Input
@@ -279,12 +286,16 @@ watch(selectedDeptId, () => {
               </FormItem>
             </Form>
             <Space>
-              <Button type="primary" class="w-21" @click="handleSearch">
+              <Button type="primary"
+class="w-21" @click="handleSearch">
                 <template #icon><IconifyIcon icon="lucide:search" /></template>
                 {{ $t('system.common.search') }}
               </Button>
-              <Button class="w-21" @click="handleReset">
-                <template #icon><IconifyIcon icon="lucide:rotate-ccw" /></template>
+              <Button class="w-21"
+@click="handleReset">
+                <template #icon>
+                  <IconifyIcon icon="lucide:rotate-ccw" />
+                </template>
                 {{ $t('system.common.reset') }}
               </Button>
             </Space>
@@ -292,11 +303,16 @@ watch(selectedDeptId, () => {
         </Card>
 
         <!-- 角色列表 -->
-        <div class="flex-1 min-h-0">
+        <div class="min-h-0 flex-1">
           <Grid>
             <template #toolbar-actions>
               <div class="flex w-full justify-end">
-                <Button type="primary" class="w-21" @click="handleAdd">
+                <Button
+                  v-if="canButton(ROLE_PAGE_BUTTON_CODES.add)"
+                  type="primary"
+                  class="w-21"
+                  @click="handleAdd"
+                >
                   <template #icon><IconifyIcon icon="lucide:plus" /></template>
                   {{ $t('system.common.add') }}
                 </Button>
@@ -305,11 +321,19 @@ watch(selectedDeptId, () => {
 
             <template #action="{ row }">
               <Space v-if="row.roleAlias !== 'admin'">
-                <a @click="handleEdit(row)">{{ $t('system.common.edit') }}</a>
-                <a style="color: #ef4444" @click="handleDelete(row)">{{
-                  $t('system.common.delete')
-                }}</a>
-                <a @click="handlePermission(row)">{{ $t('system.role.permission') }}</a>
+                <a
+                  v-if="canButton(ROLE_PAGE_BUTTON_CODES.edit)"
+                  @click="handleEdit(row)"
+                  >{{ $t('system.common.edit') }}</a>
+                <a
+                  v-if="canButton(ROLE_PAGE_BUTTON_CODES.delete)"
+                  style="color: #ef4444"
+                  @click="handleDelete(row)"
+                  >{{ $t('system.common.delete') }}</a>
+                <a
+                  v-if="canButton(ROLE_PAGE_BUTTON_CODES.auth)"
+                  @click="handlePermission(row)"
+                  >{{ $t('system.role.permission') }}</a>
               </Space>
             </template>
           </Grid>

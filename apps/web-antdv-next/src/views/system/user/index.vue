@@ -1,11 +1,12 @@
 <script lang="ts" setup>
+import type { TreeProps } from 'antdv-next';
+
 import type { DeptTreeNode, UserInfo } from '#/api/system/user';
 
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
-import { $t } from '#/locales';
 
 import {
   Button,
@@ -18,13 +19,18 @@ import {
   Tag,
   Tree,
 } from 'antdv-next';
-import type { TreeProps } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getDeptTreeApi, getUserPageApi } from '#/api/system/user';
+import { usePageButtonAccess } from '#/composables/use-page-button-access';
+import { $t } from '#/locales';
+
+import { USER_PAGE_BUTTON_CODES } from './button-permissions';
 import UserDetail from './components/UserDetail.vue';
 import UserForm from './components/UserForm.vue';
 import UserImport from './components/UserImport.vue';
+
+const { canButton } = usePageButtonAccess();
 
 // ==================== 状态定义 ====================
 
@@ -126,7 +132,9 @@ const [Grid, gridApi] = useVbenVxeGrid<UserInfo>({
         title: $t('system.common.status'),
         width: 80,
         formatter: ({ cellValue }: any) => {
-          return cellValue === 1 ? $t('system.common.normal') : $t('system.common.disabled');
+          return cellValue === 1
+            ? $t('system.common.normal')
+            : $t('system.common.disabled');
         },
       },
       {
@@ -149,7 +157,7 @@ function filterTree(data: DeptTreeNode[], keyword: string): DeptTreeNode[] {
       result.push({ ...item });
     } else if (item.children?.length) {
       const children = filterTree(item.children, keyword);
-      if (children.length) {
+      if (children.length > 0) {
         result.push({ ...item, children });
       }
     }
@@ -188,7 +196,7 @@ function getAllKeys(data: DeptTreeNode[]): string[] {
   return keys;
 }
 
-function getFirstKey(data: DeptTreeNode[]): string | null {
+function getFirstKey(data: DeptTreeNode[]): null | string {
   if (data.length === 0) return null;
   return data[0].id;
 }
@@ -261,10 +269,11 @@ watch(selectedDeptId, () => {
 </script>
 
 <template>
-  <Page auto-content-height :title="$t('system.user.title')">
+  <Page auto-content-height
+:title="$t('system.user.title')">
     <div class="flex h-full gap-4">
       <!-- 左侧部门树 -->
-      <Card class="w-80 flex-shrink-0">
+      <Card class="w-80 shrink-0">
         <div class="mb-3">
           <InputSearch
             v-model:value="searchKey"
@@ -273,8 +282,8 @@ watch(selectedDeptId, () => {
           />
         </div>
         <Tree
-          v-model:expandedKeys="expandedKeys"
-          v-model:selectedKeys="selectedKeys"
+          v-model:expanded-keys="expandedKeys"
+          v-model:selected-keys="selectedKeys"
           :tree-data="filteredDeptTree"
           :field-names="{ title: 'deptName', key: 'id', children: 'children' }"
           block-node
@@ -284,10 +293,10 @@ watch(selectedDeptId, () => {
       </Card>
 
       <!-- 右侧内容区 -->
-      <div class="flex-1 flex flex-col min-w-0 gap-4">
+      <div class="flex min-w-0 flex-1 flex-col gap-4">
         <!-- 搜索表单 -->
         <Card>
-          <div class="flex justify-between items-start">
+          <div class="flex items-start justify-between">
             <Form layout="inline">
               <FormItem :label="$t('system.user.account')">
                 <Input
@@ -307,12 +316,16 @@ watch(selectedDeptId, () => {
               </FormItem>
             </Form>
             <Space>
-              <Button type="primary" class="w-21" @click="handleSearch">
+              <Button type="primary"
+class="w-21" @click="handleSearch">
                 <template #icon><IconifyIcon icon="lucide:search" /></template>
                 {{ $t('system.common.search') }}
               </Button>
-              <Button class="w-21" @click="handleReset">
-                <template #icon><IconifyIcon icon="lucide:rotate-ccw" /></template>
+              <Button class="w-21"
+@click="handleReset">
+                <template #icon>
+                  <IconifyIcon icon="lucide:rotate-ccw" />
+                </template>
                 {{ $t('system.common.reset') }}
               </Button>
             </Space>
@@ -320,39 +333,65 @@ watch(selectedDeptId, () => {
         </Card>
 
         <!-- 用户列表 -->
-        <div class="flex-1 min-h-0">
+        <div class="min-h-0 flex-1">
           <Grid>
-          <template #toolbar-actions>
-            <div class="flex w-full justify-end">
-              <Space>
-                <Button type="primary" class="w-21" @click="handleAdd">
-                  <template #icon><IconifyIcon icon="lucide:plus" /></template>
-                  {{ $t('system.common.add') }}
-                </Button>
-                <Button class="w-26" @click="handleImport">
-                  <template #icon><IconifyIcon icon="lucide:upload" /></template>
-                  {{ $t('system.user.batchImport') }}
-                </Button>
-              </Space>
-            </div>
-          </template>
-
-          <template #roleName="{ row }">
-            <template v-if="row.roleName">
-              <Tag v-for="(role, idx) in row.roleName.split(',')" :key="idx" color="blue">
-                {{ role }}
-              </Tag>
+            <template #toolbar-actions>
+              <div class="flex w-full justify-end">
+                <Space>
+                  <Button
+                    v-if="canButton(USER_PAGE_BUTTON_CODES.add)"
+                    type="primary"
+                    class="w-21"
+                    @click="handleAdd"
+                  >
+                    <template #icon>
+                      <IconifyIcon icon="lucide:plus" />
+                    </template>
+                    {{ $t('system.common.add') }}
+                  </Button>
+                  <Button
+                    v-if="canButton(USER_PAGE_BUTTON_CODES.batchImport)"
+                    class="w-26"
+                    @click="handleImport"
+                  >
+                    <template #icon>
+                      <IconifyIcon icon="lucide:upload" />
+                    </template>
+                    {{ $t('system.user.batchImport') }}
+                  </Button>
+                </Space>
+              </div>
             </template>
-          </template>
 
-          <template #action="{ row }">
-            <Space>
-              <a @click="handleView(row)">{{ $t('system.common.view') }}</a>
-              <a @click="handleEdit(row)">{{ $t('system.common.edit') }}</a>
-              <a @click="handlePasswordReset(row)">{{ $t('system.user.editPassword') }}</a>
-            </Space>
-          </template>
-        </Grid>
+            <template #roleName="{ row }">
+              <template v-if="row.roleName">
+                <Tag
+                  v-for="(role, idx) in row.roleName.split(',')"
+                  :key="idx"
+                  color="blue"
+                >
+                  {{ role }}
+                </Tag>
+              </template>
+            </template>
+
+            <template #action="{ row }">
+              <Space>
+                <a
+                  v-if="canButton(USER_PAGE_BUTTON_CODES.detail)"
+                  @click="handleView(row)"
+                  >{{ $t('system.common.view') }}</a>
+                <a
+                  v-if="canButton(USER_PAGE_BUTTON_CODES.edit)"
+                  @click="handleEdit(row)"
+                  >{{ $t('system.common.edit') }}</a>
+                <a
+                  v-if="canButton(USER_PAGE_BUTTON_CODES.resetPwd)"
+                  @click="handlePasswordReset(row)"
+                  >{{ $t('system.user.editPassword') }}</a>
+              </Space>
+            </template>
+          </Grid>
         </div>
       </div>
     </div>
@@ -366,10 +405,14 @@ watch(selectedDeptId, () => {
     />
 
     <!-- 用户详情弹窗 -->
-    <UserDetail v-model:visible="userDetailVisible" :data="userDetailData" />
+    <UserDetail v-model:visible="userDetailVisible"
+:data="userDetailData" />
 
     <!-- 用户导入弹窗 -->
-    <UserImport v-model:visible="userImportVisible" @success="handleImportSuccess" />
+    <UserImport
+      v-model:visible="userImportVisible"
+      @success="handleImportSuccess"
+    />
   </Page>
 </template>
 
