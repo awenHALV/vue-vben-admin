@@ -368,7 +368,6 @@ function openChangeTenant(record: BackendTenantItem) {
       <div class="ml-auto flex shrink-0 items-center justify-end">
         <Space>
           <VbenButton
-            v-if="canButton(TENANT_PAGE_BUTTON_CODES.reset)"
             class="w-[60px]"
             size="sm"
             variant="outline"
@@ -378,7 +377,6 @@ function openChangeTenant(record: BackendTenantItem) {
           </VbenButton>
           <!-- prettier-ignore -->
           <VbenButton
-            v-if="canButton(TENANT_PAGE_BUTTON_CODES.search)"
             class="w-[60px]"
             size="sm"
             @click="handleSearch"
