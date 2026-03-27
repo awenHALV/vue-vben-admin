@@ -57,12 +57,14 @@
     "phoneFormat": "请输入正确的手机号",
     "emailFormat": "请输入正确的邮箱格式",
     "passwordRequired": "密码不能为空",
-    "passwordFormat": "密码必须包含大小写字母、数字和特殊字符，长度8-32位",
+    "passwordFormat": "密码必须包含大小写字母、数字和特殊字符，长度8-20位",
     "passwordNotMatch": "两次输入的密码不一致",
     "templateDownload": "模板下载",
     "selectFile": "选择文件",
     "fileFormatTip": "仅支持 .xls, .xlsx 格式，文件大小不超过 10MB",
-    "num": "序号"
+    "num": "序号",
+    "confirmDelete": "请确定是否删除数据？",
+    "confirmDeleteMessage": "删除数据也会删除所有与其相关的数据,请慎重选择"
   },
   "org": {
     "title": "组织管理",

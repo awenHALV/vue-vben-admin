@@ -15,13 +15,15 @@ import {
   FormItem,
   Input,
   InputSearch,
+  message,
+  Modal,
   Space,
   Tag,
   Tree,
 } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getDeptTreeApi, getUserPageApi } from '#/api/system/user';
+import { deleteUserApi, getDeptTreeApi, getUserPageApi } from '#/api/system/user';
 import { usePageButtonAccess } from '#/composables/use-page-button-access';
 import { $t } from '#/locales';
 
@@ -132,9 +134,7 @@ const [Grid, gridApi] = useVbenVxeGrid<UserInfo>({
         title: $t('system.common.status'),
         width: 80,
         formatter: ({ cellValue }: any) => {
-          return cellValue === 1
-            ? $t('system.common.normal')
-            : $t('system.common.disabled');
+          return cellValue === 1 ? $t('system.common.normal') : $t('system.common.disabled');
         },
       },
       {
@@ -257,6 +257,25 @@ const handleImportSuccess = () => {
   void gridApi.reload();
 };
 
+const handleDelete = (record: UserInfo) => {
+  Modal.confirm({
+    title: $t('system.user.confirmDelete'),
+    content: $t('system.user.confirmDeleteMessage', { name: record.name }),
+    okText: $t('system.common.ok'),
+    cancelText: $t('system.common.cancel'),
+    onOk: async () => {
+      try {
+        await deleteUserApi([record.id]);
+        message.success($t('system.common.deleteSuccess'));
+        void gridApi.reload();
+      } catch (error) {
+        console.error('删除用户失败:', error);
+        message.error($t('system.common.deleteFailed'));
+      }
+    },
+  });
+};
+
 // ==================== 生命周期 ====================
 
 onMounted(() => {
@@ -269,8 +288,7 @@ watch(selectedDeptId, () => {
 </script>
 
 <template>
-  <Page auto-content-height
-:title="$t('system.user.title')">
+  <Page auto-content-height :title="$t('system.user.title')">
     <div class="flex h-full gap-4">
       <!-- 左侧部门树 -->
       <Card class="w-80 shrink-0">
@@ -316,13 +334,11 @@ watch(selectedDeptId, () => {
               </FormItem>
             </Form>
             <Space>
-              <Button type="primary"
-class="w-21" @click="handleSearch">
+              <Button type="primary" class="w-21" @click="handleSearch">
                 <template #icon><IconifyIcon icon="lucide:search" /></template>
                 {{ $t('system.common.search') }}
               </Button>
-              <Button class="w-21"
-@click="handleReset">
+              <Button class="w-21" @click="handleReset">
                 <template #icon>
                   <IconifyIcon icon="lucide:rotate-ccw" />
                 </template>
@@ -365,11 +381,7 @@ class="w-21" @click="handleSearch">
 
             <template #roleName="{ row }">
               <template v-if="row.roleName">
-                <Tag
-                  v-for="(role, idx) in row.roleName.split(',')"
-                  :key="idx"
-                  color="blue"
-                >
+                <Tag v-for="(role, idx) in row.roleName.split(',')" :key="idx" color="blue">
                   {{ role }}
                 </Tag>
               </template>
@@ -377,18 +389,23 @@ class="w-21" @click="handleSearch">
 
             <template #action="{ row }">
               <Space>
-                <a
-                  v-if="canButton(USER_PAGE_BUTTON_CODES.detail)"
-                  @click="handleView(row)"
-                  >{{ $t('system.common.view') }}</a>
-                <a
-                  v-if="canButton(USER_PAGE_BUTTON_CODES.edit)"
-                  @click="handleEdit(row)"
-                  >{{ $t('system.common.edit') }}</a>
+                <a v-if="canButton(USER_PAGE_BUTTON_CODES.detail)" @click="handleView(row)">{{
+                  $t('system.common.view')
+                }}</a>
+                <a v-if="canButton(USER_PAGE_BUTTON_CODES.edit)" @click="handleEdit(row)">{{
+                  $t('system.common.edit')
+                }}</a>
                 <a
                   v-if="canButton(USER_PAGE_BUTTON_CODES.resetPwd)"
                   @click="handlePasswordReset(row)"
-                  >{{ $t('system.user.editPassword') }}</a>
+                  >{{ $t('system.user.editPassword') }}</a
+                >
+                <a
+                  v-if="canButton(USER_PAGE_BUTTON_CODES.delete)"
+                  class="text-error"
+                  @click="handleDelete(row)"
+                  >{{ $t('system.common.delete') }}</a
+                >
               </Space>
             </template>
           </Grid>
@@ -405,14 +422,10 @@ class="w-21" @click="handleSearch">
     />
 
     <!-- 用户详情弹窗 -->
-    <UserDetail v-model:visible="userDetailVisible"
-:data="userDetailData" />
+    <UserDetail v-model:visible="userDetailVisible" :data="userDetailData" />
 
     <!-- 用户导入弹窗 -->
-    <UserImport
-      v-model:visible="userImportVisible"
-      @success="handleImportSuccess"
-    />
+    <UserImport v-model:visible="userImportVisible" @success="handleImportSuccess" />
   </Page>
 </template>
 

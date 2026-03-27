@@ -3,6 +3,7 @@
  */
 export const USER_PAGE_BUTTON_CODES = {
   add: 'user:add',
+  delete: 'user:delete',
   resetPwd: 'user:resetPwd',
   detail: 'user:detail',
   edit: 'user:edit',

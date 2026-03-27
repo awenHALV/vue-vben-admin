@@ -148,6 +148,14 @@ export async function updateUserApi(data: UpdateUserParams) {
 }
 
 /**
+ * 删除用户
+ * @param ids 用户ID数组
+ */
+export async function deleteUserApi(ids: string[]) {
+  return requestClient.post(`/de-base-system/external/private/user/delete?ids=${ids.join(',')}`);
+}
+
+/**
  * 重置密码
  */
 export async function editPasswordApi(data: EditPasswordParams) {
