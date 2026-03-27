@@ -1,4 +1,8 @@
-import type { HostBridgeState } from './event';
+import type {
+  HostBridgeLanguageChangePayload,
+  HostBridgeState,
+  HostBridgeThemeChangePayload,
+} from './event';
 
 import { watch } from 'vue';
 
@@ -44,6 +48,7 @@ function buildHostState(
     token: accessStore.accessToken ?? '',
     colorMode: getResolvedColorMode(),
     builtinType: preferences.theme.builtinType,
+    locale: preferences.app.locale,
   };
 }
 
@@ -92,17 +97,19 @@ export function setupWujieHostBridge() {
   }
 
   function emitChangeThemeToChild() {
-    bus.$emit(CHANGETHEME_EVENT, {
+    const payload: HostBridgeThemeChangePayload = {
       builtinType: preferences.theme.builtinType,
       colorMode: getResolvedColorMode(),
       themeMode: preferences.theme.mode,
-    });
+    };
+    bus.$emit(CHANGETHEME_EVENT, payload);
   }
 
   function emitChangeLanguageToChild() {
-    bus.$emit(CHANGELANUAGE_EVENT, {
+    const payload: HostBridgeLanguageChangePayload = {
       locale: preferences.app.locale,
-    });
+    };
+    bus.$emit(CHANGELANUAGE_EVENT, payload);
   }
 
   function emitNoticeChildToken() {
@@ -116,6 +123,7 @@ export function setupWujieHostBridge() {
       token: accessStore.accessToken,
       mode: preferences.theme.mode,
       builtinType: preferences.theme.builtinType,
+      locale: preferences.app.locale,
     }),
     () => emitHostStatePush(),
     { immediate: true },

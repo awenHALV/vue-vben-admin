@@ -15,10 +15,10 @@ import { $t, $te, i18n, setupI18n } from '#/locales';
 
 import { initComponentAdapter } from './adapter/component';
 import { initSetupVbenForm } from './adapter/form';
-import { setupWujieHostBridge } from './wujie-config/hostBridge';
-import setupWujieApp from './wujie-config/setupApp';
 import App from './app.vue';
 import { router } from './router';
+import { setupWujieHostBridge } from './wujie-config/hostBridge';
+import setupWujieApp from './wujie-config/setupApp';
 
 async function bootstrap(namespace: string) {
   // 初始化组件适配器
