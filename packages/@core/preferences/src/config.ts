@@ -4,7 +4,7 @@ const defaultPreferences: Preferences = {
   app: {
     // 权限模式：当前的默认模式是 frontend（由前端定义路由）。
     // 如果需要后端返回路由，请将该值改为 backend。
-    accessMode: 'frontend',
+    accessMode: 'backend',
     authPageLayout: 'panel-right',
     checkUpdatesInterval: 1,
     colorGrayMode: false,

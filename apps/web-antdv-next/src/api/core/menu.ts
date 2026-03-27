@@ -55,12 +55,67 @@ function toNestedRoutePath(
 }
 
 /**
+ * 判断 pathSegments 是否以 parentSegments 为前缀（逐段比较，忽略大小写）
+ */
+function pathSegmentsStartWithParent(
+  pathSegments: string[],
+  parentSegments: string[],
+): boolean {
+  if (pathSegments.length < parentSegments.length) {
+    return false;
+  }
+  return parentSegments.every(
+    (seg, i) => seg.toLowerCase() === pathSegments[i]?.toLowerCase(),
+  );
+}
+
+/**
+ * 将后端按层级拆分的「相对」routePath 解析为基座完整路径。
+ * 使用路径段拼接，避免仅靠字符串 startsWith 时漏拼中间段（如父级 /vpp/system + 本级 /region → /vpp/system/region）。
+ * 若本级已是「从根开始的完整路径」且以父路径为前缀，则直接使用。
+ */
+function resolveMenuAbsoluteRoutePath(
+  routePath: string | undefined,
+  parentAbsoluteRoutePath?: string,
+): string {
+  const trimmed = String(routePath ?? '').trim();
+  if (!trimmed) {
+    return parentAbsoluteRoutePath ?? '';
+  }
+
+  const raw = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  const rawSegments = raw.split('/').filter(Boolean);
+
+  if (!parentAbsoluteRoutePath) {
+    return raw;
+  }
+
+  const parentNorm = parentAbsoluteRoutePath.replace(/\/+$/, '') || '/';
+  if (parentNorm === '/') {
+    return raw;
+  }
+
+  const parentSegments = parentNorm.split('/').filter(Boolean);
+
+  // 本级已包含完整父链（后端直接给绝对路径）
+  if (
+    rawSegments.length >= parentSegments.length &&
+    pathSegmentsStartWithParent(rawSegments, parentSegments)
+  ) {
+    return `/${rawSegments.join('/')}`;
+  }
+
+  // 相对片段：拼在父级绝对路径之后（/vpp + /system → /vpp/system；/vpp/system + /region → /vpp/system/region）
+  return `/${[...parentSegments, ...rawSegments].join('/')}`;
+}
+
+/**
  * 将后端菜单数据映射为 Vben 路由格式
  * - featureCode → name
- * - routePath   → path
+ * - routePath   → path（支持分层相对地址，最终拼成 /vpp/system/region 这类绝对路径）
  * - featureName / featureIcon / featureNameEn → meta
  * - 有子菜单的父级节点使用 BasicLayout，叶子节点根据 routePath 推断 component
- * - 叶子且 routePath 首段 ∈ website.projectCodes → 使用 micro/index（Wujie），并写入 meta.microName / meta.microUrl
+ * - 叶子且「完整路径」首段 ∈ website.projectCodes（如 vpp）→ 使用 micro/index（Wujie），并写入 meta.microName / meta.microUrl
  */
 function mapMenuToRoute(
   item: BackendMenuItem,
@@ -71,37 +126,42 @@ function mapMenuToRoute(
   );
   const hasChildren = menuChildren.length > 0;
 
-  let rawPath = '';
-  if (item.routePath) {
-    rawPath = item.routePath.startsWith('/')
-      ? item.routePath
-      : `/${item.routePath}`;
-  }
+  const absoluteRoutePath = resolveMenuAbsoluteRoutePath(
+    item.routePath,
+    parentAbsoluteRoutePath,
+  );
 
-  const pathForRouter = toNestedRoutePath(rawPath, parentAbsoluteRoutePath);
+  const pathForRouter = toNestedRoutePath(
+    absoluteRoutePath,
+    parentAbsoluteRoutePath,
+  );
 
   /**
-   * 微前端：routePath 首段 ∈ website.projectCodes（与 featureCode 无关）；
-   * routePath 为 http/https 外链时不走微前端
+   * 微前端：用拼接后的完整基座路径判断首段是否为 projectCode（如 vpp）；
+   * 外链 http/https 不走微前端。
    */
   const microCode =
-    !hasChildren && rawPath && !rawPath.toLowerCase().startsWith('http')
-      ? getMicroProjectCodeFromRoutePath(rawPath)
+    !hasChildren &&
+    absoluteRoutePath &&
+    !absoluteRoutePath.toLowerCase().startsWith('http')
+      ? getMicroProjectCodeFromRoutePath(absoluteRoutePath)
       : undefined;
 
   let inferredComponent: string;
   if (hasChildren) {
     inferredComponent = 'BasicLayout';
-  } else if (rawPath) {
+  } else if (absoluteRoutePath) {
     inferredComponent = microCode
       ? 'micro/index'
-      : `${rawPath.replace(/^\//, '')}/index`;
+      : `${absoluteRoutePath.replace(/^\//, '')}/index`;
   } else {
     inferredComponent = '/';
   }
 
-  const microUrl = microCode ? buildMicroUrl(microCode, rawPath) : undefined;
-
+  const microUrl = microCode
+    ? buildMicroUrl(microCode, absoluteRoutePath)
+    : undefined;
+  console.log(microUrl, 'microUrl');
   return {
     name: item.featureCode,
     path: pathForRouter,
@@ -122,7 +182,7 @@ function mapMenuToRoute(
         : {}),
     },
     children: hasChildren
-      ? menuChildren.map((child) => mapMenuToRoute(child, rawPath))
+      ? menuChildren.map((child) => mapMenuToRoute(child, absoluteRoutePath))
       : [],
   } as RouteRecordStringComponent;
 }
