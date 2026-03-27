@@ -114,8 +114,8 @@ function resolveMenuAbsoluteRoutePath(
  * - featureCode → name
  * - routePath   → path（支持分层相对地址，最终拼成 /vpp/system/region 这类绝对路径）
  * - featureName / featureIcon / featureNameEn → meta
- * - 有子菜单的父级节点使用 BasicLayout，叶子节点根据 routePath 推断 component
- * - 叶子且「完整路径」首段 ∈ website.projectCodes（如 vpp）→ 使用 micro/index（Wujie），并写入 meta.microName / meta.microUrl
+ * - 有子菜单且非微前端的父级用 BasicLayout；路径首段 ∈ website.projectCodes（如 vpp）的父级也用 micro/index，避免 BasicLayout 再包一层
+ * - 叶子：非微前端按 routePath 推断 views；微前端 → micro/index，并写入 meta.microName / meta.microUrl
  */
 function mapMenuToRoute(
   item: BackendMenuItem,
@@ -138,17 +138,16 @@ function mapMenuToRoute(
 
   /**
    * 微前端：用拼接后的完整基座路径判断首段是否为 projectCode（如 vpp）；
+   * 父级、叶子均参与判断，便于有子菜单的微应用目录不用 BasicLayout。
    * 外链 http/https 不走微前端。
    */
   const microCode =
-    !hasChildren &&
-    absoluteRoutePath &&
-    !absoluteRoutePath.toLowerCase().startsWith('http')
+    absoluteRoutePath && !absoluteRoutePath.toLowerCase().startsWith('http')
       ? getMicroProjectCodeFromRoutePath(absoluteRoutePath)
       : undefined;
 
   let inferredComponent: string;
-  if (hasChildren) {
+  if (hasChildren && !microCode) {
     inferredComponent = 'BasicLayout';
   } else if (absoluteRoutePath) {
     inferredComponent = microCode
@@ -161,7 +160,7 @@ function mapMenuToRoute(
   const microUrl = microCode
     ? buildMicroUrl(microCode, absoluteRoutePath)
     : undefined;
-  console.log(microUrl, 'microUrl');
+
   return {
     name: item.featureCode,
     path: pathForRouter,

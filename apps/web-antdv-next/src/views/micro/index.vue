@@ -23,7 +23,7 @@ const microProps = computed(() => ({
 </script>
 
 <template>
-  <div class="size-full p-4">
+  <div class="size-full">
     <!--
       sync 关闭：基座已通过 meta.microUrl 指定子应用完整地址，避免与 vue-router 冲突。
       key：同子应用名下切换 /system/region 等路径时强制重建 iframe，避免 alive+预加载根地址后仍停留在旧页面或 404。
