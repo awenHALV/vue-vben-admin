@@ -65,7 +65,7 @@ export async function getConsultationPageApi(
 ): Promise<ConsultationPageResult> {
   const res = await requestClient.get<
     ConsultationInfo[] | ConsultationPageData | ConsultationPageResult
-  >('/official-website/external/private/request-form-data/page', {
+  >('/official-website-service/external/private/request-form-data/page', {
     params,
   } as any);
 
@@ -104,6 +104,6 @@ export async function getConsultationDetailApi(id: number) {
     code: string;
     message: string;
     data: ConsultationInfo;
-  }>(`/official-website/system/consultation/${id}`);
+  }>(`/official-website-service/system/consultation/${id}`);
   return res.data;
 }
