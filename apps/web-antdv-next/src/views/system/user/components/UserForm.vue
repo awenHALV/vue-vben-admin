@@ -111,7 +111,7 @@ const rules = computed(() => {
     baseRules.pwd = [
       { required: true, message: $t('system.user.passwordRequired'), trigger: 'blur' },
       {
-        pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,32}$/,
+        pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,20}$/,
         message: $t('system.user.passwordFormat'),
         trigger: 'blur',
       },
@@ -244,12 +244,12 @@ const handleOk = async () => {
     emit('success');
     handleClose();
   } catch (error: any) {
-    console.error('操作失败:', error);
+    // console.error('操作失败:', error);
     if (error?.errorFields) {
       // 表单验证错误，不做处理
       return;
     }
-    message.error(error?.message || '操作失败');
+    // message.error(error?.message || '操作失败');
   } finally {
     loading.value = false;
   }
