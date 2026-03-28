@@ -4,9 +4,25 @@ import { LOGIN_PATH } from '@vben/constants';
 import { preferences } from '@vben/preferences';
 
 import { $t } from '#/locales';
+import website from '#/wujie-config/website';
 
 const BasicLayout = () => import('#/layouts/basic.vue');
 const AuthPageLayout = () => import('#/layouts/auth.vue');
+
+/** 与 wujie website.projectCodes 一致：这些前缀下的未知路径走 Root+BasicLayout 内 404，而非全屏兜底 */
+const microPrefixNotFoundRoutes: RouteRecordRaw[] = website.projectCodes.map(
+  (code) => ({
+    name: `MicroNotFound_${code}`,
+    path: `${code}/:pathMatch(.*)*`,
+    component: () => import('#/views/_core/fallback/not-found.vue'),
+    meta: {
+      hideInBreadcrumb: true,
+      hideInMenu: true,
+      hideInTab: true,
+      title: '404',
+    },
+  }),
+);
 /** 全局404页面 */
 const fallbackNotFoundRoute: RouteRecordRaw = {
   component: () => import('#/views/_core/fallback/not-found.vue'),
@@ -104,4 +120,4 @@ const coreRoutes: RouteRecordRaw[] = [
   },
 ];
 
-export { coreRoutes, fallbackNotFoundRoute };
+export { coreRoutes, fallbackNotFoundRoute, microPrefixNotFoundRoutes };
