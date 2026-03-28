@@ -5,7 +5,8 @@
 import type { Preferences } from '@vben/preferences';
 
 /**
- * 主应用向子应用推送的完整宿主状态（token / 明暗 / 内置主题）
+ * 主应用向子应用推送的完整宿主状态（token / 明暗 / 内置主题 / 语言）
+ * 主应用加载完成、以及上述任一字段变化时都会推送。
  * 子应用监听：window.$wujie?.bus?.$on(HOST_BRIDGE_HOST_STATE_PUSH, handler)
  */
 export const HOST_BRIDGE_HOST_STATE_PUSH = 'hostBridge:hostStatePush';
@@ -26,7 +27,8 @@ export const HOST_BRIDGE_REQUEST_COLOR_MODE = 'hostBridge:requestColorMode';
  * 子应用请求当前内置主题类型（preferences.theme.builtinType，如 default、violet）
  * bus.$emit(HOST_BRIDGE_REQUEST_BUILTIN_THEME, (builtinType) => void)
  */
-export const HOST_BRIDGE_REQUEST_BUILTIN_THEME = 'hostBridge:requestBuiltinTheme';
+export const HOST_BRIDGE_REQUEST_BUILTIN_THEME =
+  'hostBridge:requestBuiltinTheme';
 
 /**
  * 子应用一次拉取完整状态（推荐）
@@ -42,11 +44,25 @@ export interface HostBridgeState {
   colorMode: 'dark' | 'light';
   /** 内置主题类型，与基座 preferences.theme.builtinType 一致 */
   builtinType: Preferences['theme']['builtinType'];
+  /** 与基座 preferences.app.locale 一致 */
+  locale: Preferences['app']['locale'];
 }
 
-// 切换主题
+/** 主应用主题变更广播（与 CHANGETHEME_EVENT 载荷一致，便于子应用单独订阅） */
+export interface HostBridgeThemeChangePayload {
+  builtinType: Preferences['theme']['builtinType'];
+  colorMode: 'dark' | 'light';
+  themeMode: Preferences['theme']['mode'];
+}
+
+/** 主应用语言变更广播 */
+export interface HostBridgeLanguageChangePayload {
+  locale: Preferences['app']['locale'];
+}
+
+// 切换主题（主应用加载、主题/明暗模式切换时触发）
 export const CHANGETHEME_EVENT = 'changeThemeEvent';
-// 中英文切换
+// 中英文切换（主应用加载、语言切换时触发）
 export const CHANGELANUAGE_EVENT = 'changeLanguage';
 // 监听子应用通知基座退出登录事件
 export const LOGOUT_EVENT = 'logoutEvent';

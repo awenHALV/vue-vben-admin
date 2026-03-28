@@ -23,12 +23,17 @@ const microProps = computed(() => ({
 </script>
 
 <template>
-  <div class="size-full p-4">
-    <!-- sync 关闭：基座已通过 meta.microUrl 指定子应用完整地址，避免与 vue-router 冲突；且 wujie 1.0.29 在刷新时序下 sync 可能早于 __WUJIE 注入导致报错 -->
+  <div class="size-full">
+    <!--
+      sync：false，由 meta.microUrl 驱动子应用地址，避免与基座 vue-router 双写冲突。
+      key：仅用 microName。同应用切换菜单只变 microUrl；setupApp.alive 须为 false，否则 wujie 不应用新 url。
+      若 key 含 microUrl 可强制重挂载，但与 alive=false 重复、且每次整 iframe 冷启成本更高。
+    -->
     <WujieVue
       v-if="microUrl"
+      :key="String(microName)"
       width="100%"
-      height="100%"
+      height="calc(100vh - 96px)"
       :name="microName"
       :url="microUrl"
       :props="microProps"

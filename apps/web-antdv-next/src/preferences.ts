@@ -13,6 +13,10 @@ export const overridesPreferences = defineOverridesPreferences({
      * 构建时 index.html 的静态 <title> 仍由 .env 的 VITE_APP_TITLE 注入（首屏/SEO），可与中文文案一致。
      */
     name: 'app.title',
-    accessMode: 'backend', // 设置为后端控制路由模式
+    // 路由权限：frontend=前端路由表+角色过滤，不请求菜单接口；backend / mixed 才会走 getAllMenusApi
+    accessMode: 'backend',
+  },
+  theme: {
+    mode: 'light',
   },
 });

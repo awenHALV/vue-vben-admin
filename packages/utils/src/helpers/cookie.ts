@@ -8,7 +8,7 @@ export function getCookie(key: string) {
 
 export function setCookie(key: string, token: string, option = {}) {
   return Cookies.set(key, token, {
-    secure: true,
+    secure: false,
     sameSite: 'Strict',
     ...option,
   });

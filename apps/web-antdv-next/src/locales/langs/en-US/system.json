@@ -57,7 +57,7 @@
     "phoneFormat": "Please enter a valid phone number",
     "emailFormat": "Please enter a valid email address",
     "passwordRequired": "Password is required",
-    "passwordFormat": "Password must be 8-32 characters with uppercase, lowercase, numbers and special characters",
+    "passwordFormat": "Password must be 8-20 characters with uppercase, lowercase, numbers and special characters",
     "passwordNotMatch": "The passwords entered do not match",
     "templateDownload": "Template Download",
     "selectFile": "Select File",
