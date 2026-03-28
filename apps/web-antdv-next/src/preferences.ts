@@ -16,4 +16,7 @@ export const overridesPreferences = defineOverridesPreferences({
     // 路由权限：frontend=前端路由表+角色过滤，不请求菜单接口；backend / mixed 才会走 getAllMenusApi
     accessMode: 'backend',
   },
+  theme: {
+    mode: 'light',
+  },
 });
