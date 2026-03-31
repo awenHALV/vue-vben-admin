@@ -46,6 +46,9 @@
     "add": "新增字典项",
     "edit": "编辑字典项"
   },
+  "formRules": {
+    "optionValueEnOnlyEnglish": "只能包含英文字母、数字、空格"
+  },
   "optionForm": {
     "sort": "字典排序",
     "optionKey": "字典项键",

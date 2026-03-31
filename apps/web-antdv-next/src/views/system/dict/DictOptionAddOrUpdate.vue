@@ -15,6 +15,9 @@ const emit = defineEmits<{
   (e: 'success'): void;
 }>();
 
+/** 字典项英文值：仅允许英文字母、数字、半角空格 */
+const OPTION_VALUE_EN_REGEXP = /^[\da-z ]+$/i;
+
 const isEdit = ref(false);
 const dictIdRef = ref<null | number | string>(null);
 const editingId = ref<null | number | string>(null);
@@ -38,6 +41,7 @@ function buildFormSchema() {
       defaultValue: '',
       fieldName: 'dictCode',
       label: labelDictCode,
+      disabled: true,
       rules: z.string().optional(),
     },
     {
@@ -59,7 +63,13 @@ function buildFormSchema() {
       componentProps: { placeholder: ph, allowClear: true },
       fieldName: 'optionValueEn',
       label: labelValueEn,
-      rules: z.string().min(1, $t('ui.formRules.required', [labelValueEn])),
+      rules: z
+        .string()
+        .min(1, $t('ui.formRules.required', [labelValueEn]))
+        .regex(
+          OPTION_VALUE_EN_REGEXP,
+          $t('dict.formRules.optionValueEnOnlyEnglish'),
+        ),
     },
     {
       component: 'InputNumber',

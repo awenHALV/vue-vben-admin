@@ -46,7 +46,6 @@ export const useAuthStore = defineStore('auth', () => {
       };
 
       const { token, multiTenant } = await loginApi(loginParams);
-      console.log(token);
       // 如果成功获取到 token
       if (token) {
         accessStore.setAccessToken(token);
@@ -80,13 +79,9 @@ export const useAuthStore = defineStore('auth', () => {
           accessStore.setLoginExpired(false);
         }
         // 登录成功均需进入业务页；此前 loginExpired 分支未 push，会导致「过期后重新登录」不跳转
-        if (onSuccess) {
-          await onSuccess?.();
-        } else {
-          await router.push(
-            userInfo.homePath || preferences.app.defaultHomePath,
-          );
-        }
+        await (onSuccess
+          ? onSuccess?.()
+          : router.push(userInfo.homePath || preferences.app.defaultHomePath));
 
         if (userInfo?.realName) {
           notification.success({
@@ -105,17 +100,15 @@ export const useAuthStore = defineStore('auth', () => {
     };
   }
 
-  async function logout(redirect: boolean = true) {
-    try {
-      await logoutApi();
-    } catch {
-      // 不做任何处理
-    }
+  /**
+   * 仅前端清会话并回登录页（不调退出登录接口）。
+   * 用于 401/令牌作废等场景；用户主动退出请用 logout()。
+   */
+  async function terminateSession(redirect: boolean = true) {
     resetAllStores();
     removeCookie(TOKEN_KEY);
     accessStore.setLoginExpired(false);
 
-    // 回登录页带上当前路由地址
     await router.replace({
       path: LOGIN_PATH,
       query: redirect
@@ -124,6 +117,18 @@ export const useAuthStore = defineStore('auth', () => {
           }
         : {},
     });
+  }
+
+  /**
+   * 用户主动调用退出登录时，触发 logout
+   */
+  async function logout(redirect: boolean = true) {
+    try {
+      await logoutApi();
+    } catch {
+      // 不做任何处理
+    }
+    await terminateSession(redirect);
   }
 
   async function fetchUserInfo() {
@@ -148,5 +153,6 @@ export const useAuthStore = defineStore('auth', () => {
     fetchUserInfo,
     loginLoading,
     logout,
+    terminateSession,
   };
 });

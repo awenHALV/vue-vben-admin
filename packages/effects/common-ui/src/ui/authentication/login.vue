@@ -54,6 +54,7 @@ const [Form, formApi] = useVbenForm(
       hideLabel: true,
       hideRequiredMark: true,
     },
+    focusFirstError: true,
     schema: computed(() => props.formSchema),
     showDefaultActions: false,
     wrapperClass: 'grid-cols-12',
@@ -173,6 +174,7 @@ defineExpose({
     </div>
     <VbenButton
       :class="{
+        'cursor-pointer': !loading,
         'cursor-wait': loading,
       }"
       :loading="loading"

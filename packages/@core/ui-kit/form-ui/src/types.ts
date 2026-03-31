@@ -410,6 +410,12 @@ export interface VbenFormProps<
   scrollToFirstError?: boolean;
 
   /**
+   * 验证失败时是否自动 focus 第一个错误字段（按 schema 顺序）
+   * @default false
+   */
+  focusFirstError?: boolean;
+
+  /**
    * 是否显示默认操作按钮
    * @default true
    */

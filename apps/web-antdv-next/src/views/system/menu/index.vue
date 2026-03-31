@@ -107,7 +107,6 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendMenuItem>({
               total: res.total ?? 0,
             };
           } catch {
-            message.error($t('menu.message.fetchFailed'));
             return {
               records: [],
               total: 0,
@@ -579,10 +578,7 @@ onMounted(() => {
         >
           {{ $t('menu.action.reset') }}
         </VbenButton>
-        <VbenButton
-class="w-[60px]" size="sm"
-@click="handleSearch"
->
+        <VbenButton class="w-[60px]" size="sm" @click="handleSearch">
           {{ $t('menu.action.search') }}
         </VbenButton>
       </Space>
@@ -653,8 +649,6 @@ class="w-[60px]" size="sm"
     </div>
 
     <!-- 新增/编辑弹窗 -->
-    <AddOrUpdate
-ref="addOrUpdateRef" @success="handleAddOrUpdateSuccess"
-/>
+    <AddOrUpdate ref="addOrUpdateRef" @success="handleAddOrUpdateSuccess" />
   </Page>
 </template>

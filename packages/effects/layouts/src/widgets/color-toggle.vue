@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { BuiltinThemeType } from '@vben/types';
 
+import { ref } from 'vue';
+
 import { Palette } from '@vben/icons';
 import {
   COLOR_PRESETS,
@@ -10,9 +12,23 @@ import {
 
 import { VbenIconButton } from '@vben-core/shadcn-ui';
 
+import { onClickOutside } from '@vueuse/core';
+
 defineOptions({
   name: 'AuthenticationColorToggle',
 });
+
+const isOpen = ref(false);
+const containerRef = ref(null);
+
+// 点击外部时自动关闭
+onClickOutside(containerRef, () => {
+  isOpen.value = false;
+});
+
+const toggleMenu = () => {
+  isOpen.value = !isOpen.value;
+};
 
 function handleUpdate(colorPrimary: string, type: BuiltinThemeType) {
   updatePreferences({
@@ -21,13 +37,19 @@ function handleUpdate(colorPrimary: string, type: BuiltinThemeType) {
       builtinType: type,
     },
   });
+  // 可选：选择颜色后自动关闭
+  isOpen.value = false;
 }
 </script>
 
 <template>
-  <div class="group relative flex items-center overflow-hidden">
+  <div
+    ref="containerRef"
+    class="group relative flex items-center overflow-hidden"
+  >
     <div
-      class="flex w-0 overflow-hidden transition-all duration-500 ease-out group-hover:w-60"
+      class="flex w-0 overflow-hidden transition-all duration-500 ease-out"
+      :class="{ 'w-60': isOpen }"
     >
       <template v-for="preset in COLOR_PRESETS" :key="preset.color">
         <VbenIconButton
@@ -57,7 +79,8 @@ function handleUpdate(colorPrimary: string, type: BuiltinThemeType) {
       </template>
     </div>
 
-    <VbenIconButton>
+    <VbenIconButton @click="toggleMenu"
+class="cursor-pointer">
       <Palette class="size-4 text-primary" />
     </VbenIconButton>
   </div>

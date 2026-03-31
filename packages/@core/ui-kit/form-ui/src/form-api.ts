@@ -11,7 +11,7 @@ import type { Recordable } from '@vben-core/typings';
 
 import type { FormActions, FormSchema, VbenFormProps } from './types';
 
-import { isRef, toRaw } from 'vue';
+import { isRef, nextTick, toRaw } from 'vue';
 
 import { Store } from '@vben-core/shared/store';
 import {
@@ -41,6 +41,7 @@ function getDefaultState(): VbenFormProps {
     resetButtonOptions: {},
     schema: [],
     scrollToFirstError: false,
+    focusFirstError: false,
     showCollapseButton: false,
     showDefaultActions: true,
     submitButtonOptions: {},
@@ -287,6 +288,83 @@ export class FormApi {
     }
   }
 
+  /**
+   * 按 schema 顺序找到首个校验失败字段并聚焦其输入控件
+   */
+  focusFirstError(errors: Record<string, unknown> | string) {
+    let targetField: string | undefined =
+      typeof errors === 'string' ? errors : undefined;
+
+    if (!targetField && errors && typeof errors === 'object') {
+      const schemaFields = this.state?.schema ?? [];
+      for (const item of schemaFields) {
+        const name = item.fieldName;
+        if (name && errors[name]) {
+          targetField = name;
+          break;
+        }
+      }
+      if (!targetField) {
+        targetField = Object.keys(errors).find(
+          (k) => errors[k],
+        ) as string | undefined;
+      }
+    }
+
+    if (!targetField) {
+      return;
+    }
+
+    void nextTick(() => {
+      this.focusField(targetField as string);
+    });
+  }
+
+  focusField(fieldName: string) {
+    const componentRef = this.getFieldComponentRef(fieldName);
+
+    if (
+      componentRef &&
+      isFunction((componentRef as { focus?: () => void }).focus)
+    ) {
+      (componentRef as { focus: () => void }).focus();
+      return;
+    }
+
+    let el: HTMLElement | null = null;
+    if (componentRef) {
+      const inst = componentRef as ComponentPublicInstance & {
+        $el?: HTMLElement;
+      };
+      if (inst.$el instanceof HTMLElement) {
+        el = inst.$el;
+      }
+    }
+
+    const focusable =
+      el?.matches?.('input, textarea')
+        ? el
+        : (el?.querySelector?.(
+            'input:not([type=hidden]), textarea',
+          ) as HTMLElement | null);
+
+    if (focusable) {
+      focusable.focus();
+      return;
+    }
+
+    const byName = document.querySelector(
+      `[name="${fieldName}"]`,
+    ) as HTMLElement | null;
+    const fallback =
+      byName?.matches?.('input, textarea')
+        ? byName
+        : (byName?.querySelector?.(
+            'input:not([type=hidden]), textarea',
+          ) as HTMLElement | null);
+    fallback?.focus?.();
+  }
+
   async setFieldValue(field: string, value: any, shouldValidate?: boolean) {
     const form = await this.getForm();
     form.setFieldValue(field, value, shouldValidate);
@@ -413,6 +491,9 @@ export class FormApi {
       if (this.state?.scrollToFirstError) {
         this.scrollToFirstError(validateResult.errors);
       }
+      if (this.state?.focusFirstError) {
+        this.focusFirstError(validateResult.errors);
+      }
     }
     return validateResult;
   }
@@ -423,6 +504,9 @@ export class FormApi {
     if (!valid) {
       if (this.state?.scrollToFirstError) {
         this.scrollToFirstError(errors);
+      }
+      if (this.state?.focusFirstError) {
+        this.focusFirstError(errors);
       }
       return;
     }
@@ -438,6 +522,9 @@ export class FormApi {
 
       if (this.state?.scrollToFirstError) {
         this.scrollToFirstError(fieldName);
+      }
+      if (this.state?.focusFirstError) {
+        this.focusFirstError(fieldName);
       }
     }
     return validateResult;

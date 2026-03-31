@@ -42,6 +42,9 @@
     "add": "Add dictionary item",
     "edit": "Edit dictionary item"
   },
+  "formRules": {
+    "optionValueEnOnlyEnglish": "Only English letters, digits, and spaces are allowed"
+  },
   "optionForm": {
     "sort": "Dictionary order",
     "optionKey": "Item key",

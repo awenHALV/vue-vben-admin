@@ -208,8 +208,8 @@ function handleBatchDelete() {
 
 const [VbenModal, modalApi] = useVbenModal({
   destroyOnClose: true,
-  showCancelButton: true,
-  showConfirmButton: true,
+  showCancelButton: false,
+  showConfirmButton: false,
   cancelText: $t('common.cancel'),
   confirmText: $t('common.confirm'),
   title: $t('dict.config.title'),

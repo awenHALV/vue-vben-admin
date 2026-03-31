@@ -6,6 +6,20 @@ import { isFunction } from '@vben/utils';
 
 import axios from 'axios';
 
+/** 401 且业务 code 命中时：会话作废，只做重新认证（不尝试 refresh） */
+const TERMINAL_TOKEN_BUSINESS_CODES = new Set<string>([
+  'sys.token_be_replaced',
+  'sys.token_invalid_token',
+  'sys.token_kick_out',
+  'sys.token_not_token',
+  'sys.token_token_freeze',
+  'sys.token_token_timeout',
+]);
+
+function isTerminalTokenBusinessCode(code: unknown): boolean {
+  return typeof code === 'string' && TERMINAL_TOKEN_BUSINESS_CODES.has(code);
+}
+
 export const defaultResponseInterceptor = ({
   codeField = 'code',
   dataField = 'data',
@@ -68,6 +82,15 @@ export const authenticateResponseInterceptor = ({
       if (config?.skipReAuthenticate) {
         throw error;
       }
+
+      const businessCode = (response?.data as undefined | { code?: unknown })
+        ?.code;
+      // businessCode在后端提供的code码里需要重新登录
+      if (isTerminalTokenBusinessCode(businessCode)) {
+        await doReAuthenticate();
+        throw error;
+      }
+
       // 判断是否启用了 refreshToken 功能
       // 如果没有启用或者已经是重试请求了，直接跳转到重新登录
       if (!enableRefreshToken || config.__isRetryRequest) {

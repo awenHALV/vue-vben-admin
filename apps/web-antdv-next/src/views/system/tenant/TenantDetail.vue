@@ -94,12 +94,8 @@ defineExpose({ open });
 
 <template>
   <VbenModal>
-    <Spin
-:spinning="loading" class="min-h-[100px] w-full"
->
-      <div
-v-if="detail && !loading" class="mx-6 flex flex-col gap-5"
->
+    <Spin :spinning="loading" class="min-h-[100px] w-full">
+      <div v-if="detail && !loading" class="mx-6 flex flex-col gap-5">
         <!-- 租户信息 -->
         <section>
           <div class="mb-2 text-sm font-medium text-foreground">
@@ -117,7 +113,7 @@ v-if="detail && !loading" class="mx-6 flex flex-col gap-5"
                 {{ $t('tenant.list.id') }}
               </div>
               <div class="bg-background px-3 py-2">
-                {{ displayText(detail.id) }}
+                {{ displayText(detail.tenantId) }}
               </div>
             </div>
             <div
