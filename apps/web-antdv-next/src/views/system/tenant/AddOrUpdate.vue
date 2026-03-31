@@ -4,6 +4,7 @@ import type {
   TenantCreateBody,
   UpdateTenantParams,
 } from '#/api/core/tenant';
+import type { DictOption } from '#/api/system/dict';
 
 import { nextTick, ref } from 'vue';
 
@@ -23,6 +24,7 @@ import {
   getTenantDetailApi,
   updateTenantApi,
 } from '#/api/core/tenant';
+import { getDictOptionsApi } from '#/api/system/dict';
 
 defineOptions({ name: 'TenantAddOrUpdate' });
 
@@ -44,33 +46,20 @@ function getTenantFormValuesWithoutFeatureIds(r: BackendTenantItem) {
     adminPhone: String(r.adminPhone ?? r.admin_phone ?? r.phone ?? ''),
     companyName: String(r.companyName ?? ''),
     creditCode: String(r.creditCode ?? ''),
+    status: String(r.status ?? ''),
     tenantName: String(r.tenantName ?? ''),
   };
 }
 
-function normalizeFeatureIds(v: unknown): string[] | undefined {
-  if (Array.isArray(v)) {
-    return v
-      .map((x) => (x === null || x === undefined ? '' : String(x).trim()))
-      .filter(Boolean);
-  }
-  if (typeof v === 'string' && v.trim()) {
-    try {
-      const parsed = JSON.parse(v) as unknown;
-      if (Array.isArray(parsed)) {
-        return parsed
-          .map((x) => (x === null || x === undefined ? '' : String(x).trim()))
-          .filter(Boolean);
-      }
-    } catch {
-      /* 非 JSON 时按逗号分隔 */
-    }
-    return v
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }
-  return undefined;
+function mapDictToSelectOptions(items: DictOption[]) {
+  const useEn = preferences.app.locale === 'en-US';
+  return (items ?? []).map((item) => ({
+    label:
+      useEn && item.optionValueEn
+        ? item.optionValueEn
+        : (item.optionValue ?? item.optionKey),
+    value: item.optionKey,
+  }));
 }
 
 function buildFormSchema() {
@@ -131,6 +120,19 @@ function buildFormSchema() {
         .min(1, $t('ui.formRules.required', [$t('tenant.form.features')])),
     },
     {
+      component: 'Select',
+      componentProps: {
+        style: { width: '100%' },
+        options: [] as { label: string; value: string }[],
+        placeholder: $t('tenant.form.placeholder.status'),
+      },
+      fieldName: 'status',
+      label: $t('tenant.form.status'),
+      rules: z
+        .string()
+        .min(1, $t('ui.formRules.required', [$t('tenant.form.status')])),
+    },
+    {
       component: 'Input',
       componentProps: {
         placeholder: $t('tenant.form.placeholder.adminName'),
@@ -183,6 +185,26 @@ async function refreshFeatureTreeFromMineApi() {
   }
 }
 
+/** 拉取租户状态下拉；返回选项第一项的 value，供新增时作为默认值 */
+async function refreshTenantStatusOptions(): Promise<string | undefined> {
+  try {
+    const res = await getDictOptionsApi('tenant_status');
+    const options = mapDictToSelectOptions(res ?? []);
+    await formApi.updateSchema([
+      {
+        fieldName: 'status',
+        componentProps: {
+          options,
+        },
+      },
+    ]);
+    return options[0]?.value;
+  } catch {
+    message.error($t('menu.message.fetchFailed'));
+    return undefined;
+  }
+}
+
 const [VbenModal, modalApi] = useVbenModal({
   destroyOnClose: true,
   showConfirmButton: true,
@@ -196,6 +218,7 @@ const [VbenModal, modalApi] = useVbenModal({
     // 先重置，再按新增/编辑切换功能列表显隐与校验
     await formApi.resetForm();
     editTenantDetail.value = null;
+    const defaultStatusValue = await refreshTenantStatusOptions();
     const labelFeatures = $t('tenant.form.features');
     const featureIdsRequired = z
       .array(z.string())
@@ -236,6 +259,9 @@ const [VbenModal, modalApi] = useVbenModal({
         },
       ]);
       await refreshFeatureTreeFromMineApi();
+      if (defaultStatusValue !== undefined) {
+        await formApi.setFieldValue('status', defaultStatusValue);
+      }
     }
 
     await nextTick();
@@ -252,10 +278,11 @@ const [VbenModal, modalApi] = useVbenModal({
         companyName: string;
         creditCode: string;
         featureIds?: string;
+        status: string;
         tenantName: string;
       };
 
-      const createBody: TenantCreateBody = {
+      const createBody = {
         adminName: values.adminName.trim(),
         adminPhone: values.adminPhone.trim(),
         featureIds: Array.isArray(values.featureIds)
@@ -263,15 +290,15 @@ const [VbenModal, modalApi] = useVbenModal({
           : values.featureIds,
         companyName: values.companyName.trim(),
         creditCode: values.creditCode.trim(),
+        status: String(values.status ?? ''),
         tenantName: values.tenantName.trim(),
-      };
+      } as TenantCreateBody;
 
       await (isEdit.value && currentRecord.value
         ? updateTenantApi({
             ...createBody,
             id: currentRecord.value.id,
             tenantCode: currentRecord.value.tenantCode,
-            status: currentRecord.value.status,
           } satisfies UpdateTenantParams)
         : createTenantApi(createBody));
 

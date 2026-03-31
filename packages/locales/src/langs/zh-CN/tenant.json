@@ -51,7 +51,8 @@
       "creditCode": "请输入统一社会信用代码",
       "features": "请选择功能模块",
       "adminName": "请输入管理员姓名",
-      "adminPhone": "请输入管理员手机号"
+      "adminPhone": "请输入管理员手机号",
+      "status": "请选择租户状态"
     }
   },
   "featuresTree": {
