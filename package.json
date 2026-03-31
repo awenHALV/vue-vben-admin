@@ -25,7 +25,9 @@
   },
   "type": "module",
   "scripts": {
-    "build": "pnpm --filter @vben/web-antdv-next... build",
+    "build": "pnpm --filter @vben/web-antdv-next... build --mode devserver",
+    "build:test": "pnpm --filter @vben/web-antdv-next... build --mode test",
+    "build:production": "pnpm --filter @vben/web-antdv-next... build --mode production",
     "changeset": "pnpm exec changeset",
     "check": "pnpm run check:circular && pnpm run check:dep && pnpm run check:type && pnpm check:cspell",
     "check:circular": "vsh check-circular",
