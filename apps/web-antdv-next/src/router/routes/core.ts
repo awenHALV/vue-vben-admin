@@ -55,6 +55,19 @@ const coreRoutes: RouteRecordRaw[] = [
     redirect: preferences.app.defaultHomePath,
     children: [
       {
+        name: 'NoMenuPermission',
+        path: 'no-menu-permission',
+        component: () =>
+          import('#/views/_core/fallback/no-menu-permission.vue'),
+        meta: {
+          headerContentOnly: true,
+          hideInBreadcrumb: true,
+          hideInMenu: true,
+          hideInTab: true,
+          title: $t('page.fallback.noMenuPermission'),
+        },
+      },
+      {
         name: 'Profile',
         path: 'profile',
         component: () => import('#/views/_core/profile/index.vue'),

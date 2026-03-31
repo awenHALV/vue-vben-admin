@@ -1,4 +1,9 @@
 {
+  "fallback": {
+    "noMenuPermission": "无访问权限",
+    "noMenuPermissionHint": "您没有任何权限，",
+    "noMenuPermissionContact": "请联系管理员"
+  },
   "auth": {
     "login": "登录",
     "register": "注册",

@@ -134,7 +134,7 @@ const { locale } = useI18n();
 
 /** Logo / 侧栏副标题：preferences.app.name 为 i18n key（如 app.title）时按当前语言解析 */
 const resolvedAppName = computed(() => {
-  locale.value;
+  void locale.value;
   const key = preferences.app.name;
   return $te(key) ? $t(key) : key;
 });
@@ -195,6 +195,25 @@ function autoCollapseMenuByRouteMeta(route: RouteLocationNormalizedLoaded) {
 
 const route = useRoute();
 
+/** 无权限等页：只要顶栏不要侧栏与 Tabs */
+const isHeaderContentOnly = computed(
+  () => route.meta?.headerContentOnly === true,
+);
+
+const layoutSidebarEnable = computed(() => {
+  if (isHeaderContentOnly.value) {
+    return false;
+  }
+  return sidebarVisible.value;
+});
+
+const layoutTabbarEnable = computed(() => {
+  if (isHeaderContentOnly.value) {
+    return false;
+  }
+  return preferences.tabbar.enable;
+});
+
 onMounted(() => {
   autoCollapseMenuByRouteMeta(route);
 });
@@ -249,6 +268,8 @@ const headerSlots = computed(() => {
     :header-hidden="preferences.header.hidden"
     :header-mode="preferences.header.mode"
     :header-theme="headerTheme"
+    :header-force-show-logo="isHeaderContentOnly"
+    :header-hide-sidebar-toggle="isHeaderContentOnly"
     :header-toggle-sidebar-button="preferences.widget.sidebarToggle"
     :header-visible="preferences.header.enable"
     :is-mobile="preferences.app.isMobile"
@@ -256,7 +277,7 @@ const headerSlots = computed(() => {
     :sidebar-draggable="preferences.sidebar.draggable"
     :sidebar-collapse="preferences.sidebar.collapsed"
     :sidebar-collapse-show-title="preferences.sidebar.collapsedShowTitle"
-    :sidebar-enable="sidebarVisible"
+    :sidebar-enable="layoutSidebarEnable"
     :sidebar-collapsed-button="preferences.sidebar.collapsedButton"
     :sidebar-fixed-button="preferences.sidebar.fixedButton"
     :sidebar-expand-on-hover="preferences.sidebar.expandOnHover"
@@ -268,7 +289,7 @@ const headerSlots = computed(() => {
     :sidebar-theme-sub="sidebarThemeSub"
     :sidebar-width="preferences.sidebar.width"
     :side-collapse-width="preferences.sidebar.collapseWidth"
-    :tabbar-enable="preferences.tabbar.enable"
+    :tabbar-enable="layoutTabbarEnable"
     :tabbar-height="preferences.tabbar.height"
     :z-index="preferences.app.zIndex"
     @side-mouse-leave="handleSideMouseLeave"
@@ -304,7 +325,11 @@ const headerSlots = computed(() => {
         :theme="showHeaderNav ? headerTheme : theme"
         @click="clickLogo"
       >
-        <template v-if="$slots['logo-text']" #text>
+        <!-- prettier-ignore -->
+        <template
+          v-if="$slots['logo-text']"
+          #text
+        >
           <slot name="logo-text"></slot>
         </template>
       </VbenLogo>
@@ -312,11 +337,16 @@ const headerSlots = computed(() => {
     <!-- 头部区域 -->
     <template #header>
       <LayoutHeader
+        :show-refresh="!isHeaderContentOnly"
         :theme="theme"
         @clear-preferences-and-logout="clearPreferencesAndLogout"
       >
         <template
-          v-if="!showHeaderNav && preferences.breadcrumb.enable"
+          v-if="
+            !showHeaderNav &&
+            preferences.breadcrumb.enable &&
+            !isHeaderContentOnly
+          "
           #breadcrumb
         >
           <Breadcrumb
@@ -326,7 +356,11 @@ const headerSlots = computed(() => {
             :type="preferences.breadcrumb.styleType"
           />
         </template>
-        <template v-if="showHeaderNav" #menu>
+        <!-- prettier-ignore -->
+        <template
+          v-if="showHeaderNav && !isHeaderContentOnly"
+          #menu
+        >
           <LayoutMenu
             :default-active="headerActive"
             :menus="wrapperMenus(headerMenus)"
@@ -346,7 +380,11 @@ const headerSlots = computed(() => {
         <template #timezone>
           <slot name="timezone"></slot>
         </template>
-        <template v-for="item in headerSlots" #[item]>
+        <!-- prettier-ignore -->
+        <template
+          v-for="item in headerSlots"
+          #[item]
+        >
           <slot :name="item"></slot>
         </template>
       </LayoutHeader>
@@ -394,7 +432,11 @@ const headerSlots = computed(() => {
         :text="resolvedAppName"
         :theme="theme"
       >
-        <template v-if="$slots['logo-text']" #text>
+        <!-- prettier-ignore -->
+        <template
+          v-if="$slots['logo-text']"
+          #text
+        >
           <slot name="logo-text"></slot>
         </template>
       </VbenLogo>
@@ -413,12 +455,20 @@ const headerSlots = computed(() => {
       <LayoutContent />
     </template>
 
-    <template v-if="preferences.transition.loading" #content-overlay>
+    <!-- prettier-ignore -->
+    <template
+      v-if="preferences.transition.loading"
+      #content-overlay
+    >
       <LayoutContentSpinner />
     </template>
 
     <!-- 页脚 -->
-    <template v-if="preferences.footer.enable" #footer>
+    <!-- prettier-ignore -->
+    <template
+      v-if="preferences.footer.enable"
+      #footer
+    >
       <LayoutFooter>
         <Copyright
           v-if="preferences.copyright.enable"
@@ -434,8 +484,16 @@ const headerSlots = computed(() => {
         :check-updates-interval="preferences.app.checkUpdatesInterval"
       />
 
-      <Transition v-if="preferences.widget.lockScreen" name="slide-up">
-        <slot v-if="accessStore.isLockScreen" name="lock-screen"></slot>
+      <!-- prettier-ignore -->
+      <Transition
+        v-if="preferences.widget.lockScreen"
+        name="slide-up"
+      >
+        <!-- prettier-ignore -->
+        <slot
+          v-if="accessStore.isLockScreen"
+          name="lock-screen"
+        ></slot>
       </Transition>
 
       <template v-if="preferencesButtonPosition.fixed">

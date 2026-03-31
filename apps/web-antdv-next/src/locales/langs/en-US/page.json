@@ -1,4 +1,9 @@
 {
+  "fallback": {
+    "noMenuPermission": "No access",
+    "noMenuPermissionHint": "You don't have any permissions. ",
+    "noMenuPermissionContact": "Please contact your administrator."
+  },
   "auth": {
     "login": "Login",
     "register": "Register",

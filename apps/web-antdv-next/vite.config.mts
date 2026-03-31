@@ -24,12 +24,12 @@ export default defineConfig(async () => {
           // '/api': {
           //   changeOrigin: true,
           //   headers: {
-          //     referer: 'http://192.168.0.35:8010',
+          //     referer: 'http://192.168.0.150:8010',
           //   },
           //   // rewrite: (path) => path.replace(/^\/api\/de-base-system/, ''),
           //   rewrite: (path) => path.replace(/^\/api/, ''),
           //   // mock代理目标地址
-          //   target: 'http://192.168.0.35:8010',
+          //   target: 'http://192.168.0.150:8010',
           //   ws: true,
           // },
         },

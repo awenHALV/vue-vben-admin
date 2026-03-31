@@ -64,6 +64,11 @@ interface RouteMeta {
    */
   fullPathKey?: boolean;
   /**
+   * 仅保留顶栏（Logo + 工具区）：隐藏侧栏、标签栏及顶栏横向菜单、面包屑
+   * @default false
+   */
+  headerContentOnly?: boolean;
+  /**
    * 当前路由的子级在菜单中不展现
    * @default false
    */

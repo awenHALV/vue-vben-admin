@@ -58,6 +58,11 @@ interface VbenLayoutProps {
   footerHeight?: number;
 
   /**
+   * 顶栏左侧强制显示 Logo（侧栏布局且侧栏未展示时仍显示 Logo+标题）
+   * @default false
+   */
+  headerForceShowLogo?: boolean;
+  /**
    * header高度
    * @default 48
    */
@@ -67,6 +72,11 @@ interface VbenLayoutProps {
    * @default false
    */
   headerHidden?: boolean;
+  /**
+   * 隐藏顶栏侧栏展开/收起按钮（含移动端）
+   * @default false
+   */
+  headerHideSidebarToggle?: boolean;
   /**
    * header 显示模式
    * @default 'fixed'
