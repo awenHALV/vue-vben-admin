@@ -11,6 +11,8 @@ import { useAccessStore } from '@vben/stores';
 
 import WujieVue from 'wujie-vue3';
 
+import { useAuthStore } from '#/store';
+
 import {
   CHANGELANUAGE_EVENT,
   CHANGETHEME_EVENT,
@@ -19,6 +21,7 @@ import {
   HOST_BRIDGE_REQUEST_COLOR_MODE,
   HOST_BRIDGE_REQUEST_HOST_STATE,
   HOST_BRIDGE_REQUEST_TOKEN,
+  LOGOUT_EVENT,
   NOTICECHILDAPPTOKEN_EVENT,
 } from './event';
 
@@ -91,6 +94,12 @@ export function setupWujieHostBridge() {
       }
     },
   );
+
+  // 监听子应用401token失效
+  bus.$on(LOGOUT_EVENT, () => {
+    const authStore = useAuthStore();
+    authStore.terminateSession();
+  });
 
   function emitHostStatePush() {
     bus.$emit(HOST_BRIDGE_HOST_STATE_PUSH, buildHostState(accessStore));
