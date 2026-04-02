@@ -3,7 +3,6 @@
  */
 export const FEATURE_PAGE_BUTTON_CODES = {
   add: 'feature:add',
-  config: 'feature:config',
   delete: 'feature:delete',
   edit: 'feature:edit',
   addSub: 'feature:addSub',

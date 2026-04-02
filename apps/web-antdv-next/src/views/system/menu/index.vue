@@ -490,7 +490,15 @@ async function restoreMenuTreeExpand(expandedIds: MenuGridExpandSnapshot) {
   await walk(fullData);
 }
 
-async function reloadMenuGrid(extraExpandIds?: MenuGridExpandSnapshot) {
+/**
+ * 重新加载菜单表格数据
+ * @param extraExpandIds - 需要额外展开的父节点ID集合
+ * @param targetId - 加载完成后需要滚动到的目标行ID
+ */
+async function reloadMenuGrid(
+  extraExpandIds?: MenuGridExpandSnapshot,
+  targetId?: number | string | null,
+) {
   const expandedIds = snapshotExpandedMenuRowIds();
   if (extraExpandIds) {
     for (const id of extraExpandIds) {
@@ -500,6 +508,28 @@ async function reloadMenuGrid(extraExpandIds?: MenuGridExpandSnapshot) {
   await gridApi.reload(getSearchPayload());
   await nextTick();
   await restoreMenuTreeExpand(expandedIds);
+
+  // 加载完成后滚动到目标行
+  if (targetId !== undefined && targetId !== null) {
+    await scrollToTargetRow(targetId);
+  }
+}
+
+/**
+ * 滚动到指定行
+ * @param targetId - 目标行的ID
+ */
+async function scrollToTargetRow(targetId: number | string) {
+  await nextTick();
+  const grid = gridApi.grid;
+  if (!grid) return;
+
+  // 获取目标行对象
+  const targetRow = grid.getRowById?.(targetId);
+  if (targetRow) {
+    // 滚动到目标行
+    grid.scrollToRow?.(targetRow);
+  }
 }
 
 /**
@@ -507,6 +537,7 @@ async function reloadMenuGrid(extraExpandIds?: MenuGridExpandSnapshot) {
  */
 async function handleAddOrUpdateSuccess(payload?: {
   expandParentId?: null | number | string;
+  targetId?: null | number | string;
 }) {
   const extraExpand =
     payload?.expandParentId !== undefined &&
@@ -514,7 +545,9 @@ async function handleAddOrUpdateSuccess(payload?: {
     payload.expandParentId !== 0
       ? new Set<number | string>([payload.expandParentId])
       : undefined;
-  await reloadMenuGrid(extraExpand);
+
+  // 传递 targetId 以在加载完成后滚动到目标行
+  await reloadMenuGrid(extraExpand, payload?.targetId ?? null);
   void refreshMenuCacheIfNeeded();
 }
 
@@ -524,7 +557,11 @@ async function handleAddOrUpdateSuccess(payload?: {
  * @returns {Promise<void>}
  */
 async function handleDeleteSuccess(record: BackendMenuItem) {
-  await reloadMenuGrid();
+  // 删除后滚动到父节点位置（如果有父节点的话）
+  const targetId = record.parentId && record.parentId !== 0
+    ? record.parentId
+    : null;
+  await reloadMenuGrid(undefined, targetId);
   await closeTabsForDeletedMenus([record]);
   await refreshMenuCacheIfNeeded({ force: true });
 }
@@ -578,7 +615,10 @@ onMounted(() => {
         >
           {{ $t('menu.action.reset') }}
         </VbenButton>
-        <VbenButton class="w-[60px]" size="sm" @click="handleSearch">
+        <VbenButton
+class="w-[60px]" size="sm"
+@click="handleSearch"
+>
           {{ $t('menu.action.search') }}
         </VbenButton>
       </Space>
@@ -649,6 +689,8 @@ onMounted(() => {
     </div>
 
     <!-- 新增/编辑弹窗 -->
-    <AddOrUpdate ref="addOrUpdateRef" @success="handleAddOrUpdateSuccess" />
+    <AddOrUpdate
+ref="addOrUpdateRef" @success="handleAddOrUpdateSuccess"
+/>
   </Page>
 </template>

@@ -12,7 +12,7 @@ import { useAccessStore } from '@vben/stores';
 import { message } from 'antdv-next';
 
 import { getAllMenusApi, takeMenuButtonPermissionSnapshot } from '#/api';
-import { BasicLayout, IFrameView } from '#/layouts';
+import { BasicLayout, IFrameView, ParentLayout } from '#/layouts';
 import { $t } from '#/locales';
 
 import { microPrefixNotFoundRoutes } from './routes/core';
@@ -50,6 +50,7 @@ async function generateAccess(options: GenerateMenuAndRoutesOptions) {
   const layoutMap: ComponentRecordType = {
     BasicLayout,
     IFrameView,
+    ParentLayout,
   };
 
   const result = await generateAccessible(preferences.app.accessMode, {

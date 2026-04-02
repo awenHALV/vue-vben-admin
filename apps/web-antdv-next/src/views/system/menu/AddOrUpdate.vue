@@ -16,7 +16,10 @@ defineOptions({ name: 'MenuAddOrUpdate' });
 const emit = defineEmits<{
   (
     e: 'success',
-    payload?: { expandParentId?: null | number | string },
+    payload?: {
+      expandParentId?: null | number | string;
+      targetId?: null | number | string;
+    },
   ): void;
 }>();
 
@@ -189,11 +192,23 @@ const [VbenModal, modalApi] = useVbenModal({
           })
         : await createFeatureApi(payload);
       modalApi.close();
+
+      // 计算需要定位的行ID
+      let targetId: number | string | undefined;
+      if (isEdit.value) {
+        // 编辑模式：定位到被编辑的行
+        targetId = currentRecord.value?.id;
+      } else {
+        // 新增模式：定位到新增的行（使用parentId作为目标，展开父节点后用户能看到新增的行）
+        targetId =
+          payload.parentId !== 0 ? (payload.parentId as number | string) : undefined;
+      }
+
       const expandParentId =
         isEdit.value || !payload.parentId
           ? undefined
           : (payload.parentId as number | string);
-      emit('success', { expandParentId });
+      emit('success', { expandParentId, targetId });
     } finally {
       modalApi.setState({ confirmLoading: false });
     }
