@@ -13,7 +13,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'UserManagement',
         path: 'user',
-        component: () => import('#/views/system/user/index.vue'),
+        component: () => import('#/views/system/user-center/user/index.vue'),
         meta: {
           icon: 'lucide:users',
           title: '用户管理',
@@ -22,7 +22,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'OrganizationManagement',
         path: 'organization',
-        component: () => import('#/views/system/org/index.vue'),
+        component: () => import('#/views/system/user-center/org/index.vue'),
         meta: {
           icon: 'lucide:network',
           title: '组织管理',
@@ -31,7 +31,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'RoleManagement',
         path: 'role',
-        component: () => import('#/views/system/role/index.vue'),
+        component: () => import('#/views/system/user-center/role/index.vue'),
         meta: {
           icon: 'lucide:shield-check',
           title: '角色管理',
