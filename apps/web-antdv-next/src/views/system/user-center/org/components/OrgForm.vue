@@ -1,6 +1,4 @@
-<!-- @author inspur-iep-ai -->
 <script lang="ts" setup>
-import type { DictOption } from '#/api/system/dict';
 import type { OrgInfo } from '#/api/system/org';
 
 import { ref } from 'vue';
@@ -11,6 +9,7 @@ import { message } from 'antdv-next';
 
 import { getDictOptionsApi } from '#/api/system/dict';
 import { createOrgApi, getOrgTreeApi, updateOrgApi } from '#/api/system/org';
+import { $t } from '#/locales';
 
 defineOptions({ name: 'OrgForm' });
 
@@ -27,19 +26,18 @@ const currentData = ref<Partial<OrgInfo> & { parentInternal?: string }>({});
 const currentRootId = ref('');
 
 const orgTreeData = ref<any[]>([]);
-const internalOptions = ref<DictOption[]>([]);
 
 function buildFormSchema() {
   return [
     {
       component: 'Input',
       componentProps: {
-        placeholder: '请输入组织名称',
+        placeholder: $t('system.org.orgNamePlaceholder'),
         maxlength: 50,
       },
       fieldName: 'deptName',
-      label: '组织名称',
-      rules: z.string().min(1, '请输入组织名称'),
+      label: $t('system.org.orgName'),
+      rules: z.string().min(1, $t('system.org.orgNameRequired')),
     },
     {
       component: 'TreeSelect',
@@ -47,13 +45,24 @@ function buildFormSchema() {
         allowClear: true,
         style: { width: '100%' },
         fieldNames: { label: 'deptName', value: 'id', children: 'children' },
-        placeholder: '请选择上级组织',
+        placeholder: $t('system.org.parentOrgPlaceholder'),
         treeDefaultExpandAll: true,
       },
       fieldName: 'parentId',
-      label: '上级组织',
-      rules: z.string().min(1, '请选择上级组织'),
+      label: $t('system.org.parentOrg'),
+      rules: z.string().min(1, $t('system.org.parentOrgRequired')),
       hide: isEdit.value,
+    },
+    {
+      component: 'Select',
+      componentProps: {
+        style: { width: '100%' },
+        options: [],
+        placeholder: $t('system.org.orgTypePlaceholder'),
+      },
+      fieldName: 'internal',
+      label: $t('system.org.orgType'),
+      rules: z.string().min(1, $t('system.org.orgTypeRequired')),
     },
     {
       component: 'Textarea',
@@ -61,11 +70,11 @@ function buildFormSchema() {
         allowClear: true,
         autoSize: { minRows: 2, maxRows: 4 },
         maxlength: 200,
-        placeholder: '请输入备注',
+        placeholder: $t('system.org.remarksPlaceholder'),
         showCount: true,
       },
       fieldName: 'remark',
-      label: '备注',
+      label: $t('system.common.remarks'),
     },
   ];
 }
@@ -91,20 +100,27 @@ async function loadOrgTree() {
       },
     ]);
   } catch (error) {
-    console.error('获取组织树失败:', error);
+    console.error($t('system.org.loadOrgTreeFailed'), error);
   }
 }
 
 async function loadInternalOptions() {
   try {
-    const res = await getDictOptionsApi('de_base_dept_internal');
-    internalOptions.value = res || [];
+    const res = await getDictOptionsApi('sys_dept_type');
+    await formApi.updateSchema([
+      {
+        fieldName: 'internal',
+        componentProps: {
+          options:
+            res.map((item) => ({
+              label: item.optionValue,
+              value: item.optionKey,
+            })) || [],
+        },
+      },
+    ]);
   } catch (error) {
-    console.error('获取组织属性字典失败:', error);
-    internalOptions.value = [
-      { optionKey: 'company', optionValue: '公司' },
-      { optionKey: 'department', optionValue: '部门' },
-    ];
+    console.error($t('system.org.loadOrgTypeDictFailed'), error);
   }
 }
 
@@ -112,20 +128,16 @@ const [VbenModal, modalApi] = useVbenModal({
   destroyOnClose: true,
   showConfirmButton: true,
   confirmLoading: false,
-  title: '新增组织',
+  title: $t('system.org.addOrg'),
   onOpenChange: async (open: boolean) => {
     if (!open) return;
-
-    currentType.value = currentType.value;
-    currentData.value = currentData.value;
-    currentRootId.value = currentRootId.value;
 
     isEdit.value = currentType.value === 'edit';
     isAdd.value = currentType.value === 'add';
     isAddChild.value = currentType.value === 'addChild';
 
     modalApi.setState({
-      title: isEdit.value ? '编辑组织' : '新增组织',
+      title: isEdit.value ? $t('system.org.editOrg') : $t('system.org.addOrg'),
     });
 
     await formApi.resetForm();
@@ -174,14 +186,14 @@ const [VbenModal, modalApi] = useVbenModal({
           deptName: values.deptName,
           remark: values.remark,
         });
-        message.success('编辑成功');
+        message.success($t('system.common.editSuccess'));
       } else {
         const createData = {
           ...values,
           internal: currentData.value?.parentInternal || '',
         };
         await createOrgApi(createData);
-        message.success('新增成功');
+        message.success($t('system.common.addSuccess'));
       }
 
       modalApi.close();

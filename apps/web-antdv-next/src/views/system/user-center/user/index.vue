@@ -32,6 +32,10 @@ import UserDetail from './components/UserDetail.vue';
 import UserForm from './components/UserForm.vue';
 import UserImport from './components/UserImport.vue';
 
+const userFormRef = ref<InstanceType<typeof UserForm>>();
+const userDetailRef = ref<InstanceType<typeof UserDetail>>();
+const userImportRef = ref<InstanceType<typeof UserImport>>();
+
 const { canButton } = usePageButtonAccess();
 
 // ==================== 状态定义 ====================
@@ -49,16 +53,6 @@ const searchForm = reactive({
   account: '',
   name: '',
 });
-
-// 弹窗状态
-const userFormVisible = ref(false);
-const userFormType = ref<'add' | 'edit' | 'passwordReset'>('add');
-const userFormData = ref<Partial<UserInfo>>({});
-
-const userDetailVisible = ref(false);
-const userDetailData = ref<Partial<UserInfo>>({});
-
-const userImportVisible = ref(false);
 
 // ==================== 计算属性 ====================
 
@@ -220,40 +214,33 @@ const handleDeptSelect: TreeProps['onSelect'] = (keys) => {
 
 // 操作按钮
 const handleAdd = () => {
-  userFormType.value = 'add';
-  userFormData.value = { deptId: selectedDeptId.value };
-  userFormVisible.value = true;
+  userFormRef.value?.open('add', { deptId: selectedDeptId.value });
 };
 
 const handleEdit = (record: UserInfo) => {
-  userFormType.value = 'edit';
-  userFormData.value = { ...record };
-  userFormVisible.value = true;
+  userFormRef.value?.open('edit', { ...record });
 };
 
 const handleView = (record: UserInfo) => {
-  userDetailData.value = { ...record };
-  console.log('handleView', userDetailData.value);
-  userDetailVisible.value = true;
+  userDetailRef.value?.open({ ...record });
 };
 
 const handlePasswordReset = (record: UserInfo) => {
-  userFormType.value = 'passwordReset';
-  userFormData.value = { id: record.id, account: record.account };
-  userFormVisible.value = true;
+  userFormRef.value?.open('passwordReset', {
+    id: record.id,
+    account: record.account,
+  });
 };
 
 const handleImport = () => {
-  userImportVisible.value = true;
+  userImportRef.value?.open();
 };
 
 const handleFormSuccess = () => {
-  userFormVisible.value = false;
   void gridApi.reload();
 };
 
 const handleImportSuccess = () => {
-  userImportVisible.value = false;
   void gridApi.reload();
 };
 
@@ -288,68 +275,95 @@ watch(selectedDeptId, () => {
 </script>
 
 <template>
-  <Page auto-content-height :title="$t('system.user.title')">
-    <div class="flex h-full gap-4">
-      <!-- 左侧部门树 -->
-      <Card class="w-80 shrink-0">
-        <div class="mb-3">
+  <Page
+    auto-content-height
+    content-class="flex min-h-0 flex-1 flex-col"
+  >
+    <div
+      class="user-split-grid h-full min-h-0 w-full min-w-0 flex-1 gap-4"
+    >
+      <!-- 左侧组织树：与右侧网格行同高，树超出时在内部滚动 -->
+      <Card class="dept-tree-card min-h-0 w-full overflow-hidden">
+        <div class="mb-3 shrink-0">
           <InputSearch
             v-model:value="searchKey"
             :placeholder="$t('system.org.orgNamePlaceholder')"
             allow-clear
           />
         </div>
-        <Tree
-          v-model:expanded-keys="expandedKeys"
-          v-model:selected-keys="selectedKeys"
-          :tree-data="filteredDeptTree"
-          :field-names="{ title: 'deptName', key: 'id', children: 'children' }"
-          block-node
-          class="h-[calc(100%-60px)]"
-          @select="handleDeptSelect"
-        />
+        <div class="min-h-0 flex-1 overflow-y-auto">
+          <Tree
+            v-model:expanded-keys="expandedKeys"
+            v-model:selected-keys="selectedKeys"
+            :tree-data="filteredDeptTree"
+            :field-names="{
+              title: 'deptName',
+              key: 'id',
+              children: 'children',
+            }"
+            block-node
+            @select="handleDeptSelect"
+          />
+        </div>
       </Card>
 
-      <!-- 右侧内容区 -->
-      <div class="flex min-w-0 flex-1 flex-col gap-4">
-        <!-- 搜索表单 -->
-        <Card>
-          <div class="flex items-start justify-between">
-            <Form layout="inline">
-              <FormItem :label="$t('system.user.account')">
-                <Input
-                  v-model:value="searchForm.account"
-                  :placeholder="$t('system.user.accountPlaceholder')"
-                  allow-clear
-                  style="width: 240px"
-                />
-              </FormItem>
-              <FormItem :label="$t('system.user.name')">
-                <Input
-                  v-model:value="searchForm.name"
-                  :placeholder="$t('system.user.namePlaceholder')"
-                  allow-clear
-                  style="width: 240px"
-                />
-              </FormItem>
-            </Form>
-            <Space>
-              <Button type="primary" class="w-21" @click="handleSearch">
-                <template #icon><IconifyIcon icon="lucide:search" /></template>
-                {{ $t('system.common.search') }}
-              </Button>
-              <Button class="w-21" @click="handleReset">
-                <template #icon>
-                  <IconifyIcon icon="lucide:rotate-ccw" />
-                </template>
-                {{ $t('system.common.reset') }}
-              </Button>
-            </Space>
+      <!-- 右侧：与左侧同一行网格等高 -->
+      <div class="flex min-h-0 min-w-0 flex-col gap-4">
+        <Card class="shrink-0">
+          <div class="flex flex-col gap-4">
+            <h2 class="text-lg/tight font-semibold text-foreground">
+              {{ $t('system.user.title') }}
+            </h2>
+            <div
+              class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3"
+            >
+              <div class="min-w-0 flex-1">
+                <Form layout="inline">
+                  <FormItem :label="$t('system.user.account')">
+                    <Input
+                      v-model:value="searchForm.account"
+                      :placeholder="$t('system.user.accountPlaceholder')"
+                      allow-clear
+                      style="width: 240px"
+                    />
+                  </FormItem>
+                  <FormItem :label="$t('system.user.name')">
+                    <Input
+                      v-model:value="searchForm.name"
+                      :placeholder="$t('system.user.namePlaceholder')"
+                      allow-clear
+                      style="width: 240px"
+                    />
+                  </FormItem>
+                </Form>
+              </div>
+              <Space class="shrink-0">
+                <Button
+                  class="w-21"
+                  type="primary"
+                  @click="handleSearch"
+                >
+                  <template #icon>
+                    <IconifyIcon icon="lucide:search" />
+                  </template>
+                  {{ $t('system.common.search') }}
+                </Button>
+                <Button
+                  class="w-21"
+                  @click="handleReset"
+                >
+                  <template #icon>
+                    <IconifyIcon icon="lucide:rotate-ccw" />
+                  </template>
+                  {{ $t('system.common.reset') }}
+                </Button>
+              </Space>
+            </div>
           </div>
         </Card>
 
         <!-- 用户列表 -->
-        <div class="min-h-0 flex-1">
+        <div class="user-grid-host min-h-0 flex-1">
           <Grid>
             <template #toolbar-actions>
               <div class="flex w-full justify-end">
@@ -414,49 +428,68 @@ watch(selectedDeptId, () => {
     </div>
 
     <!-- 用户表单弹窗 -->
-    <UserForm
-      v-model:visible="userFormVisible"
-      :type="userFormType"
-      :data="userFormData"
-      @success="handleFormSuccess"
-    />
+    <UserForm ref="userFormRef" @success="handleFormSuccess" />
 
     <!-- 用户详情弹窗 -->
-    <UserDetail v-model:visible="userDetailVisible" :data="userDetailData" />
+    <UserDetail ref="userDetailRef" />
 
     <!-- 用户导入弹窗 -->
-    <UserImport v-model:visible="userImportVisible" @success="handleImportSuccess" />
+    <UserImport
+      ref="userImportRef"
+      @success="handleImportSuccess"
+    />
   </Page>
 </template>
 
 <style scoped>
-/* 使用系统设置的圆角 */
+/* 两列占满内容区高度且等高；避免纯 flex 下子项高度.percent 无法解析导致左侧偏矮 */
+.user-split-grid {
+  display: grid;
+  grid-template-columns: 18rem minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* 左侧 Card 铺满网格单元，内部纵向 flex + 树区滚动 */
+.dept-tree-card {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.dept-tree-card :deep(.ant-card-body) {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
 </style>
 
 <style>
 /* Grid 填满容器高度 - 分页固定在底部 */
-.flex-1.min-h-0 > div:has(.vxe-grid) {
+.user-grid-host > div:has(.vxe-grid) {
   height: 100%;
 }
 
-.flex-1.min-h-0 .vxe-grid {
+.user-grid-host .vxe-grid {
   height: 100% !important;
   display: flex;
   flex-direction: column;
 }
 
-.flex-1.min-h-0 .vxe-grid--main-wrapper {
+.user-grid-host .vxe-grid--main-wrapper {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
-.flex-1.min-h-0 .vxe-table--main-wrapper {
+.user-grid-host .vxe-table--main-wrapper {
   flex: 1;
 }
 
-.flex-1.min-h-0 .vxe-table--body-wrapper {
+.user-grid-host .vxe-table--body-wrapper {
   flex: 1;
   overflow-y: auto;
 }

@@ -1,73 +1,87 @@
 <script lang="ts" setup>
-import type { UserInfo } from '#/api/system/user';
 import type { DescriptionsItemType } from 'antdv-next';
 
-import { computed } from 'vue';
+import type { UserInfo } from '#/api/system/user';
+
+import { computed, ref } from 'vue';
+
+import { useVbenModal } from '@vben/common-ui';
+
+import { Descriptions } from 'antdv-next';
 
 import { $t } from '#/locales';
 
-import {Descriptions, Divider, Modal} from 'antdv-next';
+defineOptions({ name: 'UserDetail' });
 
-// ==================== Props & Emits ====================
-
-interface Props {
-  visible: boolean;
-  data?: Partial<UserInfo>;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  visible: false,
-  data: () => ({}),
-});
-
-const emit = defineEmits<{
-  'update:visible': [value: boolean];
-}>();
-
-// ==================== 计算属性 ====================
+const detailData = ref<Partial<UserInfo>>({});
 
 const detailItems = computed<DescriptionsItemType[]>(() => {
-  if (!props.data) return [];
+  const data = detailData.value;
+  if (!data || Object.keys(data).length === 0) {
+    return [];
+  }
   const renderStatus = (status: number) => {
-    return status === 1 ? $t('system.common.normal') : $t('system.common.disabled');
+    return status === 1
+      ? $t('system.common.normal')
+      : $t('system.common.disabled');
   };
 
   const renderRoles = (roles: string) => {
-    if (!roles) return '-';
+    if (!roles) {
+      return '-';
+    }
     return roles.split(',').join('、');
   };
 
   return [
-    { label: $t('system.user.account'), content: props.data.account || '-' },
-    { label: $t('system.user.name'), content: props.data.name || '-' },
-    { label: $t('system.common.status'), content: renderStatus(props.data.status ?? 1) },
-    { label: $t('system.user.phone'), content: props.data.phone || '-' },
-    { label: $t('system.user.email'), content: props.data.email || '-' },
-    { label: $t('system.user.org'), content: props.data.deptName || '-' },
-    { label: $t('system.user.role'), content: renderRoles(props.data.roleName || '') },
+    { label: $t('system.user.account'), content: data.account || '-' },
+    { label: $t('system.user.name'), content: data.name || '-' },
+    {
+      label: $t('system.common.status'),
+      content: renderStatus(data.status ?? 1),
+    },
+    { label: $t('system.user.phone'), content: data.phone || '-' },
+    { label: $t('system.user.email'), content: data.email || '-' },
+    { label: $t('system.user.org'), content: data.deptName || '-' },
+    {
+      label: $t('system.user.role'),
+      content: renderRoles(data.roleName || ''),
+    },
   ];
 });
 
-// ==================== 方法 ====================
+const [VbenModal, modalApi] = useVbenModal({
+  destroyOnClose: true,
+  title: $t('system.user.userDetails'),
+  class: 'w-[min(100%,700px)]',
+  onOpenChange(open: boolean) {
+    if (!open) {
+      detailData.value = {};
+    }
+  },
+  onConfirm() {
+    modalApi.close();
+  },
+  onCancel() {
+    modalApi.close();
+  },
+});
 
-const handleClose = () => {
-  emit('update:visible', false);
-};
+function open(data: Partial<UserInfo>) {
+  detailData.value = { ...data };
+  modalApi.open();
+}
+
+defineExpose({ open });
 </script>
 
 <template>
-  <Modal
-    :open="visible"
-    :title="$t('system.user.userDetails')"
-    :width="700"
-    @cancel="handleClose"
-    @ok="handleClose"
-  >
-    <Divider/>
-    <Descriptions :column="1" bordered :items="detailItems" />
-  </Modal>
+  <VbenModal>
+    <!-- eslint-disable-next-line prettier/prettier -- 与 vue/max-attributes-per-line 每属性单行一致 -->
+    <Descriptions
+      :column="1"
+      bordered
+      :items="detailItems"
+    />
+  </VbenModal>
 </template>
-
-<style>
-/* 使用系统设置的圆角（通过 --radius CSS 变量） */
-</style>

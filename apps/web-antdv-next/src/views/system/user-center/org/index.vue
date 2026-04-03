@@ -113,7 +113,7 @@ const handleAddChild = (record: OrgInfo) => {
     'addChild',
     {
       parentId: record.id,
-      parentInternal: record.internal == null ? '' : record.internal,
+      parentInternal: record.internal ?? '',
     },
     '',
   );
@@ -121,7 +121,7 @@ const handleAddChild = (record: OrgInfo) => {
 
 const handleDelete = async (record: OrgInfo) => {
   if (record.parentId === '0' || !record.parentId) {
-    message.warning('根组织不能删除');
+    message.warning($t('system.org.rootCannotDelete'));
     return;
   }
 
@@ -178,8 +178,12 @@ const handleFormSuccess = () => {
           >
             {{ $t('menu.action.reset') }}
           </VbenButton>
-          <VbenButton class="w-[60px]"
-size="sm" @click="handleSearch">
+          <!-- eslint-disable-next-line prettier/prettier -- 与 vue/max-attributes-per-line 每属性单行一致 -->
+          <VbenButton
+            class="w-[60px]"
+            size="sm"
+            @click="handleSearch"
+          >
             {{ $t('menu.action.search') }}
           </VbenButton>
         </Space>
@@ -222,9 +226,11 @@ size="sm" @click="handleSearch">
     </Grid>
 
     <!-- 组织表单弹窗 -->
+    <!-- eslint-disable-next-line prettier/prettier -- 与 vue/max-attributes-per-line 每属性单行一致 -->
     <OrgForm
-ref="orgFormRef" @success="handleFormSuccess"
-/>
+      ref="orgFormRef"
+      @success="handleFormSuccess"
+    />
   </Page>
 </template>
 

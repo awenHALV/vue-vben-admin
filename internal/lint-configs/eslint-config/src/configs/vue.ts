@@ -101,12 +101,12 @@ export async function vue(): Promise<Linter.Config[]> {
             svg: 'always',
           },
         ],
-        // 强制 Vue 模板属性换行
+        // 属性数量 ≥3 时强制多行；1～2 个属性允许单行
         'vue/max-attributes-per-line': [
           'error',
           {
             singleline: {
-              max: 1, // 起步走：哪怕只有一个属性也换行（如果你想要极致垂直布局）
+              max: 2,
             },
             multiline: {
               max: 1,

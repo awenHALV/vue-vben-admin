@@ -200,7 +200,6 @@ async function refreshTenantStatusOptions(): Promise<string | undefined> {
     ]);
     return options[0]?.value;
   } catch {
-    message.error($t('menu.message.fetchFailed'));
     return undefined;
   }
 }

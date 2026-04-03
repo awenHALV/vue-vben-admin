@@ -84,7 +84,13 @@
     "addOrg": "新增组织",
     "editOrg": "编辑组织",
     "deleteTip": "请确定是否删除数据？",
-    "deleteContent": "删除数据也会删除所有与其相关的数据,请慎重选择"
+    "deleteContent": "删除数据也会删除所有与其相关的数据,请慎重选择",
+    "rootCannotDelete": "根组织不能删除",
+    "orgType": "组织类型",
+    "orgTypePlaceholder": "请选择组织类型",
+    "orgTypeRequired": "请选择组织类型",
+    "loadOrgTreeFailed": "获取组织树失败",
+    "loadOrgTypeDictFailed": "获取组织类型字典失败"
   },
   "role": {
     "title": "角色管理",
