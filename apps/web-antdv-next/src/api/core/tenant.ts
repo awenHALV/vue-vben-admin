@@ -129,6 +129,7 @@ export interface UpdateTenantParams extends TenantCreateBody {
   adminPhone: string;
   companyName: string;
   creditCode: string;
+  tenantCode: string;
   status: boolean | number | string;
   tenantName: string;
 }
@@ -181,7 +182,9 @@ export async function getTenantAuthCodeApi(
 }
 
 /** POST /de-base-system/external/public/tenant/switch，返回新 token */
-export async function switchTenantApi(code: string): Promise<{ token: string }> {
+export async function switchTenantApi(
+  code: string,
+): Promise<{ token: string }> {
   return requestClient.post<{ token: string }>(
     '/de-base-system/external/public/tenant/switch',
     { code },
