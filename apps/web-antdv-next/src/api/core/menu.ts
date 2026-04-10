@@ -1,6 +1,7 @@
 import type { RouteRecordStringComponent } from '@vben/types';
 
 import { requestClient } from '#/api/request';
+import { mappedFeatureCodes } from '#/router/component-map';
 import {
   buildMicroUrl,
   getMicroProjectCodeFromRoutePath,
@@ -18,6 +19,7 @@ export interface BackendMenuItem {
   parentId: null | number | string;
   routePath: string;
   sort?: number;
+  resourceCode?: string;
 }
 
 function isMenuFeatureType(featureType: string | undefined): boolean {
@@ -245,7 +247,11 @@ function mapMenuToRoute(
       : undefined;
 
   let inferredComponent: string;
-  if (hasChildren && !microCode) {
+  // 优先从组件映射表中寻找
+  if (mappedFeatureCodes.includes(item.featureCode)) {
+    inferredComponent = item.featureCode;
+    console.debug(`[Route Mapping] ${item.featureCode} -> 使用映射解析`);
+  } else if (hasChildren && !microCode) {
     inferredComponent = parentAbsoluteRoutePath
       ? 'ParentLayout'
       : 'BasicLayout';
@@ -253,6 +259,9 @@ function mapMenuToRoute(
     inferredComponent = microCode
       ? 'micro/index'
       : `${absoluteRoutePath.replace(/^\//, '')}/index`;
+    if (!microCode) {
+      console.debug(`[Route Mapping] ${item.featureCode} -> 使用路径解析 (Fallback)`);
+    }
   } else {
     inferredComponent = '/';
   }
@@ -445,6 +454,7 @@ export interface CreateFeatureParams {
   featureIcon?: string;
   sort?: number;
   routePath?: string;
+  resourceCode?: string;
 }
 
 export interface UpdateFeatureParams extends CreateFeatureParams {
@@ -486,5 +496,19 @@ export async function deleteFeatureApi(
     `/de-base-system/external/private/app-feature/delete?ids=${encodeURIComponent(
       normalizedIds,
     )}`,
+  );
+}
+
+export interface ResourcePoolItem {
+  id: number | string;
+  resourceCode: string;
+  resourceName: string;
+  defaultDataScope?: 'ALL' | 'DEPT' | 'DEPT_AND_SUB' | 'SELF';
+}
+
+/** 获取关联资源池列表 */
+export async function getResourcePoolListApi() {
+  return requestClient.get<ResourcePoolItem[]>(
+    '/de-base-system/external/private/role/data-resource/pool',
   );
 }

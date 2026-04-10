@@ -7,7 +7,7 @@ import { Page, VbenButton, VbenInput } from '@vben/common-ui';
 import { Plus } from '@vben/icons';
 import { $t } from '@vben/locales';
 
-import { message, Modal, Space } from 'antdv-next';
+import { Button, message, Modal, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteDictApi, getDictPageApi } from '#/api/core/dict';
@@ -213,35 +213,33 @@ function openDictConfig(record: DictListItem) {
       </template>
 
       <template #action="{ row }">
-        <div class="flex-center gap-2">
-          <VbenButton
-            v-if="canButton(DICT_PAGE_BUTTON_CODES.edit)"
-            size="sm"
-            variant="ghost"
-            class="text-primary"
-            @click="openEdit(row)"
-          >
-            {{ $t('dict.list.edit') }}
-          </VbenButton>
-          <VbenButton
-            v-if="canButton(DICT_PAGE_BUTTON_CODES.delete)"
-            size="sm"
-            variant="ghost"
-            class="text-primary"
-            @click="openDelete(row)"
-          >
-            {{ $t('dict.list.delete') }}
-          </VbenButton>
-          <VbenButton
-            v-if="canButton(DICT_PAGE_BUTTON_CODES.dictConfig)"
-            size="sm"
-            variant="ghost"
-            class="text-primary"
-            @click="openDictConfig(row)"
-          >
-            {{ $t('dict.list.dictConfig') }}
-          </VbenButton>
-        </div>
+        <Button
+          v-if="canButton(DICT_PAGE_BUTTON_CODES.edit)"
+          type="link"
+          size="small"
+          class="text-primary"
+          @click="openEdit(row)"
+        >
+          {{ $t('dict.list.edit') }}
+        </Button>
+        <Button
+          danger
+          v-if="canButton(DICT_PAGE_BUTTON_CODES.delete)"
+          type="link"
+          size="small"
+          @click="openDelete(row)"
+        >
+          {{ $t('dict.list.delete') }}
+        </Button>
+        <Button
+          v-if="canButton(DICT_PAGE_BUTTON_CODES.dictConfig)"
+          type="link"
+          size="small"
+          class="text-primary"
+          @click="openDictConfig(row)"
+        >
+          {{ $t('dict.list.dictConfig') }}
+        </Button>
       </template>
     </Grid>
 

@@ -25,6 +25,15 @@ export interface UserInfo {
   code?: string;
 }
 
+/** 邀请用户搜索结果 */
+export interface InviteUserSearchResult {
+  userId: number;
+  account: string;
+  phone: string;
+  name: string;
+  status: 'ALREADY_IN_TENANT' | 'IN_OTHER_TENANT' | 'NOT_FOUND';
+}
+
 /** 用户分页查询参数 */
 export interface UserPageParams {
   current: number;
@@ -124,27 +133,38 @@ export async function getUserPageApi(params: UserPageParams) {
  * 创建用户
  */
 export async function createUserApi(data: CreateUserParams) {
-  return requestClient.post('/de-base-system/external/private/user/create', data);
+  return requestClient.post(
+    '/de-base-system/external/private/user/create',
+    data,
+  );
 }
 
 /**
  * 获取用户消息接收方式
  */
 export async function getMessageTyperApi(id: string) {
-  return requestClient.get(`/de-base-system/external/private/user/${id}/messageType`);
+  return requestClient.get(
+    `/de-base-system/external/private/user/${id}/messageType`,
+  );
 }
 /**
  * 更新用户消息接收方式
  */
-export async function updateMessageTyperApi(id: string,data: MessageTypeInfo) {
-  return requestClient.put(`/de-base-system/external/private/user/${id}/messageType`,data);
+export async function updateMessageTyperApi(id: string, data: MessageTypeInfo) {
+  return requestClient.put(
+    `/de-base-system/external/private/user/${id}/messageType`,
+    data,
+  );
 }
 
 /**
  * 更新用户
  */
 export async function updateUserApi(data: UpdateUserParams) {
-  return requestClient.post('/de-base-system/external/private/user/update', data);
+  return requestClient.post(
+    '/de-base-system/external/private/user/update',
+    data,
+  );
 }
 
 /**
@@ -152,44 +172,83 @@ export async function updateUserApi(data: UpdateUserParams) {
  * @param ids 用户ID数组
  */
 export async function deleteUserApi(ids: string[]) {
-  return requestClient.post(`/de-base-system/external/private/user/delete?ids=${ids.join(',')}`);
+  return requestClient.post(
+    `/de-base-system/external/private/user/delete?ids=${ids.join(',')}`,
+  );
 }
 
 /**
  * 重置密码
  */
 export async function editPasswordApi(data: EditPasswordParams) {
-  return requestClient.post('/de-base-system/external/private/user/pwd/update', data);
+  return requestClient.post(
+    '/de-base-system/external/private/user/pwd/update',
+    data,
+  );
 }
 
 /**
  * 批量导入用户
  */
 export async function importUserApi(data: FormData) {
-  return requestClient.post('/de-base-system/external/private/user/import', data, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
+  return requestClient.post(
+    '/de-base-system/external/private/user/import',
+    data,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     },
-  });
+  );
 }
 
 /**
  * 获取部门树
  */
 export async function getDeptTreeApi() {
-  return requestClient.get<DeptTreeNode[]>('/de-base-system/external/private/dept/tree');
+  return requestClient.get<DeptTreeNode[]>(
+    '/de-base-system/external/private/dept/tree',
+  );
 }
 
 /**
  * 获取部门下的角色列表
  */
 export async function getDeptRolesApi(deptId: string) {
-  return requestClient.get<RoleInfo[]>(`/de-base-system/external/private/dept/${deptId}/role`);
+  return requestClient.get<RoleInfo[]>(
+    `/de-base-system/external/private/dept/${deptId}/role`,
+  );
 }
 
 /**
  * 下载用户导入模板
  */
 export function getUserImportTemplateUrl(): Promise<Blob> {
-  return requestClient.download('/de-base-system/external/private/user/import/template');
+  return requestClient.download(
+    '/de-base-system/external/private/user/import/template',
+  );
+}
+
+/**
+ * 确认邀请用户（添加代运营）
+ */
+export async function confirmInviteUserApi(params: {
+  agreePrivacyPolicy: boolean;
+  deptId?: number | string;
+  userId: number;
+}) {
+  return requestClient.post(
+    '/de-base-system/external/private/user/invite/confirm',
+    params,
+  );
+}
+
+/**
+ * 搜索邀请用户
+ */
+export async function searchInviteUserApi(params: { phone: string }) {
+  return requestClient.get<InviteUserSearchResult>(
+    '/de-base-system/external/private/user/invite/search',
+    { params },
+  );
 }

@@ -11,7 +11,7 @@ import { preferences } from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
 import { setCookie, TOKEN_KEY } from '@vben/utils';
 
-import { message, Modal, Space } from 'antdv-next';
+import { Button, message, Modal, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
@@ -57,6 +57,19 @@ function getFirstMenuPath(menus: AccessMenuItem[]): string {
     }
   }
   return '';
+}
+
+function hasMenuPath(menus: AccessMenuItem[], targetPath: string): boolean {
+  for (const menu of menus) {
+    if (menu.path === targetPath) {
+      return true;
+    }
+    const children = menu.children ?? [];
+    if (children.length > 0 && hasMenuPath(children, targetPath)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function extractTokenFromSwitchPayload(data: unknown): string | undefined {
@@ -241,29 +254,16 @@ async function applyTenantTokenAndRefresh(token: string) {
   accessStore.setAccessRoutes(accessibleRoutes);
   accessStore.setIsAccessChecked(true);
 
-  /**
-   * 与 router/guard 登录后首次 generateAccess 一致：homePath → 侧栏第一个可访问菜单 → 默认首页
-   * 切换租户成功后始终进入该目标，与重新登录进入体验一致。
-   */
-  const firstMenuPath = getFirstMenuPath(accessibleMenus as AccessMenuItem[]);
-  const targetPath =
-    userStore.userInfo?.homePath ||
-    firstMenuPath ||
-    preferences.app.defaultHomePath;
-
-  let resolved: ReturnType<typeof router.resolve>;
-  try {
-    resolved = router.resolve(targetPath);
-  } catch {
-    resolved = router.resolve(preferences.app.defaultHomePath);
-  }
-
-  if (resolved.fullPath !== router.currentRoute.value.fullPath) {
-    await router.replace({
-      path: resolved.path,
-      query: resolved.query,
-      hash: resolved.hash,
-    });
+  const currentPath = router.currentRoute.value.path;
+  if (!hasMenuPath(accessibleMenus as AccessMenuItem[], currentPath)) {
+    const firstMenuPath = getFirstMenuPath(accessibleMenus as AccessMenuItem[]);
+    const fallbackPath =
+      firstMenuPath ||
+      userStore.userInfo?.homePath ||
+      preferences.app.defaultHomePath;
+    if (fallbackPath && fallbackPath !== currentPath) {
+      await router.replace(fallbackPath);
+    }
   }
 }
 
@@ -273,7 +273,7 @@ async function applyTenantTokenAndRefresh(token: string) {
 4）setAccessToken + setCookie(TOKEN_KEY)
 5）fetchUserInfo()
 6）generateAccess 刷新菜单与动态路由并写回 accessStore
-7）按登录后首次进入逻辑跳转：homePath → 第一个菜单路径 → 默认首页（与 router/guard 一致）。
+7）若当前路由在新菜单里不存在，则跳到首个可访问菜单或首页。
  * @param record 
  */
 async function runSwitchTenant(record: BackendTenantItem) {
@@ -404,46 +404,44 @@ function openChangeTenant(record: BackendTenantItem) {
       </template>
 
       <template #action="{ row }">
-        <div class="flex-center gap-2">
-          <VbenButton
-            v-if="canButton(TENANT_PAGE_BUTTON_CODES.detail)"
-            size="sm"
-            variant="ghost"
-            class="text-primary"
-            @click="openDetail(row)"
-          >
-            {{ $t('tenant.action.detail') }}
-          </VbenButton>
+        <Button
+          type="link"
+          size="small"
+          class="text-primary"
+          v-if="canButton(TENANT_PAGE_BUTTON_CODES.detail)"
+          @click="openDetail(row)"
+        >
+          {{ $t('tenant.action.detail') }}
+        </Button>
 
-          <VbenButton
-            v-if="canButton(TENANT_PAGE_BUTTON_CODES.edit)"
-            size="sm"
-            variant="ghost"
-            class="text-primary"
-            @click="openEdit(row)"
-          >
-            {{ $t('tenant.action.edit') }}
-          </VbenButton>
-          <VbenButton
-            v-if="canButton(TENANT_PAGE_BUTTON_CODES.menuConfig)"
-            size="sm"
-            variant="ghost"
-            class="text-primary"
-            @click="openMenu(row)"
-          >
-            {{ $t('tenant.action.menuConfig') }}
-          </VbenButton>
-          <VbenButton
-            v-if="canButton(TENANT_PAGE_BUTTON_CODES.changeTenant)"
-            size="sm"
-            variant="ghost"
-            class="text-primary"
-            :disabled="switchingTenant"
-            @click="openChangeTenant(row)"
-          >
-            {{ $t('tenant.action.changeTenant') }}
-          </VbenButton>
-        </div>
+        <Button
+          v-if="canButton(TENANT_PAGE_BUTTON_CODES.edit)"
+          type="link"
+          size="small"
+          class="text-primary"
+          @click="openEdit(row)"
+        >
+          {{ $t('tenant.action.edit') }}
+        </Button>
+        <Button
+          v-if="canButton(TENANT_PAGE_BUTTON_CODES.menuConfig)"
+          type="link"
+          size="small"
+          class="text-primary"
+          @click="openMenu(row)"
+        >
+          {{ $t('tenant.action.menuConfig') }}
+        </Button>
+        <Button
+          v-if="canButton(TENANT_PAGE_BUTTON_CODES.changeTenant)"
+          type="link"
+          size="small"
+          class="text-primary"
+          :disabled="switchingTenant"
+          @click="openChangeTenant(row)"
+        >
+          {{ $t('tenant.action.changeTenant') }}
+        </Button>
       </template>
     </Grid>
 

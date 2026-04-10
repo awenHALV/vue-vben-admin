@@ -8,7 +8,6 @@ import { useVbenForm, useVbenModal, z } from '@vben/common-ui';
 
 import { message } from 'antdv-next';
 
-import { getDictOptionsApi } from '#/api/system/dict';
 import {
   createUserApi,
   editPasswordApi,
@@ -30,6 +29,12 @@ const currentData = ref<Partial<UserInfo>>({});
 
 const deptTreeData = ref<DeptTreeNode[]>([]);
 const roleList = ref<RoleInfo[]>([]);
+
+/**
+ * 与角色下拉已联动的部门 id。仅当用户把部门改成「不同 id」时才清空角色；
+ * 避免 setValues / TreeSelect 二次渲染在下一 tick 触发 handleValuesChange 误清空回显。
+ */
+const lastDeptIdLinkedToRoles = ref<string | undefined>(undefined);
 
 type UserFormApi = ReturnType<typeof useVbenForm>[1];
 
@@ -54,7 +59,7 @@ async function syncRoleFieldOptions(api: UserFormApi, deptId: string) {
         componentProps: {
           options: roleList.value.map((r) => ({
             label: r.roleName,
-            value: r.id,
+            value: `${r.id}`,
           })),
         },
       },
@@ -204,7 +209,7 @@ function schemaDeptAndRole() {
         mode: 'multiple',
         options: roleList.value.map((r) => ({
           label: r.roleName,
-          value: r.id,
+          value: String(r.id),
         })),
         placeholder: $t('system.user.rolePlaceholder'),
       },
@@ -215,38 +220,25 @@ function schemaDeptAndRole() {
   ];
 }
 
-/** 拉取用户状态下拉；返回选项第一项的 value，供新增时作为默认值 */
-async function refreshUserStatusOptions(): Promise<string | undefined> {
-  try {
-    const res = await getDictOptionsApi('user_status');
-    await formApi.updateSchema([
-      {
-        fieldName: 'status',
-        componentProps: {
-          options: res ?? [],
-        },
-      },
-    ]);
-    return res[0]?.value;
-  } catch {
-    return undefined;
-  }
-}
+const userStatusOptions = ref<any[]>([]);
 
 function schemaStatusField() {
+  const isEdit = currentType.value === 'edit';
   return {
     component: 'Select' as const,
     componentProps: {
       style: { width: '100%' },
-      options: [
-        { label: $t('system.common.normal'), value: 1 },
-        { label: $t('system.common.disabled'), value: 0 },
-      ],
+      disabled: isEdit && currentData.value.status === 2,
+      options: userStatusOptions.value.map((opt) => ({
+        label: opt.optionValue,
+        value: Number(opt.optionKey),
+        disabled: isEdit && opt.optionValue === '待激活',
+      })),
       placeholder: $t('system.common.selectPlaceholder'),
     },
     fieldName: 'status',
     label: $t('system.common.status'),
-    rules: z.number().refine((v) => v === 0 || v === 1, {
+    rules: z.number().min(0, {
       message: $t('system.common.selectPlaceholder'),
     }),
   };
@@ -297,8 +289,13 @@ const [Form, formApi] = useVbenForm({
     if (!api) {
       return;
     }
+    const newDeptId = String(values.deptId ?? '');
+    if (newDeptId === lastDeptIdLinkedToRoles.value) {
+      return;
+    }
+    lastDeptIdLinkedToRoles.value = newDeptId;
+    await syncRoleFieldOptions(api, newDeptId);
     await api.setFieldValue('roleId', []);
-    await syncRoleFieldOptions(api, String(values.deptId ?? ''));
   },
 });
 formApiRef.current = formApi;
@@ -322,14 +319,12 @@ const [VbenModal, modalApi] = useVbenModal({
 
     /** 先重置 */
     await formApi.resetForm();
+    lastDeptIdLinkedToRoles.value = undefined;
     const mode = currentType.value;
 
     modalApi.setState({
       title: buildModalTitle(mode),
     });
-
-    const defaultStatusValue = await refreshUserStatusOptions();
-    await formApi.setFieldValue('status', defaultStatusValue);
 
     if (mode !== 'passwordReset') {
       await loadDeptTree();
@@ -359,6 +354,10 @@ const [VbenModal, modalApi] = useVbenModal({
           account: row.account || '',
         });
       } else {
+        if (row.deptId) {
+          lastDeptIdLinkedToRoles.value = String(row.deptId);
+          await syncRoleFieldOptions(formApi, row.deptId);
+        }
         await formApi.setValues({
           id: row.id || '',
           account: row.account || '',
@@ -369,10 +368,6 @@ const [VbenModal, modalApi] = useVbenModal({
           roleId: normalizeRoleFieldValue(row.roleId),
           status: row.status === undefined ? 1 : row.status,
         });
-
-        if (row.deptId) {
-          await syncRoleFieldOptions(formApi, row.deptId);
-        }
       }
     }
 
@@ -412,6 +407,7 @@ const [VbenModal, modalApi] = useVbenModal({
         }
         case 'edit': {
           await updateUserApi({
+            id: currentData.value.id,
             ...values,
             roleId: values.roleId.join(','),
           });
@@ -421,7 +417,7 @@ const [VbenModal, modalApi] = useVbenModal({
         }
         case 'passwordReset': {
           await editPasswordApi({
-            id: String(values.id),
+            id: String(currentData.value.id),
             pwd: encryptByMd5(values.pwd),
             password2: encryptByMd5(values.password2),
           });
@@ -445,9 +441,11 @@ const [VbenModal, modalApi] = useVbenModal({
 function open(
   type: 'add' | 'edit' | 'passwordReset',
   data?: Partial<UserInfo>,
+  statusOptions: any[] = [],
 ) {
   currentType.value = type;
   currentData.value = data ? { ...data } : {};
+  userStatusOptions.value = statusOptions;
   modalApi.setState({
     title: buildModalTitle(type),
   });

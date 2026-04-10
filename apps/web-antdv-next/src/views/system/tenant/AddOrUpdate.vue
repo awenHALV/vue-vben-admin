@@ -276,7 +276,7 @@ const [VbenModal, modalApi] = useVbenModal({
         adminPhone: string;
         companyName: string;
         creditCode: string;
-        featureIds?: string;
+        featureIds?: string[];
         status: string;
         tenantName: string;
       };

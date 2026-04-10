@@ -83,6 +83,12 @@ export const ROUTERCHANGE_EVENT = (projectCode: string) =>
 // 通知子应用跳转到静态路由
 export const JUMPROUTESTATIC_EVENT = (projectCode: string) =>
   `${projectCode}:jumpRouteStaticEvent`;
+// 通知子应用菜单变更
+export const BUTTON_PERMISSION_LIST_CHANGE = (projectCode: string) =>
+  `${projectCode}:button:permission:change`;
+// 监听 VPP 子应用菜单请求
+export const BUTTON_PERMISSION_LIST = (projectCode: string) =>
+  `${projectCode}:button:permission:list`;
 // 子应用离开时触发
 export const DEACTIVATEDAPP = (projectCode: string) =>
   `${projectCode}:deactivatedApp`;

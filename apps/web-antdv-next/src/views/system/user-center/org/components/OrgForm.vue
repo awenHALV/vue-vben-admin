@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { OrgInfo } from '#/api/system/org';
+import type { CreateOrgParams, OrgInfo } from '#/api/system/org';
 
 import { ref } from 'vue';
 
@@ -27,6 +27,12 @@ const currentRootId = ref('');
 
 const orgTreeData = ref<any[]>([]);
 
+/** 是否为顶层组织（根节点） */
+function isTopLevelOrg(data?: Partial<OrgInfo>): boolean {
+  const pid = data?.parentId;
+  return !pid || pid === '0';
+}
+
 function buildFormSchema() {
   return [
     {
@@ -51,7 +57,6 @@ function buildFormSchema() {
       fieldName: 'parentId',
       label: $t('system.org.parentOrg'),
       rules: z.string().min(1, $t('system.org.parentOrgRequired')),
-      hide: isEdit.value,
     },
     {
       component: 'Select',
@@ -60,7 +65,7 @@ function buildFormSchema() {
         options: [],
         placeholder: $t('system.org.orgTypePlaceholder'),
       },
-      fieldName: 'internal',
+      fieldName: 'deptType',
       label: $t('system.org.orgType'),
       rules: z.string().min(1, $t('system.org.orgTypeRequired')),
     },
@@ -91,17 +96,38 @@ async function loadOrgTree() {
   try {
     const res = await getOrgTreeApi();
     orgTreeData.value = res || [];
-    await formApi.updateSchema([
-      {
-        fieldName: 'parentId',
-        componentProps: {
-          treeData: orgTreeData.value,
-        },
-      },
-    ]);
   } catch (error) {
     console.error($t('system.org.loadOrgTreeFailed'), error);
   }
+}
+
+async function syncParentIdField() {
+  const topLevel = isTopLevelOrg(currentData.value);
+
+  const hide = (isEdit.value && topLevel) || (isAdd.value && topLevel);
+  const disabled = (isEdit.value && !topLevel) || isAddChild.value;
+  const parentIdRequired = isAddChild.value || (isAdd.value && !topLevel);
+
+  const rules = parentIdRequired
+    ? z.string().min(1, $t('system.org.parentOrgRequired'))
+    : z.string().optional();
+
+  await formApi.updateSchema([
+    {
+      fieldName: 'parentId',
+      hide,
+      rules,
+      componentProps: {
+        allowClear: true,
+        disabled,
+        style: { width: '100%' },
+        fieldNames: { label: 'deptName', value: 'id', children: 'children' },
+        placeholder: $t('system.org.parentOrgPlaceholder'),
+        treeData: orgTreeData.value,
+        treeDefaultExpandAll: true,
+      },
+    },
+  ]);
 }
 
 async function loadInternalOptions() {
@@ -109,13 +135,14 @@ async function loadInternalOptions() {
     const res = await getDictOptionsApi('sys_dept_type');
     await formApi.updateSchema([
       {
-        fieldName: 'internal',
+        fieldName: 'deptType',
         componentProps: {
           options:
             res.map((item) => ({
               label: item.optionValue,
               value: item.optionKey,
             })) || [],
+          disabled: isEdit.value,
         },
       },
     ]);
@@ -128,6 +155,8 @@ const [VbenModal, modalApi] = useVbenModal({
   destroyOnClose: true,
   showConfirmButton: true,
   confirmLoading: false,
+  // 点击不关闭弹窗
+  closeOnClickModal: false,
   title: $t('system.org.addOrg'),
   onOpenChange: async (open: boolean) => {
     if (!open) return;
@@ -143,33 +172,22 @@ const [VbenModal, modalApi] = useVbenModal({
     await formApi.resetForm();
     await loadOrgTree();
     await loadInternalOptions();
+    await syncParentIdField();
 
     if (isEdit.value && currentData.value?.id) {
-      await formApi.setValues({
+      const values: Record<string, string> = {
         deptName: currentData.value.deptName || '',
         remark: currentData.value.remark || '',
-      });
+        deptType: currentData.value.deptType || '',
+      };
+      if (!isTopLevelOrg(currentData.value) && currentData.value.parentId) {
+        values.parentId = currentData.value.parentId;
+      }
+      await formApi.setValues(values);
     } else if (isAddChild.value && currentData.value?.parentId) {
       await formApi.setValues({
         parentId: currentData.value.parentId,
       });
-      await formApi.updateSchema([
-        {
-          fieldName: 'parentId',
-          componentProps: {
-            disabled: true,
-          },
-        },
-      ]);
-    } else if (isAdd.value) {
-      await formApi.updateSchema([
-        {
-          fieldName: 'parentId',
-          componentProps: {
-            disabled: false,
-          },
-        },
-      ]);
     }
   },
   async onConfirm() {
@@ -185,14 +203,21 @@ const [VbenModal, modalApi] = useVbenModal({
           id: currentData.value?.id || '',
           deptName: values.deptName,
           remark: values.remark,
+          parentId: values.parentId,
+          deptType: values.deptType,
         });
         message.success($t('system.common.editSuccess'));
       } else {
-        const createData = {
-          ...values,
-          internal: currentData.value?.parentInternal || '',
+        const createPayload: CreateOrgParams = {
+          deptName: values.deptName as string,
+          deptType: values.deptType,
+          parentId:
+            isAdd.value && isTopLevelOrg(currentData.value)
+              ? '0'
+              : (values.parentId as string | undefined),
+          remark: values.remark as string | undefined,
         };
-        await createOrgApi(createData);
+        await createOrgApi(createPayload);
         message.success($t('system.common.addSuccess'));
       }
 

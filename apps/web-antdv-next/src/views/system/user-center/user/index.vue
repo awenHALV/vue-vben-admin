@@ -23,7 +23,12 @@ import {
 } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { deleteUserApi, getDeptTreeApi, getUserPageApi } from '#/api/system/user';
+import { getDictOptionsApi } from '#/api/system/dict';
+import {
+  deleteUserApi,
+  getDeptTreeApi,
+  getUserPageApi,
+} from '#/api/system/user';
 import { usePageButtonAccess } from '#/composables/use-page-button-access';
 import { $t } from '#/locales';
 
@@ -31,6 +36,8 @@ import { USER_PAGE_BUTTON_CODES } from './button-permissions';
 import UserDetail from './components/UserDetail.vue';
 import UserForm from './components/UserForm.vue';
 import UserImport from './components/UserImport.vue';
+
+defineOptions({ name: 'SystemUser' });
 
 const userFormRef = ref<InstanceType<typeof UserForm>>();
 const userDetailRef = ref<InstanceType<typeof UserDetail>>();
@@ -47,6 +54,10 @@ const deptTreeData = ref<DeptTreeNode[]>([]);
 const searchKey = ref('');
 const expandedKeys = ref<string[]>([]);
 const selectedKeys = ref<string[]>([]);
+
+// 字典数据
+const userStatusOptions = ref<any[]>([]);
+const userTypeOptions = ref<any[]>([]);
 
 // 搜索表单
 const searchForm = reactive({
@@ -111,6 +122,12 @@ const [Grid, gridApi] = useVbenVxeGrid<UserInfo>({
         minWidth: 100,
       },
       {
+        field: 'userType',
+        minWidth: 150,
+        title: $t('system.user.userType'),
+        slots: { default: 'userType' },
+      },
+      {
         field: 'roleName',
         title: $t('system.user.role'),
         minWidth: 180,
@@ -126,14 +143,12 @@ const [Grid, gridApi] = useVbenVxeGrid<UserInfo>({
       {
         field: 'status',
         title: $t('system.common.status'),
-        width: 80,
-        formatter: ({ cellValue }: any) => {
-          return cellValue === 1 ? $t('system.common.normal') : $t('system.common.disabled');
-        },
+        width: 100,
+        slots: { default: 'userStatus' },
       },
       {
         title: $t('system.common.operation'),
-        width: 200,
+        width: 250,
         fixed: 'right',
         align: 'center',
         slots: { default: 'action' },
@@ -214,15 +229,19 @@ const handleDeptSelect: TreeProps['onSelect'] = (keys) => {
 
 // 操作按钮
 const handleAdd = () => {
-  userFormRef.value?.open('add', { deptId: selectedDeptId.value });
+  userFormRef.value?.open(
+    'add',
+    { deptId: selectedDeptId.value },
+    userStatusOptions.value,
+  );
 };
 
 const handleEdit = (record: UserInfo) => {
-  userFormRef.value?.open('edit', { ...record });
+  userFormRef.value?.open('edit', { ...record }, userStatusOptions.value);
 };
 
 const handleView = (record: UserInfo) => {
-  userDetailRef.value?.open({ ...record });
+  userDetailRef.value?.open({ ...record }, userStatusOptions.value);
 };
 
 const handlePasswordReset = (record: UserInfo) => {
@@ -265,23 +284,39 @@ const handleDelete = (record: UserInfo) => {
 
 // ==================== 生命周期 ====================
 
+const fetchDictOptions = async () => {
+  try {
+    const [statusData, typeData] = await Promise.all([
+      getDictOptionsApi('sys_user_status'),
+      getDictOptionsApi('sys_user_type'),
+    ]);
+    userStatusOptions.value = statusData || [];
+    userTypeOptions.value = typeData || [];
+  } catch (error) {
+    console.error('获取字典数据失败:', error);
+  }
+};
+
 onMounted(() => {
   getDeptTree();
+  fetchDictOptions();
 });
 
 watch(selectedDeptId, () => {
   void gridApi.reload();
 });
+
+// 用户状态 tag color映射表
+const userStatusColorMap = {
+  0: 'red',
+  1: 'green',
+  2: 'gold',
+};
 </script>
 
 <template>
-  <Page
-    auto-content-height
-    content-class="flex min-h-0 flex-1 flex-col"
-  >
-    <div
-      class="user-split-grid h-full min-h-0 w-full min-w-0 flex-1 gap-4"
-    >
+  <Page auto-content-height content-class="flex min-h-0 flex-1 flex-col">
+    <div class="user-split-grid size-full min-h-0 min-w-0 flex-1 gap-4">
       <!-- 左侧组织树：与右侧网格行同高，树超出时在内部滚动 -->
       <Card class="dept-tree-card min-h-0 w-full overflow-hidden">
         <div class="mb-3 shrink-0">
@@ -338,20 +373,13 @@ watch(selectedDeptId, () => {
                 </Form>
               </div>
               <Space class="shrink-0">
-                <Button
-                  class="w-21"
-                  type="primary"
-                  @click="handleSearch"
-                >
+                <Button class="w-21" type="primary" @click="handleSearch">
                   <template #icon>
                     <IconifyIcon icon="lucide:search" />
                   </template>
                   {{ $t('system.common.search') }}
                 </Button>
-                <Button
-                  class="w-21"
-                  @click="handleReset"
-                >
+                <Button class="w-21" @click="handleReset">
                   <template #icon>
                     <IconifyIcon icon="lucide:rotate-ccw" />
                   </template>
@@ -393,34 +421,78 @@ watch(selectedDeptId, () => {
               </div>
             </template>
 
+            <template #userType="{ row }">
+              <Tag
+                :color="row.userType === 'INTERNAL' ? 'blue' : 'gold'"
+                variant="outlined"
+              >
+                {{
+                  userTypeOptions.find(
+                    (opt) => opt.optionKey === String(row.userType),
+                  )?.optionValue || row.userType
+                }}
+              </Tag>
+            </template>
+
+            <template #userStatus="{ row }">
+              <Tag :color="userStatusColorMap[row.status]" variant="outlined">
+                {{
+                  userStatusOptions.find(
+                    (opt) => opt.optionKey === String(row.status),
+                  )?.optionValue || row.status
+                }}
+              </Tag>
+            </template>
+
             <template #roleName="{ row }">
               <template v-if="row.roleName">
-                <Tag v-for="(role, idx) in row.roleName.split(',')" :key="idx" color="blue">
+                <Tag
+                  v-for="(role, idx) in row.roleName.split(',')"
+                  :key="idx"
+                  color="blue"
+                >
                   {{ role }}
                 </Tag>
               </template>
             </template>
 
             <template #action="{ row }">
-              <Space>
-                <a v-if="canButton(USER_PAGE_BUTTON_CODES.detail)" @click="handleView(row)">{{
-                  $t('system.common.view')
-                }}</a>
-                <a v-if="canButton(USER_PAGE_BUTTON_CODES.edit)" @click="handleEdit(row)">{{
-                  $t('system.common.edit')
-                }}</a>
-                <a
-                  v-if="canButton(USER_PAGE_BUTTON_CODES.resetPwd)"
-                  @click="handlePasswordReset(row)"
-                  >{{ $t('system.user.editPassword') }}</a
-                >
-                <a
-                  v-if="canButton(USER_PAGE_BUTTON_CODES.delete)"
-                  class="text-error"
-                  @click="handleDelete(row)"
-                  >{{ $t('system.common.delete') }}</a
-                >
-              </Space>
+              <Button
+                type="link"
+                size="small"
+                class="text-primary"
+                v-if="canButton(USER_PAGE_BUTTON_CODES.detail)"
+                @click="handleView(row)"
+              >
+                {{ $t('system.common.view') }}
+              </Button>
+              <Button
+                type="link"
+                size="small"
+                class="text-primary"
+                v-if="canButton(USER_PAGE_BUTTON_CODES.edit)"
+                @click="handleEdit(row)"
+              >
+                {{ $t('system.common.edit') }}
+              </Button>
+              <Button
+                type="link"
+                size="small"
+                v-if="canButton(USER_PAGE_BUTTON_CODES.resetPwd)"
+                :disabled="row.status === 2"
+                @click="handlePasswordReset(row)"
+              >
+                {{ $t('system.user.editPassword') }}
+              </Button>
+              <Button
+                type="link"
+                size="small"
+                danger
+                v-if="canButton(USER_PAGE_BUTTON_CODES.delete)"
+                @click="handleDelete(row)"
+              >
+                {{ $t('system.common.delete') }}
+              </Button>
             </template>
           </Grid>
         </div>
@@ -434,10 +506,7 @@ watch(selectedDeptId, () => {
     <UserDetail ref="userDetailRef" />
 
     <!-- 用户导入弹窗 -->
-    <UserImport
-      ref="userImportRef"
-      @success="handleImportSuccess"
-    />
+    <UserImport ref="userImportRef" @success="handleImportSuccess" />
   </Page>
 </template>
 

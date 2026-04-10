@@ -69,5 +69,8 @@
     "center": "居中",
     "alignLeft": "居左",
     "alignRight": "居右"
-  }
+  },
+  "tenantSelectTitle": "您可以选择以下租户登录",
+  "tenantSelectPlaceholder": "请选择租户",
+  "tenantSelectOk": "确定"
 }

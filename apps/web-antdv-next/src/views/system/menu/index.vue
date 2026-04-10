@@ -15,7 +15,7 @@ import {
   useUserStore,
 } from '@vben/stores';
 
-import { message, Modal, Space } from 'antdv-next';
+import { Button, message, Modal, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteFeatureApi, getRawMenusApi } from '#/api/core/menu';
@@ -497,7 +497,7 @@ async function restoreMenuTreeExpand(expandedIds: MenuGridExpandSnapshot) {
  */
 async function reloadMenuGrid(
   extraExpandIds?: MenuGridExpandSnapshot,
-  targetId?: number | string | null,
+  targetId?: null | number | string,
 ) {
   const expandedIds = snapshotExpandedMenuRowIds();
   if (extraExpandIds) {
@@ -558,9 +558,8 @@ async function handleAddOrUpdateSuccess(payload?: {
  */
 async function handleDeleteSuccess(record: BackendMenuItem) {
   // 删除后滚动到父节点位置（如果有父节点的话）
-  const targetId = record.parentId && record.parentId !== 0
-    ? record.parentId
-    : null;
+  const targetId =
+    record.parentId && record.parentId !== 0 ? record.parentId : null;
   await reloadMenuGrid(undefined, targetId);
   await closeTabsForDeletedMenus([record]);
   await refreshMenuCacheIfNeeded({ force: true });
@@ -616,8 +615,8 @@ onMounted(() => {
           {{ $t('menu.action.reset') }}
         </VbenButton>
         <VbenButton
-class="w-[60px]" size="sm"
-@click="handleSearch"
+class="w-[60px]"
+size="sm" @click="handleSearch"
 >
           {{ $t('menu.action.search') }}
         </VbenButton>
@@ -654,43 +653,40 @@ class="w-[60px]" size="sm"
 
       <Grid>
         <template #action="{ row }">
-          <Space size="small">
-            <VbenButton
-              v-if="canButton(FEATURE_PAGE_BUTTON_CODES.edit)"
-              size="sm"
-              variant="ghost"
-              @click="handleEdit(row)"
-            >
-              <span class="text-primary">
-                {{ $t('menu.action.edit') }}
-              </span>
-            </VbenButton>
-            <VbenButton
-              v-if="canButton(FEATURE_PAGE_BUTTON_CODES.delete)"
-              size="sm"
-              variant="ghost"
-              @click="handleDelete(row)"
-            >
-              <span class="text-destructive">{{
-                $t('menu.action.delete')
-              }}</span>
-            </VbenButton>
-            <VbenButton
-              v-if="canButton(FEATURE_PAGE_BUTTON_CODES.addSub)"
-              size="sm"
-              variant="ghost"
-              @click="handleAdd(row)"
-            >
-              <span class="text-primary">{{ $t('menu.action.addChild') }}</span>
-            </VbenButton>
-          </Space>
+          <Button
+            type="link"
+            size="small"
+            class="text-primary"
+            v-if="canButton(FEATURE_PAGE_BUTTON_CODES.edit)"
+            @click="handleEdit(row)"
+          >
+            <span class="text-primary">
+              {{ $t('menu.action.edit') }}
+            </span>
+          </Button>
+          <Button
+            danger
+            type="link"
+            size="small"
+            v-if="canButton(FEATURE_PAGE_BUTTON_CODES.delete)"
+            @click="handleDelete(row)"
+          >
+            {{ $t('menu.action.delete') }}
+          </Button>
+          <Button
+            v-if="canButton(FEATURE_PAGE_BUTTON_CODES.addSub)"
+            size="small"
+            type="link"
+            class="text-primary"
+            @click="handleAdd(row)"
+          >
+            {{ $t('menu.action.addChild') }}
+          </Button>
         </template>
       </Grid>
     </div>
 
     <!-- 新增/编辑弹窗 -->
-    <AddOrUpdate
-ref="addOrUpdateRef" @success="handleAddOrUpdateSuccess"
-/>
+    <AddOrUpdate ref="addOrUpdateRef" @success="handleAddOrUpdateSuccess" />
   </Page>
 </template>

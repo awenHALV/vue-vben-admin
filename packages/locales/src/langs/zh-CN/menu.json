@@ -39,6 +39,7 @@
     "featureNameEn": "请输入英文名称",
     "featureIcon": "请输入功能图标",
     "routePath": "请输入路由地址",
+    "resourceCode": "请选择资源池",
     "routePathStartWithSlash": "路由地址必须以 / 开头",
     "routePathOnlyEnglish": "路由地址只能包含英文、数字、/、-、_",
     "sort": "请输入排序号",

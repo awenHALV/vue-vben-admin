@@ -9,7 +9,11 @@ import { $t } from '@vben/locales';
 
 import { useVbenForm } from '#/adapter/form';
 // import { useVbenForm } from '@vben-core/form-ui';
-import { createFeatureApi, updateFeatureApi } from '#/api/core/menu';
+import {
+  createFeatureApi,
+  getResourcePoolListApi,
+  updateFeatureApi,
+} from '#/api/core/menu';
 
 defineOptions({ name: 'MenuAddOrUpdate' });
 
@@ -117,6 +121,32 @@ const [Form, formApi] = useVbenForm({
       label: $t('menu.form.routePath'),
     },
     {
+      component: 'Select',
+      componentProps: {
+        disabled: isEdit.value,
+        mode: 'multiple',
+        options: [] as { label: string; value: string }[],
+        placeholder: $t('tenant.form.resourcePool') || '请选择关联资源池',
+        style: { width: '100%' },
+      },
+      dependencies: {
+        if(values) {
+          return values.featureType === 'MENU';
+        },
+        rules(values) {
+          if (values.featureType === 'MENU') {
+            return z
+              .array(z.string())
+              .min(1, { message: $t('menu.formRules.resourceCode') });
+          }
+          return z.array(z.string()).optional();
+        },
+        triggerFields: ['featureType'],
+      },
+      fieldName: 'resourceCode',
+      label: $t('tenant.form.resourcePool') || '关联资源池',
+    },
+    {
       component: 'Input',
       componentProps: {
         placeholder: $t('menu.placeholder.input', [
@@ -147,6 +177,26 @@ const [VbenModal, modalApi] = useVbenModal({
   onOpenChange: async (isOpen) => {
     if (isOpen) {
       await formApi.resetForm();
+
+      try {
+        const poolRes = await getResourcePoolListApi();
+        await formApi.updateSchema([
+          {
+            fieldName: 'resourceCode',
+            componentProps: {
+              options: (poolRes ?? []).map((p) => ({
+                label: p.resourceName,
+                value: p.resourceCode,
+              })),
+              // 暂时去掉，添加上以后再给打开
+              // disabled: isEdit.value,
+            },
+          },
+        ]);
+      } catch (error) {
+        console.error('Fetch resource pool failed', error);
+      }
+
       if (currentRecord.value) {
         const r = currentRecord.value;
         await formApi.setValues({
@@ -158,6 +208,9 @@ const [VbenModal, modalApi] = useVbenModal({
           parentId: r.parentId ?? 0,
           routePath: r.routePath ?? '',
           sort: r.sort ?? 0,
+          resourceCode: String(r.resourceCode ?? '')
+            .split(',')
+            .filter(Boolean),
         });
       } else if (currentParentId.value !== null) {
         formApi.setFieldValue('parentId', currentParentId.value);
@@ -184,6 +237,9 @@ const [VbenModal, modalApi] = useVbenModal({
           0,
         routePath: values.routePath || '',
         sort: values.sort ?? 0,
+        resourceCode: Array.isArray(values.resourceCode)
+          ? values.resourceCode.join(',')
+          : (values.resourceCode ?? ''),
       };
       isEdit.value && currentRecord.value
         ? await updateFeatureApi({
@@ -201,7 +257,9 @@ const [VbenModal, modalApi] = useVbenModal({
       } else {
         // 新增模式：定位到新增的行（使用parentId作为目标，展开父节点后用户能看到新增的行）
         targetId =
-          payload.parentId !== 0 ? (payload.parentId as number | string) : undefined;
+          payload.parentId === 0
+            ? undefined
+            : (payload.parentId as number | string);
       }
 
       const expandParentId =

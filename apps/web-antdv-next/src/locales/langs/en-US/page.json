@@ -10,7 +10,8 @@
     "codeLogin": "Code Login",
     "qrcodeLogin": "Qr Code Login",
     "forgetPassword": "Forget Password",
-    "profile": "Profile"
+    "profile": "Profile",
+    "switchTenant": "Switch tenant"
   },
   "dashboard": {
     "title": "Dashboard",

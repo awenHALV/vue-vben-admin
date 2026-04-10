@@ -14,6 +14,7 @@ import { $t } from '#/locales';
 defineOptions({ name: 'UserDetail' });
 
 const detailData = ref<Partial<UserInfo>>({});
+const statusOptions = ref<any[]>([]);
 
 const detailItems = computed<DescriptionsItemType[]>(() => {
   const data = detailData.value;
@@ -21,9 +22,8 @@ const detailItems = computed<DescriptionsItemType[]>(() => {
     return [];
   }
   const renderStatus = (status: number) => {
-    return status === 1
-      ? $t('system.common.normal')
-      : $t('system.common.disabled');
+    const opt = statusOptions.value.find((o) => o.optionKey === String(status));
+    return opt ? opt.optionValue : String(status);
   };
 
   const renderRoles = (roles: string) => {
@@ -67,8 +67,9 @@ const [VbenModal, modalApi] = useVbenModal({
   },
 });
 
-function open(data: Partial<UserInfo>) {
+function open(data: Partial<UserInfo>, options: any[] = []) {
   detailData.value = { ...data };
+  statusOptions.value = options;
   modalApi.open();
 }
 

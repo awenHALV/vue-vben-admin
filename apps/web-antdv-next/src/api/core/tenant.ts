@@ -172,7 +172,10 @@ export async function updateConfigApi(
   );
 }
 
-/** GET /de-base-system/external/private/tenant/{id}/auth-code */
+/**
+ * 租户管理「切到该行租户」专用：先取授权码，再用 code 换 token。
+ * 与登录多租户 / 顶栏切换使用的 `POST .../auth/switch-tenant` 不是同一条链路。
+ */
 export async function getTenantAuthCodeApi(
   tenantId: number | string,
 ): Promise<{ code: string }> {
@@ -181,7 +184,6 @@ export async function getTenantAuthCodeApi(
   );
 }
 
-/** POST /de-base-system/external/public/tenant/switch，返回新 token */
 export async function switchTenantApi(
   code: string,
 ): Promise<{ token: string }> {

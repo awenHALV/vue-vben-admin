@@ -6,7 +6,7 @@ import { ref } from 'vue';
 
 import { Page, VbenButton, VbenInput } from '@vben/common-ui';
 
-import { message, Modal, Space } from 'antdv-next';
+import { Button, message, Modal, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteOrgApi, getOrgTreeApi } from '#/api/system/org';
@@ -14,9 +14,15 @@ import { usePageButtonAccess } from '#/composables/use-page-button-access';
 import { $t } from '#/locales';
 
 import { ORG_PAGE_BUTTON_CODES } from './button-permissions';
+import EntityConfigModal from './components/EntityConfigModal.vue';
 import OrgForm from './components/OrgForm.vue';
 
+defineOptions({ name: 'SystemOrg' });
 const { canButton } = usePageButtonAccess();
+const entityConfigRef = ref<InstanceType<typeof EntityConfigModal> | null>(
+  null,
+);
+const currentConfigOrg = ref<null | OrgInfo>(null);
 
 const loading = ref(false);
 const tableData = ref<OrgInfo[]>([]);
@@ -82,7 +88,7 @@ const [Grid, gridApi] = useVbenVxeGrid<OrgInfo>({
       },
       {
         title: $t('system.common.operation'),
-        width: 200,
+        width: 300,
         fixed: 'right',
         align: 'center',
         slots: { default: 'action' },
@@ -145,6 +151,11 @@ const handleDelete = async (record: OrgInfo) => {
 const handleFormSuccess = () => {
   getTableData();
 };
+
+const handleEntityConfig = (record: OrgInfo) => {
+  currentConfigOrg.value = record;
+  entityConfigRef.value?.open(record);
+};
 </script>
 
 <template>
@@ -193,44 +204,54 @@ const handleFormSuccess = () => {
     <!-- 组织列表 -->
     <Grid>
       <template #action="{ row }">
-        <Space size="small">
-          <VbenButton
-            v-if="canButton(ORG_PAGE_BUTTON_CODES.edit)"
-            size="sm"
-            variant="ghost"
-            @click="handleEdit(row)"
-          >
-            <span class="text-primary">{{ $t('system.common.edit') }}</span>
-          </VbenButton>
-          <VbenButton
-            v-if="canButton(ORG_PAGE_BUTTON_CODES.delete)"
-            size="sm"
-            variant="ghost"
-            :disabled="!row.parentId || row.parentId === '0'"
-            @click="handleDelete(row)"
-          >
-            <span class="text-destructive">{{
-              $t('system.common.delete')
-            }}</span>
-          </VbenButton>
-          <VbenButton
-            v-if="canButton(ORG_PAGE_BUTTON_CODES.addSub)"
-            size="sm"
-            variant="ghost"
-            @click="handleAddChild(row)"
-          >
-            <span class="text-primary">{{ $t('system.org.addSubitem') }}</span>
-          </VbenButton>
-        </Space>
+        <Button
+          v-if="canButton(ORG_PAGE_BUTTON_CODES.edit)"
+          type="link"
+          size="small"
+          class="text-primary"
+          @click="handleEdit(row)"
+        >
+          {{ $t('system.common.edit') }}
+        </Button>
+        <Button
+          danger
+          v-if="canButton(ORG_PAGE_BUTTON_CODES.delete)"
+          type="link"
+          size="small"
+          :disabled="!row.parentId || row.parentId === '0'"
+          @click="handleDelete(row)"
+        >
+          {{ $t('system.common.delete') }}
+        </Button>
+        <Button
+          v-if="canButton(ORG_PAGE_BUTTON_CODES.addSub)"
+          type="link"
+          size="small"
+          class="text-primary"
+          @click="handleAddChild(row)"
+        >
+          {{ $t('system.org.addSubitem') }}
+        </Button>
+        <Button
+          v-if="canButton(ORG_PAGE_BUTTON_CODES.assetConfig)"
+          type="link"
+          size="small"
+          class="text-primary"
+          @click="handleEntityConfig(row)"
+        >
+          <span class="text-primary">{{
+            $t('system.tradeEntity.assetConfig')
+          }}</span>
+        </Button>
       </template>
     </Grid>
 
     <!-- 组织表单弹窗 -->
     <!-- eslint-disable-next-line prettier/prettier -- 与 vue/max-attributes-per-line 每属性单行一致 -->
-    <OrgForm
-      ref="orgFormRef"
-      @success="handleFormSuccess"
-    />
+    <OrgForm ref="orgFormRef" @success="handleFormSuccess" />
+
+    <!-- 资产配置弹窗 -->
+    <EntityConfigModal ref="entityConfigRef" @success="handleFormSuccess" />
   </Page>
 </template>
 

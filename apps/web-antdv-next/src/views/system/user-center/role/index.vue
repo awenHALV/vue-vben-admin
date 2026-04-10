@@ -32,6 +32,8 @@ import { ROLE_PAGE_BUTTON_CODES } from './button-permissions';
 import RoleForm from './components/RoleForm.vue';
 import RolePermission from './components/RolePermission.vue';
 
+defineOptions({ name: 'SystemRole' });
+
 const { canButton } = usePageButtonAccess();
 
 // ==================== 状态定义 ====================
@@ -247,8 +249,7 @@ watch(selectedDeptId, () => {
 </script>
 
 <template>
-  <Page auto-content-height
-:title="$t('system.role.title')">
+  <Page auto-content-height :title="$t('system.role.title')">
     <div class="flex h-full gap-4">
       <!-- 左侧组织树 -->
       <Card class="w-80 shrink-0">
@@ -286,13 +287,12 @@ watch(selectedDeptId, () => {
               </FormItem>
             </Form>
             <Space>
-              <Button type="primary"
-class="w-21" @click="handleSearch">
+              <Button type="primary" class="w-21"
+@click="handleSearch">
                 <template #icon><IconifyIcon icon="lucide:search" /></template>
                 {{ $t('system.common.search') }}
               </Button>
-              <Button class="w-21"
-@click="handleReset">
+              <Button class="w-21" @click="handleReset">
                 <template #icon>
                   <IconifyIcon icon="lucide:rotate-ccw" />
                 </template>
@@ -320,21 +320,34 @@ class="w-21" @click="handleSearch">
             </template>
 
             <template #action="{ row }">
-              <Space v-if="row.roleAlias !== 'admin'">
-                <a
+              <template v-if="row.roleAlias !== 'admin'">
+                <Button
+                  type="link"
+                  size="small"
+                  class="text-primary"
                   v-if="canButton(ROLE_PAGE_BUTTON_CODES.edit)"
                   @click="handleEdit(row)"
-                  >{{ $t('system.common.edit') }}</a>
-                <a
+                >
+                  {{ $t('system.common.edit') }}
+                </Button>
+                <Button
+                  danger
+                  type="link"
+                  size="small"
                   v-if="canButton(ROLE_PAGE_BUTTON_CODES.delete)"
-                  style="color: #ef4444"
                   @click="handleDelete(row)"
-                  >{{ $t('system.common.delete') }}</a>
-                <a
+                >
+                  {{ $t('system.common.delete') }}
+                </Button>
+                <Button
+                  type="link"
+                  size="small"
                   v-if="canButton(ROLE_PAGE_BUTTON_CODES.auth)"
                   @click="handlePermission(row)"
-                  >{{ $t('system.role.permission') }}</a>
-              </Space>
+                >
+                  {{ $t('system.role.permission') }}
+                </Button>
+              </template>
             </template>
           </Grid>
         </div>

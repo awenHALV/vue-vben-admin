@@ -7,4 +7,5 @@ export const ORG_PAGE_BUTTON_CODES = {
   detail: 'org:detail',
   edit: 'org:edit',
   delete: 'org:delete',
+  assetConfig: 'org:assetConfig',
 } as const;
