@@ -57,3 +57,8 @@ vite.config.ts.*
 .claude
 .codex
 skills-lock.json
+
+.opencode/
+openspec
+.github/prompts/
+.gitignore
