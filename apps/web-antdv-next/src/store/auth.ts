@@ -17,6 +17,7 @@ import { getUserInfoApi, logoutApi } from '#/api';
 import { getTenantListApi, loginApi } from '#/api/core/auth';
 import { $t } from '#/locales';
 import { encryptByMd5 } from '#/utils/cipher';
+import { notifyChildAppsLogout } from '#/wujie-config/event';
 
 const MULTI_TENANT_SESSION_KEY = `${import.meta.env.VITE_APP_NAMESPACE}-multi-tenant`;
 
@@ -129,8 +130,15 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * 仅前端清会话并回登录页（不调退出登录接口）。
    * 用于 401/令牌作废等场景；用户主动退出请用 logout()。
+   * 会先通过无界 bus 通知子应用清空缓存，再清基座状态。
    */
-  async function terminateSession(redirect: boolean = true) {
+  async function terminateSession(
+    redirect: boolean = true,
+    options?: { reason?: 'session_expired' | 'unauthorized' | 'user' },
+  ) {
+    notifyChildAppsLogout({
+      reason: options?.reason ?? 'session_expired',
+    });
     syncMultiTenantFlag(false);
     resetAllStores();
     removeCookie(TOKEN_KEY);
@@ -155,7 +163,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch {
       // 不做任何处理
     }
-    await terminateSession(redirect);
+    await terminateSession(redirect, { reason: 'user' });
   }
 
   async function fetchUserInfo() {

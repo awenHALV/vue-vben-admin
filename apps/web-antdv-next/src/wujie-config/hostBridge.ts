@@ -111,10 +111,10 @@ export function setupWujieHostBridge() {
     },
   );
 
-  // 监听子应用401token失效
+  // 监听子应用 401 / token 失效上报 → 基座统一退出（会广播 HOST_BRIDGE_LOGOUT_NOTIFY_CHILD）
   bus.$on(LOGOUT_EVENT, () => {
     const authStore = useAuthStore();
-    authStore.terminateSession();
+    void authStore.terminateSession(true, { reason: 'session_expired' });
   });
 
   // 监听 VPP 子应用菜单请求
@@ -192,8 +192,6 @@ export function setupWujieHostBridge() {
 
       website.projectCodes.forEach((code) => {
         const projectCodes = getProjectAccessCodes(code);
-        // 派发权限数组
-        console.log('projectCodes', projectCodes);
         bus.$emit(BUTTON_PERMISSION_LIST_CHANGE(code), projectCodes);
       });
     },
