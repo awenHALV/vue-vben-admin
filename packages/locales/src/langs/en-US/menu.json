@@ -34,6 +34,7 @@
     "featureNameEn": "Please enter English name",
     "featureIcon": "Please enter feature icon",
     "routePath": "Please enter route path",
+    "resourceCode": "Please select resource pool",
     "routePathStartWithSlash": "Route path must start with /",
     "routePathOnlyEnglish": "Route path can only contain English letters, numbers, /, -, _",
     "sort": "Please enter sort order",

@@ -38,6 +38,7 @@
     "tenantInfo": "租户名称",
     "companyName": "公司名称",
     "creditCode": "社会信用代码",
+    "resourcePool": "关联资源池",
     "features": "功能列表",
     "adminName": "管理员姓名",
     "adminPhone": "管理员手机号",

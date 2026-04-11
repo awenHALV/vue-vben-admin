@@ -4,6 +4,8 @@
 
 import type { Preferences } from '@vben/preferences';
 
+import WujieVue from 'wujie-vue3';
+
 /**
  * 主应用向子应用推送的完整宿主状态（token / 明暗 / 内置主题 / 语言）
  * 主应用加载完成、以及上述任一字段变化时都会推送。
@@ -60,6 +62,30 @@ export interface HostBridgeLanguageChangePayload {
   locale: Preferences['app']['locale'];
 }
 
+/**
+ * 主应用会话结束（主动退出 / 主应用 401 / 子应用上报失效等）时广播。
+ * 子应用应：清空本地缓存、Pinia、路由栈、与登录态相关的 storage 等。
+ * 监听：window.$wujie?.bus?.$on(HOST_BRIDGE_LOGOUT_NOTIFY_CHILD, handler)
+ */
+export const HOST_BRIDGE_LOGOUT_NOTIFY_CHILD = 'hostBridge:logoutNotifyChild';
+
+export interface HostBridgeLogoutNotifyPayload {
+  /** user：用户点击退出；session_expired：令牌失效；unauthorized：主应用 401 等 */
+  reason?: 'session_expired' | 'unauthorized' | 'user';
+}
+
+const { bus: wujieBus } = WujieVue;
+
+/**
+ * 通知所有无界子应用：基座会话已结束，请自行清空缓存与本地登录态。
+ * 在清主应用 Pinia / 跳转登录页之前调用，便于子应用仍能通过 bus 收到一次广播。
+ */
+export function notifyChildAppsLogout(
+  payload: HostBridgeLogoutNotifyPayload = {},
+) {
+  wujieBus.$emit(HOST_BRIDGE_LOGOUT_NOTIFY_CHILD, payload);
+}
+
 // 切换主题（主应用加载、主题/明暗模式切换时触发）
 export const CHANGETHEME_EVENT = 'changeThemeEvent';
 // 中英文切换（主应用加载、语言切换时触发）
@@ -72,10 +98,7 @@ export const NOTICECHILDAPPTOKEN_EVENT = 'noticeChildAppTokenEvent';
 // export const NOTICEBASEAPPTOKEN_EVENT = 'noticeBaseAppTokenEvent';
 // 监听来自子应用的路由跳转
 export const JUMPROUTE_EVENT = 'jumpRouteEvent';
-// 监听子应用完全退出登录事件
-export const SSO_LOGOUT_EVENT = 'ssoLogoutEvent';
 
-// 通知子应用退出登录事件
 // export const LOGOUT_CHILD_EVENT = 'logoutChildEvent';
 // 通知子应用路由跳转
 export const ROUTERCHANGE_EVENT = (projectCode: string) =>
@@ -83,6 +106,12 @@ export const ROUTERCHANGE_EVENT = (projectCode: string) =>
 // 通知子应用跳转到静态路由
 export const JUMPROUTESTATIC_EVENT = (projectCode: string) =>
   `${projectCode}:jumpRouteStaticEvent`;
+// 通知子应用菜单变更
+export const BUTTON_PERMISSION_LIST_CHANGE = (projectCode: string) =>
+  `${projectCode}:button:permission:change`;
+// 监听 VPP 子应用菜单请求
+export const BUTTON_PERMISSION_LIST = (projectCode: string) =>
+  `${projectCode}:button:permission:list`;
 // 子应用离开时触发
 export const DEACTIVATEDAPP = (projectCode: string) =>
   `${projectCode}:deactivatedApp`;

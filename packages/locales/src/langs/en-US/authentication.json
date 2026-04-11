@@ -61,5 +61,8 @@
     "center": "Align Center",
     "alignLeft": "Align Left",
     "alignRight": "Align Right"
-  }
+  },
+  "tenantSelectTitle": "Choose a tenant to continue",
+  "tenantSelectPlaceholder": "Select a tenant",
+  "tenantSelectOk": "OK"
 }

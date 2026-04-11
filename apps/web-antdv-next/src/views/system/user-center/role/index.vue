@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import type { TreeProps } from 'antdv-next';
 
-import type { DeptTreeNode, UserInfo } from '#/api/system/user';
+import type { OrgInfo } from '#/api/system/org';
+import type { RoleInfo } from '#/api/system/role';
 
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 
@@ -18,19 +19,20 @@ import {
   message,
   Modal,
   Space,
-  Tag,
   Tree,
 } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { deleteUserApi, getDeptTreeApi, getUserPageApi } from '#/api/system/user';
+import { getOrgTreeApi } from '#/api/system/org';
+import { deleteRoleApi, getRolePageApi } from '#/api/system/role';
 import { usePageButtonAccess } from '#/composables/use-page-button-access';
 import { $t } from '#/locales';
 
-import { USER_PAGE_BUTTON_CODES } from './button-permissions';
-import UserDetail from './components/UserDetail.vue';
-import UserForm from './components/UserForm.vue';
-import UserImport from './components/UserImport.vue';
+import { ROLE_PAGE_BUTTON_CODES } from './button-permissions';
+import RoleForm from './components/RoleForm.vue';
+import RolePermission from './components/RolePermission.vue';
+
+defineOptions({ name: 'SystemRole' });
 
 const { canButton } = usePageButtonAccess();
 
@@ -39,26 +41,23 @@ const { canButton } = usePageButtonAccess();
 const selectedDeptId = ref<string>('');
 
 // 部门树相关
-const deptTreeData = ref<DeptTreeNode[]>([]);
+const deptTreeData = ref<OrgInfo[]>([]);
 const searchKey = ref('');
 const expandedKeys = ref<string[]>([]);
 const selectedKeys = ref<string[]>([]);
 
 // 搜索表单
 const searchForm = reactive({
-  account: '',
-  name: '',
+  roleName: '',
 });
 
 // 弹窗状态
-const userFormVisible = ref(false);
-const userFormType = ref<'add' | 'edit' | 'passwordReset'>('add');
-const userFormData = ref<Partial<UserInfo>>({});
+const formVisible = ref(false);
+const formType = ref<'add' | 'edit'>('add');
+const formData = ref<Partial<RoleInfo>>({});
 
-const userDetailVisible = ref(false);
-const userDetailData = ref<Partial<UserInfo>>({});
-
-const userImportVisible = ref(false);
+const permissionVisible = ref(false);
+const permissionData = ref<Partial<RoleInfo>>({});
 
 // ==================== 计算属性 ====================
 
@@ -69,7 +68,7 @@ const filteredDeptTree = computed(() => {
 
 // ==================== VxeGrid 配置 ====================
 
-const [Grid, gridApi] = useVbenVxeGrid<UserInfo>({
+const [Grid, gridApi] = useVbenVxeGrid<RoleInfo>({
   showSearchForm: false,
   separator: false,
   gridOptions: {
@@ -87,7 +86,7 @@ const [Grid, gridApi] = useVbenVxeGrid<UserInfo>({
             deptId: selectedDeptId.value,
             ...searchForm,
           };
-          const res = await getUserPageApi(params);
+          const res = await getRolePageApi(params);
           return {
             records: res?.records || [],
             total: res?.total || 0,
@@ -102,40 +101,14 @@ const [Grid, gridApi] = useVbenVxeGrid<UserInfo>({
     },
     columns: [
       {
-        type: 'seq',
-        title: $t('system.user.num') || '序号',
-        width: 60,
-      },
-      {
-        field: 'account',
-        title: $t('system.user.account'),
-        minWidth: 120,
-      },
-      {
-        field: 'name',
-        title: $t('system.user.name'),
-        minWidth: 100,
-      },
-      {
         field: 'roleName',
-        title: $t('system.user.role'),
-        minWidth: 180,
-        align: 'left',
-        slots: { default: 'roleName' },
+        title: $t('system.role.roleName'),
+        minWidth: 150,
       },
       {
         field: 'deptName',
-        title: $t('system.user.org'),
+        title: $t('system.role.organization'),
         minWidth: 150,
-        align: 'left',
-      },
-      {
-        field: 'status',
-        title: $t('system.common.status'),
-        width: 80,
-        formatter: ({ cellValue }: any) => {
-          return cellValue === 1 ? $t('system.common.normal') : $t('system.common.disabled');
-        },
       },
       {
         title: $t('system.common.operation'),
@@ -150,8 +123,8 @@ const [Grid, gridApi] = useVbenVxeGrid<UserInfo>({
 
 // ==================== 方法 ====================
 
-function filterTree(data: DeptTreeNode[], keyword: string): DeptTreeNode[] {
-  const result: DeptTreeNode[] = [];
+function filterTree(data: OrgInfo[], keyword: string): OrgInfo[] {
+  const result: OrgInfo[] = [];
   for (const item of data) {
     if (item.deptName.toLowerCase().includes(keyword)) {
       result.push({ ...item });
@@ -167,12 +140,10 @@ function filterTree(data: DeptTreeNode[], keyword: string): DeptTreeNode[] {
 
 const getDeptTree = async () => {
   try {
-    const res = await getDeptTreeApi();
+    const res = await getOrgTreeApi();
     deptTreeData.value = res || [];
-    // 默认展开所有节点
     const allKeys = getAllKeys(deptTreeData.value);
     expandedKeys.value = allKeys;
-    // 默认选中第一个
     if (deptTreeData.value.length > 0) {
       const firstKey = getFirstKey(deptTreeData.value);
       if (firstKey) {
@@ -185,7 +156,7 @@ const getDeptTree = async () => {
   }
 };
 
-function getAllKeys(data: DeptTreeNode[]): string[] {
+function getAllKeys(data: OrgInfo[]): string[] {
   const keys: string[] = [];
   for (const item of data) {
     keys.push(item.id);
@@ -196,7 +167,7 @@ function getAllKeys(data: DeptTreeNode[]): string[] {
   return keys;
 }
 
-function getFirstKey(data: DeptTreeNode[]): null | string {
+function getFirstKey(data: OrgInfo[]): null | string {
   if (data.length === 0) return null;
   return data[0].id;
 }
@@ -206,8 +177,7 @@ const handleSearch = () => {
 };
 
 const handleReset = () => {
-  searchForm.account = '';
-  searchForm.name = '';
+  searchForm.roleName = '';
   void gridApi.reload();
 };
 
@@ -218,62 +188,53 @@ const handleDeptSelect: TreeProps['onSelect'] = (keys) => {
   }
 };
 
-// 操作按钮
 const handleAdd = () => {
-  userFormType.value = 'add';
-  userFormData.value = { deptId: selectedDeptId.value };
-  userFormVisible.value = true;
+  formType.value = 'add';
+  formData.value = { deptId: selectedDeptId.value };
+  formVisible.value = true;
 };
 
-const handleEdit = (record: UserInfo) => {
-  userFormType.value = 'edit';
-  userFormData.value = { ...record };
-  userFormVisible.value = true;
+const handleEdit = (record: RoleInfo) => {
+  formType.value = 'edit';
+  formData.value = { ...record };
+  formVisible.value = true;
 };
 
-const handleView = (record: UserInfo) => {
-  userDetailData.value = { ...record };
-  console.log('handleView', userDetailData.value);
-  userDetailVisible.value = true;
-};
+const handleDelete = async (record: RoleInfo) => {
+  if (record.roleAlias === 'admin') {
+    message.warning('管理员角色不能删除');
+    return;
+  }
 
-const handlePasswordReset = (record: UserInfo) => {
-  userFormType.value = 'passwordReset';
-  userFormData.value = { id: record.id, account: record.account };
-  userFormVisible.value = true;
-};
-
-const handleImport = () => {
-  userImportVisible.value = true;
-};
-
-const handleFormSuccess = () => {
-  userFormVisible.value = false;
-  void gridApi.reload();
-};
-
-const handleImportSuccess = () => {
-  userImportVisible.value = false;
-  void gridApi.reload();
-};
-
-const handleDelete = (record: UserInfo) => {
   Modal.confirm({
-    title: $t('system.user.confirmDelete'),
-    content: $t('system.user.confirmDeleteMessage', { name: record.name }),
+    title: $t('system.role.deleteTip'),
+    content: $t('system.role.deleteContent'),
     okText: $t('system.common.ok'),
     cancelText: $t('system.common.cancel'),
     onOk: async () => {
       try {
-        await deleteUserApi([record.id]);
+        await deleteRoleApi(record.id);
         message.success($t('system.common.deleteSuccess'));
         void gridApi.reload();
-      } catch (error) {
-        console.error('删除用户失败:', error);
-        message.error($t('system.common.deleteFailed'));
+      } catch (error: any) {
+        message.error(error?.message || $t('system.common.deleteFailed'));
       }
     },
   });
+};
+
+const handlePermission = (record: RoleInfo) => {
+  permissionData.value = { ...record };
+  permissionVisible.value = true;
+};
+
+const handleFormSuccess = () => {
+  formVisible.value = false;
+  void gridApi.reload();
+};
+
+const handlePermissionSuccess = () => {
+  permissionVisible.value = false;
 };
 
 // ==================== 生命周期 ====================
@@ -288,14 +249,14 @@ watch(selectedDeptId, () => {
 </script>
 
 <template>
-  <Page auto-content-height :title="$t('system.user.title')">
+  <Page auto-content-height :title="$t('system.role.title')">
     <div class="flex h-full gap-4">
-      <!-- 左侧部门树 -->
+      <!-- 左侧组织树 -->
       <Card class="w-80 shrink-0">
         <div class="mb-3">
           <InputSearch
             v-model:value="searchKey"
-            :placeholder="$t('system.org.orgNamePlaceholder')"
+            :placeholder="$t('system.role.organizationPlaceholder')"
             allow-clear
           />
         </div>
@@ -316,25 +277,18 @@ watch(selectedDeptId, () => {
         <Card>
           <div class="flex items-start justify-between">
             <Form layout="inline">
-              <FormItem :label="$t('system.user.account')">
+              <FormItem :label="$t('system.role.roleName')">
                 <Input
-                  v-model:value="searchForm.account"
-                  :placeholder="$t('system.user.accountPlaceholder')"
-                  allow-clear
-                  style="width: 240px"
-                />
-              </FormItem>
-              <FormItem :label="$t('system.user.name')">
-                <Input
-                  v-model:value="searchForm.name"
-                  :placeholder="$t('system.user.namePlaceholder')"
+                  v-model:value="searchForm.roleName"
+                  :placeholder="$t('system.role.roleNamePlaceholder')"
                   allow-clear
                   style="width: 240px"
                 />
               </FormItem>
             </Form>
             <Space>
-              <Button type="primary" class="w-21" @click="handleSearch">
+              <Button type="primary" class="w-21"
+@click="handleSearch">
                 <template #icon><IconifyIcon icon="lucide:search" /></template>
                 {{ $t('system.common.search') }}
               </Button>
@@ -348,84 +302,72 @@ watch(selectedDeptId, () => {
           </div>
         </Card>
 
-        <!-- 用户列表 -->
+        <!-- 角色列表 -->
         <div class="min-h-0 flex-1">
           <Grid>
             <template #toolbar-actions>
               <div class="flex w-full justify-end">
-                <Space>
-                  <Button
-                    v-if="canButton(USER_PAGE_BUTTON_CODES.add)"
-                    type="primary"
-                    class="w-21"
-                    @click="handleAdd"
-                  >
-                    <template #icon>
-                      <IconifyIcon icon="lucide:plus" />
-                    </template>
-                    {{ $t('system.common.add') }}
-                  </Button>
-                  <Button
-                    v-if="canButton(USER_PAGE_BUTTON_CODES.batchImport)"
-                    class="w-26"
-                    @click="handleImport"
-                  >
-                    <template #icon>
-                      <IconifyIcon icon="lucide:upload" />
-                    </template>
-                    {{ $t('system.user.batchImport') }}
-                  </Button>
-                </Space>
+                <Button
+                  v-if="canButton(ROLE_PAGE_BUTTON_CODES.add)"
+                  type="primary"
+                  class="w-21"
+                  @click="handleAdd"
+                >
+                  <template #icon><IconifyIcon icon="lucide:plus" /></template>
+                  {{ $t('system.common.add') }}
+                </Button>
               </div>
             </template>
 
-            <template #roleName="{ row }">
-              <template v-if="row.roleName">
-                <Tag v-for="(role, idx) in row.roleName.split(',')" :key="idx" color="blue">
-                  {{ role }}
-                </Tag>
-              </template>
-            </template>
-
             <template #action="{ row }">
-              <Space>
-                <a v-if="canButton(USER_PAGE_BUTTON_CODES.detail)" @click="handleView(row)">{{
-                  $t('system.common.view')
-                }}</a>
-                <a v-if="canButton(USER_PAGE_BUTTON_CODES.edit)" @click="handleEdit(row)">{{
-                  $t('system.common.edit')
-                }}</a>
-                <a
-                  v-if="canButton(USER_PAGE_BUTTON_CODES.resetPwd)"
-                  @click="handlePasswordReset(row)"
-                  >{{ $t('system.user.editPassword') }}</a
+              <template v-if="row.roleAlias !== 'admin'">
+                <Button
+                  type="link"
+                  size="small"
+                  class="text-primary"
+                  v-if="canButton(ROLE_PAGE_BUTTON_CODES.edit)"
+                  @click="handleEdit(row)"
                 >
-                <a
-                  v-if="canButton(USER_PAGE_BUTTON_CODES.delete)"
-                  class="text-error"
+                  {{ $t('system.common.edit') }}
+                </Button>
+                <Button
+                  danger
+                  type="link"
+                  size="small"
+                  v-if="canButton(ROLE_PAGE_BUTTON_CODES.delete)"
                   @click="handleDelete(row)"
-                  >{{ $t('system.common.delete') }}</a
                 >
-              </Space>
+                  {{ $t('system.common.delete') }}
+                </Button>
+                <Button
+                  type="link"
+                  size="small"
+                  v-if="canButton(ROLE_PAGE_BUTTON_CODES.auth)"
+                  @click="handlePermission(row)"
+                >
+                  {{ $t('system.role.permission') }}
+                </Button>
+              </template>
             </template>
           </Grid>
         </div>
       </div>
     </div>
 
-    <!-- 用户表单弹窗 -->
-    <UserForm
-      v-model:visible="userFormVisible"
-      :type="userFormType"
-      :data="userFormData"
+    <!-- 角色表单弹窗 -->
+    <RoleForm
+      v-model:visible="formVisible"
+      :type="formType"
+      :data="formData"
       @success="handleFormSuccess"
     />
 
-    <!-- 用户详情弹窗 -->
-    <UserDetail v-model:visible="userDetailVisible" :data="userDetailData" />
-
-    <!-- 用户导入弹窗 -->
-    <UserImport v-model:visible="userImportVisible" @success="handleImportSuccess" />
+    <!-- 权限配置弹窗 -->
+    <RolePermission
+      v-model:visible="permissionVisible"
+      :data="permissionData"
+      @success="handlePermissionSuccess"
+    />
   </Page>
 </template>
 

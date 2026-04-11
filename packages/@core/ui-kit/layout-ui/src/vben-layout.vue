@@ -42,8 +42,10 @@ const props = withDefaults(defineProps<Props>(), {
   footerEnable: false,
   footerFixed: true,
   footerHeight: 32,
+  headerForceShowLogo: false,
   headerHeight: 50,
   headerHidden: false,
+  headerHideSidebarToggle: false,
   headerMode: 'fixed',
   headerToggleSidebarButton: true,
   headerVisible: true,
@@ -369,6 +371,9 @@ const maskStyle = computed((): CSSProperties => {
 });
 
 const showHeaderToggleButton = computed(() => {
+  if (props.headerHideSidebarToggle) {
+    return false;
+  }
   return (
     props.isMobile ||
     (props.headerToggleSidebarButton &&
@@ -380,7 +385,12 @@ const showHeaderToggleButton = computed(() => {
 });
 
 const showHeaderLogo = computed(() => {
-  return !isSideMode.value || isMixedNav.value || props.isMobile;
+  return (
+    props.headerForceShowLogo ||
+    !isSideMode.value ||
+    isMixedNav.value ||
+    props.isMobile
+  );
 });
 
 watch(
@@ -522,7 +532,11 @@ const idMainContent = ELEMENT_ID_MAIN_CONTENT;
       @leave="() => emit('sideMouseLeave')"
       @update:width="(val) => emit('update:sidebar-width', val)"
     >
-      <template v-if="isSideMode && !isMixedNav" #logo>
+      <!-- prettier-ignore -->
+      <template
+        v-if="isSideMode && !isMixedNav"
+        #logo
+      >
         <slot name="logo"></slot>
       </template>
 
@@ -566,7 +580,11 @@ const idMainContent = ELEMENT_ID_MAIN_CONTENT;
           :width="mainStyle.width"
           :z-index="headerZIndex"
         >
-          <template v-if="showHeaderLogo" #logo>
+          <!-- prettier-ignore -->
+          <template
+            v-if="showHeaderLogo"
+            #logo
+          >
             <slot name="logo"></slot>
           </template>
 
@@ -576,8 +594,7 @@ const idMainContent = ELEMENT_ID_MAIN_CONTENT;
               class="my-0 mr-1 rounded-md"
               @click="handleHeaderToggle"
             >
-              <IconifyIcon v-if="showSidebar" icon="ep:fold" />
-              <IconifyIcon v-else icon="ep:expand" />
+              <IconifyIcon :icon="showSidebar ? 'ep:fold' : 'ep:expand'" />
             </VbenIconButton>
           </template>
           <slot name="header"></slot>

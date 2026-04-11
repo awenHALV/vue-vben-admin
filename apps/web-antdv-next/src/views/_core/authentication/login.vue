@@ -3,17 +3,17 @@ import type { VbenFormSchema } from '@vben/common-ui';
 
 import { computed, h, onMounted, ref } from 'vue';
 
-import {
-  AuthenticationLogin,
-  useVbenModal,
-  VbenButton,
-  VbenSelect,
-  z,
-} from '@vben/common-ui';
+import { AuthenticationLogin, z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 
+import { message } from 'antdv-next';
+
 import { getCaptchaApi } from '#/api';
+import { switchTenantPublicApi } from '#/api/core/auth';
+import { extractTokenFromSwitchPayload } from '#/composables/use-tenant-switch-flow';
 import { useAuthStore } from '#/store';
+
+import TenantSelectModal from './TenantSelectModal.vue';
 
 defineOptions({ name: 'Login' });
 
@@ -173,11 +173,10 @@ const formSchema = computed((): VbenFormSchema[] => {
   ];
 });
 
-const [Modal, modalApi] = useVbenModal();
+const tenantModalRef = ref<InstanceType<typeof TenantSelectModal> | null>(null);
 
 const tenantList = ref<Array<{ tenantId: string; tenantName: string }>>([]);
 const selectedTenant = ref<string>('');
-const currentLoginParams = ref<any>({});
 
 async function handleSubmit(values: any) {
   const params = {
@@ -189,15 +188,14 @@ async function handleSubmit(values: any) {
 
     if (result?.needTenantSelection) {
       tenantList.value = result.tenantList || [];
-      currentLoginParams.value = result.loginParams;
       const [firstTenant] = tenantList.value;
       if (firstTenant) {
         selectedTenant.value = firstTenant.tenantId;
       }
-      modalApi.setState({ isOpen: true });
+      tenantModalRef.value?.open();
     }
   } catch (error: unknown) {
-    console.log(error);
+    console.error(error);
     if (loginType.value === 'account' && isUserLoginFailedError(error)) {
       await fetchCaptcha();
     }
@@ -205,14 +203,21 @@ async function handleSubmit(values: any) {
 }
 
 async function handleTenantConfirm() {
-  if (!selectedTenant.value) return;
+  if (!selectedTenant.value) {
+    return;
+  }
   authStore.loginLoading = true;
   try {
-    modalApi.setState({ isOpen: false });
-    await authStore.authLogin({
-      ...currentLoginParams.value,
+    tenantModalRef.value?.close();
+    const payload = await switchTenantPublicApi({
       tenantId: selectedTenant.value,
     });
+    const token = extractTokenFromSwitchPayload(payload);
+    if (!token) {
+      message.error($t('tenant.message.switchTenantFailed'));
+      return;
+    }
+    await authStore.enterPlatformWithToken(token);
   } catch (error: unknown) {
     if (loginType.value === 'account' && isUserLoginFailedError(error)) {
       await fetchCaptcha();
@@ -223,7 +228,7 @@ async function handleTenantConfirm() {
 }
 
 function handleTenantCancel() {
-  modalApi.setState({ isOpen: false });
+  tenantModalRef.value?.close();
   authStore.clearToken();
 }
 </script>
@@ -237,65 +242,12 @@ function handleTenantCancel() {
       @submit="handleSubmit"
     />
 
-    <Modal
-      :closable="false"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :footer="false"
-      :fullscreen-button="false"
-      :header="false"
-      class="border-none p-0 shadow-xl sm:w-[420px] sm:rounded-lg"
-    >
-      <div class="overflow-hidden rounded-lg bg-background text-left">
-        <!-- Banner -->
-        <div
-          class="relative flex h-32 items-center justify-between bg-linear-to-r from-[#eef2fc] to-[#f4f7fe] px-6 dark:from-[#1f2438] dark:to-[#171a28]"
-        >
-          <span class="text-xl font-medium text-foreground"
-            >您可以选择以下租户登录</span
-          >
-          <div class="absolute right-0 bottom-0 opacity-80 dark:opacity-30">
-            <!-- Decorative SVG matching the people icon concept from the image -->
-            <svg
-              class="size-32 translate-4 text-primary"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
-              />
-            </svg>
-          </div>
-        </div>
-
-        <!-- Form Content -->
-        <div class="p-6">
-          <VbenSelect
-            v-model="selectedTenant"
-            :options="
-              tenantList.map((t) => ({
-                value: t.tenantId,
-                label: t.tenantName,
-              }))
-            "
-            class="mb-6 h-10 w-full"
-            placeholder="请选择租户"
-          />
-          <div class="flex justify-between gap-4">
-            <VbenButton
-              class="h-10 flex-1"
-              variant="outline"
-              @click="handleTenantCancel"
-            >
-              取消
-            </VbenButton>
-            <VbenButton class="h-10 flex-1"
-@click="handleTenantConfirm">
-              确定
-            </VbenButton>
-          </div>
-        </div>
-      </div>
-    </Modal>
+    <TenantSelectModal
+      ref="tenantModalRef"
+      v-model:selected-tenant="selectedTenant"
+      :tenant-list="tenantList"
+      @cancel="handleTenantCancel"
+      @confirm="handleTenantConfirm"
+    />
   </div>
 </template>

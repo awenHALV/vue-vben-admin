@@ -17,6 +17,16 @@ import { getUserInfoApi, logoutApi } from '#/api';
 import { getTenantListApi, loginApi } from '#/api/core/auth';
 import { $t } from '#/locales';
 import { encryptByMd5 } from '#/utils/cipher';
+import { notifyChildAppsLogout } from '#/wujie-config/event';
+
+const MULTI_TENANT_SESSION_KEY = `${import.meta.env.VITE_APP_NAMESPACE}-multi-tenant`;
+
+function readSessionMultiTenant(): boolean {
+  if (typeof sessionStorage === 'undefined') {
+    return false;
+  }
+  return sessionStorage.getItem(MULTI_TENANT_SESSION_KEY) === '1';
+}
 
 export const useAuthStore = defineStore('auth', () => {
   const accessStore = useAccessStore();
@@ -24,6 +34,19 @@ export const useAuthStore = defineStore('auth', () => {
   const router = useRouter();
 
   const loginLoading = ref(false);
+  const isMultiTenant = ref(readSessionMultiTenant());
+
+  function syncMultiTenantFlag(value: boolean) {
+    isMultiTenant.value = value;
+    if (typeof sessionStorage === 'undefined') {
+      return;
+    }
+    if (value) {
+      sessionStorage.setItem(MULTI_TENANT_SESSION_KEY, '1');
+    } else {
+      sessionStorage.removeItem(MULTI_TENANT_SESSION_KEY);
+    }
+  }
 
   /**
    * 异步处理登录操作
@@ -46,6 +69,11 @@ export const useAuthStore = defineStore('auth', () => {
       };
 
       const { token, multiTenant } = await loginApi(loginParams);
+      if (multiTenant === true) {
+        syncMultiTenantFlag(true);
+      } else if (multiTenant === false) {
+        syncMultiTenantFlag(false);
+      }
       // 如果成功获取到 token
       if (token) {
         accessStore.setAccessToken(token);
@@ -59,7 +87,6 @@ export const useAuthStore = defineStore('auth', () => {
           return {
             needTenantSelection: true,
             tenantList,
-            loginParams,
           };
         }
         // 获取用户信息并存储到 accessStore 中
@@ -103,8 +130,16 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * 仅前端清会话并回登录页（不调退出登录接口）。
    * 用于 401/令牌作废等场景；用户主动退出请用 logout()。
+   * 会先通过无界 bus 通知子应用清空缓存，再清基座状态。
    */
-  async function terminateSession(redirect: boolean = true) {
+  async function terminateSession(
+    redirect: boolean = true,
+    options?: { reason?: 'session_expired' | 'unauthorized' | 'user' },
+  ) {
+    notifyChildAppsLogout({
+      reason: options?.reason ?? 'session_expired',
+    });
+    syncMultiTenantFlag(false);
     resetAllStores();
     removeCookie(TOKEN_KEY);
     accessStore.setLoginExpired(false);
@@ -128,7 +163,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch {
       // 不做任何处理
     }
-    await terminateSession(redirect);
+    await terminateSession(redirect, { reason: 'user' });
   }
 
   async function fetchUserInfo() {
@@ -137,11 +172,33 @@ export const useAuthStore = defineStore('auth', () => {
     return userInfo;
   }
 
+  /**
+   * 多租户选租户后：已由 `switch-tenant` 换发 token，写入会话并进入业务首页（与登录成功分支一致）。
+   */
+  async function enterPlatformWithToken(token: string) {
+    accessStore.setAccessToken(token);
+    setCookie(TOKEN_KEY, token);
+    if (accessStore.loginExpired) {
+      accessStore.setLoginExpired(false);
+    }
+    const userInfo = await fetchUserInfo();
+    await router.push(userInfo.homePath || preferences.app.defaultHomePath);
+    if (userInfo?.realName) {
+      notification.success({
+        description: `${$t('authentication.loginSuccessDesc')}:${userInfo?.realName}`,
+        duration: 3,
+        title: $t('authentication.loginSuccess'),
+      });
+    }
+  }
+
   function $reset() {
     loginLoading.value = false;
+    syncMultiTenantFlag(false);
   }
 
   function clearToken() {
+    syncMultiTenantFlag(false);
     accessStore.setAccessToken(null);
     removeCookie(TOKEN_KEY);
   }
@@ -150,7 +207,9 @@ export const useAuthStore = defineStore('auth', () => {
     $reset,
     authLogin,
     clearToken,
+    enterPlatformWithToken,
     fetchUserInfo,
+    isMultiTenant,
     loginLoading,
     logout,
     terminateSession,

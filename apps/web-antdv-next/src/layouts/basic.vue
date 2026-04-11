@@ -15,9 +15,15 @@ import {
 import { preferences } from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
+import { message } from 'antdv-next';
+import { storeToRefs } from 'pinia';
+
+import { getTenantListApi } from '#/api/core/auth';
+import { useTenantSwitchFlow } from '#/composables/use-tenant-switch-flow';
 import { $t } from '#/locales';
 import { useAuthStore } from '#/store';
 import LoginForm from '#/views/_core/authentication/login.vue';
+import TenantSelectModal from '#/views/_core/authentication/TenantSelectModal.vue';
 
 const notifications = ref<NotificationItem[]>([
   {
@@ -75,48 +81,74 @@ const notifications = ref<NotificationItem[]>([
 const router = useRouter();
 const userStore = useUserStore();
 const authStore = useAuthStore();
+const { isMultiTenant } = storeToRefs(authStore);
+const { switchTenantByTenantId } = useTenantSwitchFlow(router);
 const accessStore = useAccessStore();
 const { destroyWatermark, updateWatermark } = useWatermark();
 const showDot = computed(() =>
   notifications.value.some((item) => !item.isRead),
 );
 
-const menus = computed(() => [
-  {
-    handler: () => {
-      router.push({ name: 'Profile' });
+const tenantModalRef = ref<InstanceType<typeof TenantSelectModal> | null>(null);
+const headerTenantList = ref<Array<{ tenantId: string; tenantName: string }>>(
+  [],
+);
+const headerSelectedTenant = ref('');
+const headerTenantConfirmLoading = ref(false);
+
+async function openSwitchTenantModal() {
+  try {
+    const list = await getTenantListApi();
+    headerTenantList.value = list.map((t) => ({
+      tenantId: String(t.tenantId),
+      tenantName: t.tenantName,
+    }));
+    const [first] = headerTenantList.value;
+    headerSelectedTenant.value = first ? first.tenantId : '';
+    tenantModalRef.value?.open();
+  } catch {
+    message.error($t('tenant.message.switchTenantFailed'));
+  }
+}
+
+async function handleHeaderTenantConfirm() {
+  if (!headerSelectedTenant.value) {
+    return;
+  }
+  headerTenantConfirmLoading.value = true;
+  try {
+    await switchTenantByTenantId(headerSelectedTenant.value);
+    tenantModalRef.value?.close();
+  } finally {
+    headerTenantConfirmLoading.value = false;
+  }
+}
+
+function handleHeaderTenantCancel() {
+  tenantModalRef.value?.close();
+}
+
+const menus = computed(() => {
+  const items = [
+    {
+      handler: () => {
+        router.push({ name: 'Profile' });
+      },
+      icon: 'lucide:user',
+      text: $t('page.auth.profile'),
     },
-    icon: 'lucide:user',
-    text: $t('page.auth.profile'),
-  },
-  // {
-  //   handler: () => {
-  //     openWindow(VBEN_DOC_URL, {
-  //       target: '_blank',
-  //     });
-  //   },
-  //   icon: BookOpenText,
-  //   text: $t('ui.widgets.document'),
-  // },
-  // {
-  //   handler: () => {
-  //     openWindow(VBEN_GITHUB_URL, {
-  //       target: '_blank',
-  //     });
-  //   },
-  //   icon: SvgGithubIcon,
-  //   text: 'GitHub',
-  // },
-  // {
-  //   handler: () => {
-  //     openWindow(`${VBEN_GITHUB_URL}/issues`, {
-  //       target: '_blank',
-  //     });
-  //   },
-  //   icon: CircleHelp,
-  //   text: $t('ui.widgets.qa'),
-  // },
-]);
+  ];
+  if (isMultiTenant.value) {
+    items.push({
+      handler: () => {
+        void openSwitchTenantModal();
+      },
+      icon: 'lucide:building-2',
+      text: $t('page.auth.switchTenant'),
+    });
+  }
+  return items;
+});
 
 const avatar = computed(() => {
   return userStore.userInfo?.avatar ?? preferences.app.defaultAvatar;
@@ -188,6 +220,14 @@ watch(
       />
     </template>
     <template #extra>
+      <TenantSelectModal
+        ref="tenantModalRef"
+        v-model:selected-tenant="headerSelectedTenant"
+        :confirm-loading="headerTenantConfirmLoading"
+        :tenant-list="headerTenantList"
+        @cancel="handleHeaderTenantCancel"
+        @confirm="handleHeaderTenantConfirm"
+      />
       <AuthenticationLoginExpiredModal
         v-model:open="accessStore.loginExpired"
         :avatar
@@ -196,8 +236,7 @@ watch(
       </AuthenticationLoginExpiredModal>
     </template>
     <template #lock-screen>
-      <LockScreen :avatar
-@to-login="handleLogout" />
+      <LockScreen :avatar="avatar" @to-login="handleLogout" />
     </template>
   </BasicLayout>
 </template>

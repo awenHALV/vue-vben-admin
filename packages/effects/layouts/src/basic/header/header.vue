@@ -21,14 +21,20 @@ interface Props {
    * Logo 主题
    */
   theme?: string;
+  /**
+   * 是否显示顶栏左侧刷新按钮
+   * @default true
+   */
+  showRefresh?: boolean;
 }
 
 defineOptions({
   name: 'LayoutHeader',
 });
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   theme: 'light',
+  showRefresh: true,
 });
 
 const emit = defineEmits<{ clearPreferencesAndLogout: [] }>();
@@ -98,7 +104,7 @@ const rightSlots = computed(() => {
 const leftSlots = computed(() => {
   const list: Array<{ index: number; name: string }> = [];
 
-  if (preferences.widget.refresh) {
+  if (preferences.widget.refresh && props.showRefresh) {
     list.push({
       index: 0,
       name: 'refresh',
@@ -126,7 +132,11 @@ function clearPreferencesAndLogout() {
   >
     <slot :name="slot.name">
       <template v-if="slot.name === 'refresh'">
-        <VbenIconButton class="my-0 mr-1 rounded-md" @click="refresh">
+        <!-- prettier-ignore -->
+        <VbenIconButton
+          class="my-0 mr-1 rounded-md"
+          @click="refresh"
+        >
           <RotateCw class="size-4" />
         </VbenIconButton>
       </template>
@@ -148,7 +158,11 @@ function clearPreferencesAndLogout() {
     <slot name="menu"></slot>
   </div>
   <div class="flex h-full min-w-0 shrink-0 items-center">
-    <template v-for="slot in rightSlots" :key="slot.name">
+    <!-- prettier-ignore -->
+    <template
+      v-for="slot in rightSlots"
+      :key="slot.name"
+    >
       <slot :name="slot.name">
         <template v-if="slot.name === 'global-search'">
           <GlobalSearch

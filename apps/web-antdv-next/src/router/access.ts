@@ -12,9 +12,10 @@ import { useAccessStore } from '@vben/stores';
 import { message } from 'antdv-next';
 
 import { getAllMenusApi, takeMenuButtonPermissionSnapshot } from '#/api';
-import { BasicLayout, IFrameView } from '#/layouts';
+import { BasicLayout, IFrameView, ParentLayout } from '#/layouts';
 import { $t } from '#/locales';
 
+import { transformComponentMap } from './component-map';
 import { microPrefixNotFoundRoutes } from './routes/core';
 
 const forbiddenComponent = () => import('#/views/_core/fallback/forbidden.vue');
@@ -45,11 +46,14 @@ function appendMicroPrefixNotFoundRoutes(
 }
 
 async function generateAccess(options: GenerateMenuAndRoutesOptions) {
-  const pageMap: ComponentRecordType = import.meta.glob('../views/**/*.vue');
+  const pageMap: ComponentRecordType = transformComponentMap(
+    import.meta.glob('../views/**/*.vue'),
+  );
 
   const layoutMap: ComponentRecordType = {
     BasicLayout,
     IFrameView,
+    ParentLayout,
   };
 
   const result = await generateAccessible(preferences.app.accessMode, {

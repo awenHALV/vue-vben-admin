@@ -7,7 +7,6 @@ import { preferences, usePreferences } from '@vben/preferences';
 
 import { Copyright } from '../basic/copyright';
 import AuthenticationFormView from './form.vue';
-import SloganIcon from './icons/slogan.vue';
 import Toolbar from './toolbar.vue';
 
 interface Props {
@@ -108,29 +107,6 @@ const logoSrc = computed(() => {
         class="absolute inset-0 size-full bg-background-deep dark:bg-[#070709]"
       >
         <div class="login-background absolute top-0 left-0 size-full"></div>
-        <div
-          :key="authPanelLeft ? 'left' : authPanelRight ? 'right' : 'center'"
-          class="mr-20 flex-col-center h-full"
-          :class="{
-            'enter-x': authPanelLeft,
-            '-enter-x': authPanelRight,
-          }"
-        >
-          <template v-if="sloganImage">
-            <img
-              :alt="appName"
-              :src="sloganImage"
-              class="h-64 w-2/5 animate-float"
-            />
-          </template>
-          <SloganIcon v-else :alt="appName" class="h-64 w-2/5 animate-float" />
-          <!-- <div class="text-1xl mt-6 font-sans text-foreground lg:text-2xl">
-            {{ pageTitle }}
-          </div>
-          <div class="mt-2 dark:text-muted-foreground">
-            {{ pageDescription }}
-          </div> -->
-        </div>
       </div>
     </div>
 
@@ -172,24 +148,32 @@ const logoSrc = computed(() => {
 
 <style scoped>
 .login-background {
-  background: linear-gradient(
-    154deg,
-    #07070915 30%,
-    hsl(var(--primary) / 30%) 48%,
-    #07070915 64%
-  );
-  filter: blur(100px);
+  background-color: hsl(var(--background-deep));
+  background-image:
+    linear-gradient(
+      180deg,
+      hsl(var(--primary) / 0) 0%,
+      hsl(var(--primary) / 0.1) 100%
+    ),
+    url('./icons/light.svg');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .dark {
   .login-background {
-    background: linear-gradient(
-      154deg,
-      #07070915 30%,
-      hsl(var(--primary) / 20%) 48%,
-      #07070915 64%
-    );
-    filter: blur(100px);
+    background-color: #070709;
+    background-image:
+      linear-gradient(
+        180deg,
+        hsl(var(--primary) / 0) 0%,
+        hsl(var(--primary) / 0.1) 100%
+      ),
+      url('./icons/dark.svg');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
   }
 }
 </style>

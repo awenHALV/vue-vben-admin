@@ -10,6 +10,8 @@ import { useAuthStore } from '#/store';
 
 import { generateAccess } from './access';
 
+// 无后端菜单权限时的落地页
+const NO_MENU_PERMISSION_PATH = '/no-menu-permission';
 interface AccessMenuItem {
   children?: AccessMenuItem[];
   path?: string;
@@ -108,13 +110,13 @@ function setupAccessGuard(router: Router) {
             preferences.app.defaultHomePath,
         );
       }
-      // 个人中心挂在 BasicLayout 下，侧栏依赖 generateAccess 写入的菜单；刷新直达时若尚未生成权限，
-      // 不可在此提前 return，否则 accessMenus 为空，左侧菜单空白。
-      const profileNeedsMenus =
-        to.name === 'Profile' &&
+      // 个人中心 / 无权限落地页挂在 BasicLayout 下，侧栏依赖 generateAccess 写入的菜单；
+      // 刷新直达时若尚未生成权限，不可在此提前 return，否则 accessMenus 未初始化。
+      const coreRouteNeedsAccessGeneration =
         accessStore.accessToken &&
-        !accessStore.isAccessChecked;
-      if (!profileNeedsMenus) {
+        !accessStore.isAccessChecked &&
+        (to.name === 'Profile' || to.name === 'NoMenuPermission');
+      if (!coreRouteNeedsAccessGeneration) {
         return true;
       }
     }
@@ -144,6 +146,28 @@ function setupAccessGuard(router: Router) {
 
     // 是否已经生成过动态路由
     if (accessStore.isAccessChecked) {
+      if (
+        accessStore.accessToken &&
+        accessStore.accessMenus.length === 0 &&
+        to.name !== 'NoMenuPermission' &&
+        to.name !== 'Profile'
+      ) {
+        return { path: NO_MENU_PERMISSION_PATH, replace: true };
+      }
+      if (
+        accessStore.accessToken &&
+        accessStore.accessMenus.length > 0 &&
+        to.name === 'NoMenuPermission'
+      ) {
+        const first = getFirstMenuPath(
+          accessStore.accessMenus as AccessMenuItem[],
+        );
+        const target =
+          userStore.userInfo?.homePath ||
+          first ||
+          preferences.app.defaultHomePath;
+        return { path: target, replace: true };
+      }
       return true;
     }
 
@@ -180,19 +204,27 @@ function setupAccessGuard(router: Router) {
       }
     }
 
-    let redirectPath =
-      pathFromQuery ||
-      (requestedDefaultHome
-        ? userInfo.homePath || firstMenuPath || preferences.app.defaultHomePath
-        : to.fullPath);
-
-    // 已登录时若目标仍是登录页，改去首页，避免与「登录页带 token 再跳首页」逻辑打架形成死循环
-    if (
-      redirectPath === LOGIN_PATH ||
-      redirectPath.startsWith(`${LOGIN_PATH}?`)
-    ) {
+    let redirectPath: string;
+    if (accessibleMenus.length === 0) {
       redirectPath =
-        userInfo.homePath || firstMenuPath || preferences.app.defaultHomePath;
+        to.name === 'Profile' ? to.fullPath : NO_MENU_PERMISSION_PATH;
+    } else {
+      redirectPath =
+        pathFromQuery ||
+        (requestedDefaultHome
+          ? userInfo.homePath ||
+            firstMenuPath ||
+            preferences.app.defaultHomePath
+          : to.fullPath);
+
+      // 已登录时若目标仍是登录页，改去首页，避免与「登录页带 token 再跳首页」逻辑打架形成死循环
+      if (
+        redirectPath === LOGIN_PATH ||
+        redirectPath.startsWith(`${LOGIN_PATH}?`)
+      ) {
+        redirectPath =
+          userInfo.homePath || firstMenuPath || preferences.app.defaultHomePath;
+      }
     }
 
     let resolved: ReturnType<Router['resolve']>;

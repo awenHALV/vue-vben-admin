@@ -16,6 +16,7 @@ import { useAccessStore } from '@vben/stores';
 import { message } from 'antdv-next';
 
 import { useAuthStore } from '#/store';
+import { notifyChildAppsLogout } from '#/wujie-config/event';
 
 import { refreshTokenApi } from './core';
 
@@ -39,8 +40,10 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       accessStore.isAccessChecked
     ) {
       accessStore.setLoginExpired(true);
+      // 未走 terminateSession 时仍通知子应用清缓存（仅弹窗模式）
+      notifyChildAppsLogout({ reason: 'unauthorized' });
     } else {
-      await authStore.terminateSession();
+      await authStore.terminateSession(true, { reason: 'unauthorized' });
     }
   }
 

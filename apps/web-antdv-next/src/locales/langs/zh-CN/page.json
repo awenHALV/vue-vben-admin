@@ -1,11 +1,17 @@
 {
+  "fallback": {
+    "noMenuPermission": "无访问权限",
+    "noMenuPermissionHint": "您没有任何权限，",
+    "noMenuPermissionContact": "请联系管理员"
+  },
   "auth": {
     "login": "登录",
     "register": "注册",
     "codeLogin": "验证码登录",
     "qrcodeLogin": "二维码登录",
     "forgetPassword": "忘记密码",
-    "profile": "个人中心"
+    "profile": "个人中心",
+    "switchTenant": "切换租户"
   },
   "dashboard": {
     "title": "概览",

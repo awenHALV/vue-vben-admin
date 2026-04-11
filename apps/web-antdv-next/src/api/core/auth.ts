@@ -59,18 +59,25 @@ export async function getCaptchaApi() {
  * 获取租户列表
  */
 export async function getTenantListApi() {
-  return [
-    {
-      tenantId: '1',
-      tenantName: '租户1',
-    },
-    {
-      tenantId: '2',
-      tenantName: '租户2',
-    },
-  ];
   return requestClient.get<AuthApi.TenantItem[]>(
     '/de-base-system/external/public/auth/tenant/list',
+  );
+}
+
+/** 已登录或登录后多租户选人场景：凭 tenantId 换发新 token */
+export interface SwitchTenantParams {
+  tenantId: number | string;
+}
+
+/**
+ * 切换租户（公开接口）
+ * POST /de-base-system/external/public/auth/switch-tenant
+ */
+export async function switchTenantPublicApi(data: SwitchTenantParams) {
+  return requestClient.post<AuthApi.LoginResult>(
+    '/de-base-system/external/public/auth/switch-tenant',
+    data,
+    { skipReAuthenticate: true },
   );
 }
 

@@ -1,11 +1,17 @@
 {
+  "fallback": {
+    "noMenuPermission": "No access",
+    "noMenuPermissionHint": "You don't have any permissions. ",
+    "noMenuPermissionContact": "Please contact your administrator."
+  },
   "auth": {
     "login": "Login",
     "register": "Register",
     "codeLogin": "Code Login",
     "qrcodeLogin": "Qr Code Login",
     "forgetPassword": "Forget Password",
-    "profile": "Profile"
+    "profile": "Profile",
+    "switchTenant": "Switch tenant"
   },
   "dashboard": {
     "title": "Dashboard",

@@ -10,7 +10,7 @@ export interface OrgInfo {
   id: string;
   deptName: string;
   parentId?: string;
-  internal?: string;
+  deptType?: string;
   code?: string;
   sort?: number;
   status?: number;
@@ -31,7 +31,7 @@ export interface OrgTreeNode {
 export interface CreateOrgParams {
   deptName: string;
   parentId?: string;
-  internal?: string;
+  deptType?: string;
   code?: string;
   sort?: number;
   status?: number;
@@ -43,7 +43,7 @@ export interface UpdateOrgParams {
   id: string;
   deptName: string;
   parentId?: string;
-  internal?: string;
+  deptType?: string;
   code?: string;
   sort?: number;
   status?: number;
@@ -56,7 +56,10 @@ export interface UpdateOrgParams {
  * 获取组织树
  */
 export async function getOrgTreeApi(params?: { deptName?: string }) {
-  return requestClient.get<OrgInfo[]>('/de-base-system/external/private/dept/tree', { params });
+  return requestClient.get<OrgInfo[]>(
+    '/de-base-system/external/private/dept/tree',
+    { params },
+  );
 }
 
 /**
@@ -68,19 +71,27 @@ export const getDeptTreeApi = getOrgTreeApi;
  * 创建组织
  */
 export async function createOrgApi(data: CreateOrgParams) {
-  return requestClient.post('/de-base-system/external/private/dept/create', data);
+  return requestClient.post(
+    '/de-base-system/external/private/dept/create',
+    data,
+  );
 }
 
 /**
  * 更新组织
  */
 export async function updateOrgApi(data: UpdateOrgParams) {
-  return requestClient.post('/de-base-system/external/private/dept/update', data);
+  return requestClient.post(
+    '/de-base-system/external/private/dept/update',
+    data,
+  );
 }
 
 /**
  * 删除组织
  */
 export async function deleteOrgApi(ids: string[]) {
-  return requestClient.post(`/de-base-system/external/private/dept/delete?ids=${ids.join(',')}`);
+  return requestClient.post(
+    `/de-base-system/external/private/dept/delete?ids=${ids.join(',')}`,
+  );
 }

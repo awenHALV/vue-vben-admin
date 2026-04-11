@@ -14,6 +14,8 @@ import WujieVue from 'wujie-vue3';
 import { useAuthStore } from '#/store';
 
 import {
+  BUTTON_PERMISSION_LIST,
+  BUTTON_PERMISSION_LIST_CHANGE,
   CHANGELANUAGE_EVENT,
   CHANGETHEME_EVENT,
   HOST_BRIDGE_HOST_STATE_PUSH,
@@ -24,6 +26,7 @@ import {
   LOGOUT_EVENT,
   NOTICECHILDAPPTOKEN_EVENT,
 } from './event';
+import website from './website';
 
 const { bus } = WujieVue;
 
@@ -62,6 +65,19 @@ function buildHostState(
 export function setupWujieHostBridge() {
   const accessStore = useAccessStore();
 
+  /** 获取子应用关联的扁平化权限码列表 */
+  function getProjectAccessCodes(projectCode: string) {
+    const codes = new Set<string>();
+    const map = accessStore.menuPathToDirectButtonCodes;
+    Object.keys(map).forEach((path) => {
+      // 匹配属于该子应用的路径
+      if (path.startsWith(`/${projectCode}/`) || path === `/${projectCode}`) {
+        map[path]?.forEach((code) => codes.add(code));
+      }
+    });
+    return [...codes];
+  }
+
   bus.$on(HOST_BRIDGE_REQUEST_TOKEN, (callback?: (token: string) => void) => {
     if (typeof callback === 'function') {
       callback(accessStore.accessToken ?? '');
@@ -95,10 +111,17 @@ export function setupWujieHostBridge() {
     },
   );
 
-  // 监听子应用401token失效
+  // 监听子应用 401 / token 失效上报 → 基座统一退出（会广播 HOST_BRIDGE_LOGOUT_NOTIFY_CHILD）
   bus.$on(LOGOUT_EVENT, () => {
     const authStore = useAuthStore();
-    authStore.terminateSession();
+    void authStore.terminateSession(true, { reason: 'session_expired' });
+  });
+
+  // 监听 VPP 子应用菜单请求
+  bus.$on(BUTTON_PERMISSION_LIST('vpp'), (callback) => {
+    if (typeof callback === 'function') {
+      callback(getProjectAccessCodes('vpp'));
+    }
   });
 
   function emitHostStatePush() {
@@ -157,5 +180,21 @@ export function setupWujieHostBridge() {
     () => accessStore.accessToken,
     () => emitNoticeChildToken(),
     { immediate: true },
+  );
+
+  // 监听菜单变化并自动派发权限码给子应用
+  watch(
+    () => accessStore.accessMenus,
+    (menus) => {
+      if (!menus || menus.length === 0) {
+        return;
+      }
+
+      website.projectCodes.forEach((code) => {
+        const projectCodes = getProjectAccessCodes(code);
+        bus.$emit(BUTTON_PERMISSION_LIST_CHANGE(code), projectCodes);
+      });
+    },
+    { deep: true, immediate: true },
   );
 }

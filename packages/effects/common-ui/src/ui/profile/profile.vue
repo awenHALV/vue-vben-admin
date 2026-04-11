@@ -41,7 +41,8 @@ const tabsValue = defineModel<string>('modelValue');
           </span>
         </div>
         <Separator class="my-4" />
-        <Tabs v-model="tabsValue" orientation="vertical" class="m-4">
+        <Tabs v-model="tabsValue" orientation="vertical"
+class="m-4">
           <TabsList class="grid w-full grid-cols-1 bg-card">
             <TabsTrigger
               v-for="tab in tabs"

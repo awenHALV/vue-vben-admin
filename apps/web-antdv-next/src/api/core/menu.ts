@@ -1,6 +1,7 @@
 import type { RouteRecordStringComponent } from '@vben/types';
 
 import { requestClient } from '#/api/request';
+import { mappedFeatureCodes } from '#/router/component-map';
 import {
   buildMicroUrl,
   getMicroProjectCodeFromRoutePath,
@@ -18,6 +19,7 @@ export interface BackendMenuItem {
   parentId: null | number | string;
   routePath: string;
   sort?: number;
+  resourceCode?: string;
 }
 
 function isMenuFeatureType(featureType: string | undefined): boolean {
@@ -68,6 +70,8 @@ export function takeMenuButtonPermissionSnapshot(): MenuButtonPermissionSnapshot
 
 /**
  * 遍历功能树：每个 MENU 只收集其直接子级中的 BUTTON，不把子 MENU 下的 BUTTON 归到父级。
+ * 菜单 path key 与 {@link mapMenuToRoute} 一致：对 {@link resolveMenuAbsoluteRoutePath} 的结果做规范化，
+ * 以便与 vue-router 的完整 `route.path`（及 {@link normalizeMenuPermissionPath}）对齐。
  */
 export function collectMenuButtonPermissionsFromRaw(
   items: BackendMenuItem[],
@@ -75,14 +79,15 @@ export function collectMenuButtonPermissionsFromRaw(
   const pathToCodes = new Map<string, Set<string>>();
   const allCodes = new Set<string>();
 
-  function visitMenuNode(menu: BackendMenuItem): void {
-    let rawPath = '';
-    if (menu.routePath) {
-      rawPath = menu.routePath.startsWith('/')
-        ? menu.routePath
-        : `/${menu.routePath}`;
-    }
-    const pathKey = normalizeMenuPermissionPath(rawPath);
+  function visitMenuNode(
+    menu: BackendMenuItem,
+    parentAbsoluteRoutePath?: string,
+  ): void {
+    const absoluteRoutePath = resolveMenuAbsoluteRoutePath(
+      menu.routePath,
+      parentAbsoluteRoutePath,
+    );
+    const pathKey = normalizeMenuPermissionPath(absoluteRoutePath);
     const children = menu.children ?? [];
     for (const child of children) {
       if (!child) {
@@ -100,7 +105,7 @@ export function collectMenuButtonPermissionsFromRaw(
           set.add(code);
         }
       } else if (isMenuFeatureType(child.featureType)) {
-        visitMenuNode(child);
+        visitMenuNode(child, absoluteRoutePath);
       }
     }
   }
@@ -208,7 +213,8 @@ function resolveMenuAbsoluteRoutePath(
  * - featureCode → name
  * - routePath   → path（支持分层相对地址，最终拼成 /vpp/system/region 这类绝对路径）
  * - featureName / featureIcon / featureNameEn → meta
- * - 有子菜单且非微前端的父级用 BasicLayout；路径首段 ∈ website.projectCodes（如 vpp）的父级也用 micro/index，避免 BasicLayout 再包一层
+ * - 有子菜单且非微前端：顶层父级用 BasicLayout（合并进 Root 时会去掉 component）；嵌套父级用 ParentLayout（仅 RouterView），避免与 Root 的 BasicLayout 重复套娃
+ * - 路径首段 ∈ website.projectCodes（如 vpp）的父级用 micro/index，避免 BasicLayout 再包一层
  * - 叶子：非微前端按 routePath 推断 views；微前端 → micro/index，并写入 meta.microName / meta.microUrl
  */
 function mapMenuToRoute(
@@ -241,12 +247,21 @@ function mapMenuToRoute(
       : undefined;
 
   let inferredComponent: string;
-  if (hasChildren && !microCode) {
-    inferredComponent = 'BasicLayout';
+  // 优先从组件映射表中寻找
+  if (mappedFeatureCodes.includes(item.featureCode)) {
+    inferredComponent = item.featureCode;
+    console.debug(`[Route Mapping] ${item.featureCode} -> 使用映射解析`);
+  } else if (hasChildren && !microCode) {
+    inferredComponent = parentAbsoluteRoutePath
+      ? 'ParentLayout'
+      : 'BasicLayout';
   } else if (absoluteRoutePath) {
     inferredComponent = microCode
       ? 'micro/index'
       : `${absoluteRoutePath.replace(/^\//, '')}/index`;
+    if (!microCode) {
+      console.debug(`[Route Mapping] ${item.featureCode} -> 使用路径解析 (Fallback)`);
+    }
   } else {
     inferredComponent = '/';
   }
@@ -439,6 +454,7 @@ export interface CreateFeatureParams {
   featureIcon?: string;
   sort?: number;
   routePath?: string;
+  resourceCode?: string;
 }
 
 export interface UpdateFeatureParams extends CreateFeatureParams {
@@ -480,5 +496,19 @@ export async function deleteFeatureApi(
     `/de-base-system/external/private/app-feature/delete?ids=${encodeURIComponent(
       normalizedIds,
     )}`,
+  );
+}
+
+export interface ResourcePoolItem {
+  id: number | string;
+  resourceCode: string;
+  resourceName: string;
+  defaultDataScope?: 'ALL' | 'DEPT' | 'DEPT_AND_SUB' | 'SELF';
+}
+
+/** 获取关联资源池列表 */
+export async function getResourcePoolListApi() {
+  return requestClient.get<ResourcePoolItem[]>(
+    '/de-base-system/external/private/role/data-resource/pool',
   );
 }
