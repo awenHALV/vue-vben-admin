@@ -10,15 +10,15 @@ export default defineConfig(async () => {
       server: {
         proxy: {
           // 研发环境
-          // '/api': {
-          //   changeOrigin: true,
-          //   headers: {
-          //     referer: 'http://100.153.1.74:30100',
-          //   },
-          //   // mock代理目标地址
-          //   target: 'http://100.153.1.74:30100',
-          //   ws: true,
-          // },
+          '/api': {
+            changeOrigin: true,
+            headers: {
+              referer: 'http://100.153.1.74:30100',
+            },
+            // mock代理目标地址
+            target: 'http://100.153.1.74:30100',
+            ws: true,
+          },
           // 测试环境
           // '/api': {
           //   changeOrigin: true,
@@ -45,16 +45,16 @@ export default defineConfig(async () => {
             ws: true,
           },
           // qyj
-          '/api': {
-            changeOrigin: true,
-            headers: {
-              referer: 'http://192.168.0.48:8011',
-            },
-            rewrite: (path) => path.replace(/^\/api\/de-base-system/, ''),
-            // mock代理目标地址
-            target: 'http://192.168.0.48:8011',
-            ws: true,
-          },
+          // '/api': {
+          //   changeOrigin: true,
+          //   headers: {
+          //     referer: 'http://192.168.0.48:8011',
+          //   },
+          //   rewrite: (path) => path.replace(/^\/api\/de-base-system/, ''),
+          //   // mock代理目标地址
+          //   target: 'http://192.168.0.48:8011',
+          //   ws: true,
+          // },
         },
       },
     },

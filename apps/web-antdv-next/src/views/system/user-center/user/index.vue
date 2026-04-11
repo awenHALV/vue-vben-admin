@@ -479,7 +479,7 @@ const userStatusColorMap = {
                 type="link"
                 size="small"
                 v-if="canButton(USER_PAGE_BUTTON_CODES.resetPwd)"
-                :disabled="row.status === 2"
+                :disabled="row.userType === 'EXTERNAL'"
                 @click="handlePasswordReset(row)"
               >
                 {{ $t('system.user.editPassword') }}
