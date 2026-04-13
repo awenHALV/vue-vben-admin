@@ -31,7 +31,7 @@ export interface InviteUserSearchResult {
   account: string;
   phone: string;
   name: string;
-  status: 'ALREADY_IN_TENANT' | 'IN_OTHER_TENANT' | 'NOT_FOUND';
+  status: 'ALREADY_IN_TENANT' | 'NORMAL' | 'NOT_FOUND';
 }
 
 /** 用户分页查询参数 */
@@ -205,9 +205,10 @@ export async function importUserApi(data: FormData) {
 /**
  * 获取部门树
  */
-export async function getDeptTreeApi() {
+export async function getDeptTreeApi(params?: {deptName?: string, deptType?: string}){
   return requestClient.get<DeptTreeNode[]>(
     '/de-base-system/external/private/dept/tree',
+    { params }
   );
 }
 
