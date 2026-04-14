@@ -7,6 +7,7 @@ import type { AssetItem, TradeEntityListItem } from '#/api/system/trade-entity';
 import { ref, watch } from 'vue';
 
 import { useVbenModal } from '@vben/common-ui';
+import {message} from 'antdv-next';
 
 import { useDebounceFn } from '@vueuse/core';
 import { Checkbox, InputSearch, Spin, Tag } from 'antdv-next';
@@ -86,7 +87,8 @@ watch(searchKeyword, () => {
 });
 
 function getEntityTypeLabel(value?: string) {
-  const option = entityTypeOptions.value.find(
+  const filterOptions = entityTypeOptions.value.filter(item => item.optionKey !== '3')
+  const option = filterOptions.find(
     (opt) => opt.optionKey === (value ?? ''),
   );
   return option ? option.optionValue : (value ?? '');
@@ -141,6 +143,7 @@ const handleEntitySaved = async (assets: AssetItem[]) => {
     });
     emit('success');
     modalApi.close();
+    message.success($t('system.org.configSuccess'))
   } catch {
     // 请求层已统一错误提示
   } finally {

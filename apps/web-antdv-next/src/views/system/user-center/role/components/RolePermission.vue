@@ -790,7 +790,7 @@ watch(
                 checkedKeysSet.size === 0
                   ? $t(
                       'system.role.chooseFeatureFirst',
-                      '请先在功能权限下勾选菜单',
+                      '请先在权限管理下勾选菜单',
                     )
                   : $t(
                       'system.role.noAssociatedResources',

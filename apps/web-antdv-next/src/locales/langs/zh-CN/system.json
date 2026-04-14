@@ -93,14 +93,15 @@
     "orgTypePlaceholder": "请选择组织类型",
     "orgTypeRequired": "请选择组织类型",
     "loadOrgTreeFailed": "获取组织树失败",
-    "loadOrgTypeDictFailed": "获取组织类型字典失败"
+    "loadOrgTypeDictFailed": "获取组织类型字典失败",
+    "configSuccess": "资产配置成功"
   },
   "role": {
     "title": "角色管理",
     "roleName": "角色名称",
     "roleCode": "角色编码",
     "organization": "所属组织",
-    "permission": "功能权限",
+    "permission": "权限管理",
     "roleNamePlaceholder": "请输入角色名称",
     "roleCodePlaceholder": "请输入角色编码",
     "organizationPlaceholder": "请选择所属组织",
@@ -108,7 +109,7 @@
     "organizationRequired": "所属组织不能为空",
     "addRole": "新增角色",
     "editRole": "编辑角色",
-    "permissionConfig": "功能权限",
+    "permissionConfig": "权限管理",
     "deleteTip": "请确定是否删除数据？",
     "deleteContent": "删除数据也会删除所有与其相关的数据,请慎重选择",
     "configSuccess": "配置成功",
