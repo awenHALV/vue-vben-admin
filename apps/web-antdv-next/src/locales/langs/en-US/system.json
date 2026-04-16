@@ -91,7 +91,8 @@
     "orgTypePlaceholder": "Please select organization type",
     "orgTypeRequired": "Organization type is required",
     "loadOrgTreeFailed": "Failed to load organization tree",
-    "loadOrgTypeDictFailed": "Failed to load organization type options"
+    "loadOrgTypeDictFailed": "Failed to load organization type options",
+    "configSuccess": "Asset configuration successful"
   },
   "role": {
     "title": "Role Management",

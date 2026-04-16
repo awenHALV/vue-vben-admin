@@ -129,20 +129,6 @@ const [Form, formApi] = useVbenForm({
         placeholder: $t('tenant.form.resourcePool') || '请选择关联资源池',
         style: { width: '100%' },
       },
-      dependencies: {
-        if(values) {
-          return values.featureType === 'MENU';
-        },
-        rules(values) {
-          if (values.featureType === 'MENU') {
-            return z
-              .array(z.string())
-              .min(1, { message: $t('menu.formRules.resourceCode') });
-          }
-          return z.array(z.string()).optional();
-        },
-        triggerFields: ['featureType'],
-      },
       fieldName: 'resourceCode',
       label: $t('tenant.form.resourcePool') || '关联资源池',
     },

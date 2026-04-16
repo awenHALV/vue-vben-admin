@@ -143,13 +143,14 @@ function schemaPasswordPair() {
   ];
 }
 
-function schemaNamePhoneEmail() {
+function schemaNamePhoneEmail(disabled: boolean) {
   return [
     {
       component: 'Input' as const,
       componentProps: {
         maxlength: 20,
         placeholder: $t('system.user.namePlaceholder'),
+        disabled
       },
       fieldName: 'name',
       label: $t('system.user.name'),
@@ -160,6 +161,7 @@ function schemaNamePhoneEmail() {
       componentProps: {
         maxlength: 11,
         placeholder: $t('system.user.phonePlaceholder'),
+        disabled
       },
       fieldName: 'phone',
       label: $t('system.user.phone'),
@@ -170,6 +172,7 @@ function schemaNamePhoneEmail() {
       componentProps: {
         maxlength: 50,
         placeholder: $t('system.user.emailPlaceholder'),
+        disabled
       },
       fieldName: 'email',
       label: $t('system.user.email'),
@@ -260,15 +263,15 @@ function buildFormSchema() {
     return [
       schemaAccountField(false),
       ...schemaPasswordPair(),
-      ...schemaNamePhoneEmail(),
+      ...schemaNamePhoneEmail(false),
       ...schemaDeptAndRole(),
     ];
   }
-
+  const disabled = currentType.value === 'edit' && currentData.value.userType === 'EXTERNAL';
   return [
     schemaAccountField(true),
     schemaStatusField(),
-    ...schemaNamePhoneEmail(),
+    ...schemaNamePhoneEmail(disabled),
     ...schemaDeptAndRole(),
   ];
 }

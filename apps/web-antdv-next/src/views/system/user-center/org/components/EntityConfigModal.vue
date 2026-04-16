@@ -9,7 +9,7 @@ import { ref, watch } from 'vue';
 import { useVbenModal } from '@vben/common-ui';
 
 import { useDebounceFn } from '@vueuse/core';
-import { Checkbox, InputSearch, Spin, Tag } from 'antdv-next';
+import { Checkbox, InputSearch, message, Spin, Tag } from 'antdv-next';
 
 import { getDictOptionsApi } from '#/api/system/dict';
 import {
@@ -53,7 +53,7 @@ async function loadEntityList() {
     const res = await getTradeEntityListApi({
       name: searchKeyword.value || undefined,
     });
-    entityList.value = res || [];
+    entityList.value = res.filter((item) => item.entityType !== '3') || [];
   } finally {
     loading.value = false;
   }
@@ -141,6 +141,7 @@ const handleEntitySaved = async (assets: AssetItem[]) => {
     });
     emit('success');
     modalApi.close();
+    message.success($t('system.org.configSuccess'));
   } catch {
     // 请求层已统一错误提示
   } finally {

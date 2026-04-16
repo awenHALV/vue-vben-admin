@@ -36,6 +36,8 @@ const isEdit = ref(false);
 const currentRecord = ref<BackendTenantItem | null>(null);
 /** 编辑态：详情接口完整数据，提交时 appFeatureIds 直接取详情里的 featureIds */
 const editTenantDetail = ref<BackendTenantItem | null>(null);
+/** 备份原始功能列表，用于补全父级节点 ID */
+const featureRawList = ref<BackendMenuItem[]>([]);
 
 const PHONE_CN = /^1[3-9]\d{9}$/;
 
@@ -168,6 +170,7 @@ const [Form, formApi] = useVbenForm({
 async function refreshFeatureTreeFromMineApi() {
   try {
     const raw = await getMineFeaturesRawApi();
+    featureRawList.value = raw;
     const tree = mapBackendMenusToFeatureTree(raw, {
       t: $t,
       useEnglishName: preferences.app.locale === 'en-US',
@@ -183,6 +186,42 @@ async function refreshFeatureTreeFromMineApi() {
   } catch {
     message.error($t('menu.message.fetchFailed'));
   }
+}
+
+/**
+ * 根据已选 ID 列表及全量功能树，补全所有父级节点 ID
+ */
+function findFullFeatureIds(
+  selectedIds: string[],
+  allFeatures: BackendMenuItem[],
+): string[] {
+  const idToParentId = new Map<string, null | string>();
+
+  function traverse(items: BackendMenuItem[]) {
+    for (const item of items) {
+      if (!item) continue;
+      idToParentId.set(
+        String(item.id),
+        item.parentId ? String(item.parentId) : null,
+      );
+      if (item.children && Array.isArray(item.children)) {
+        traverse(item.children);
+      }
+    }
+  }
+
+  traverse(allFeatures);
+
+  const resultSet = new Set<string>(selectedIds);
+  for (const id of selectedIds) {
+    let parentId = idToParentId.get(id);
+    while (parentId) {
+      resultSet.add(parentId);
+      parentId = idToParentId.get(parentId);
+    }
+  }
+
+  return [...resultSet].filter((id) => id && id !== '0');
 }
 
 /** 拉取租户状态下拉；返回选项第一项的 value，供新增时作为默认值 */
@@ -281,12 +320,15 @@ const [VbenModal, modalApi] = useVbenModal({
         tenantName: string;
       };
 
+      const fullFeatureIds = findFullFeatureIds(
+        Array.isArray(values.featureIds) ? values.featureIds : [],
+        featureRawList.value,
+      );
+
       const createBody = {
         adminName: values.adminName.trim(),
         adminPhone: values.adminPhone.trim(),
-        featureIds: Array.isArray(values.featureIds)
-          ? values.featureIds?.map(String).join(',')
-          : values.featureIds,
+        featureIds: fullFeatureIds.map(String).join(','),
         companyName: values.companyName.trim(),
         creditCode: values.creditCode.trim(),
         status: String(values.status ?? ''),

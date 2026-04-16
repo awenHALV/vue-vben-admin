@@ -142,7 +142,7 @@ const handleDelete = async (record: OrgInfo) => {
         message.success($t('system.common.deleteSuccess'));
         getTableData();
       } catch (error: any) {
-        message.error(error?.message || $t('system.common.deleteFailed'));
+        console.warn(error?.message || $t('system.common.deleteFailed'))
       }
     },
   });

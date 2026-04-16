@@ -41,7 +41,9 @@ const deptTreeLoading = ref(false);
 async function handleFetchDeptTree() {
   deptTreeLoading.value = true;
   try {
-    const data = await getDeptTreeApi();
+    const data = await getDeptTreeApi({
+      deptType: 'OPERATION'
+    });
     deptTreeData.value = data || [];
   } catch (error) {
     console.error(error);
@@ -249,17 +251,7 @@ class="size-6" />
           }}
         </div>
 
-        <div class="rounded-lg border border-[#FFE58F] bg-[#FFFBE6] p-4">
-          <div class="flex gap-3">
-            <IconifyIcon
-              icon="lucide:alert-circle"
-              class="mt-0.5 size-5 shrink-0 text-orange-500"
-            />
-            <div class="text-[14px]/6 text-[#666]">
-              {{ $t('system.agency.warningTip') }}
-            </div>
-          </div>
-        </div>
+
 
         <div class="org-wrap">
           <div class="mb-2 flex items-center justify-between">
