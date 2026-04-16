@@ -33,7 +33,7 @@ const microProps = computed(() => ({
       v-if="microUrl"
       :key="String(microName)"
       width="100%"
-      height="calc(100vh - 96px)"
+      height="calc(100vh - var(--vben-header-height, 0px))"
       :name="microName"
       :url="microUrl"
       :props="microProps"

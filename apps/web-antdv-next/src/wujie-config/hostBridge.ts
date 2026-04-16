@@ -11,6 +11,7 @@ import { useAccessStore } from '@vben/stores';
 
 import WujieVue from 'wujie-vue3';
 
+import { router } from '#/router';
 import { useAuthStore } from '#/store';
 
 import {
@@ -23,6 +24,7 @@ import {
   HOST_BRIDGE_REQUEST_COLOR_MODE,
   HOST_BRIDGE_REQUEST_HOST_STATE,
   HOST_BRIDGE_REQUEST_TOKEN,
+  JUMPROUTE_EVENT,
   LOGOUT_EVENT,
   NOTICECHILDAPPTOKEN_EVENT,
 } from './event';
@@ -127,6 +129,14 @@ export function setupWujieHostBridge() {
   function emitHostStatePush() {
     bus.$emit(HOST_BRIDGE_HOST_STATE_PUSH, buildHostState(accessStore));
   }
+
+  // 监听子路由跳转
+  bus.$on(
+    JUMPROUTE_EVENT,
+    (payload: { path: string; query?: Record<string, string> }) => {
+      router.push(payload);
+    },
+  );
 
   function emitChangeThemeToChild() {
     const payload: HostBridgeThemeChangePayload = {
