@@ -503,10 +503,6 @@ const handleButtonCheck = (id: number | string, checked: boolean) => {
     }
   } else {
     checkedKeysSet.value.delete(id);
-    const node = allNodesMap.value.get(id);
-    if (node) {
-      syncParentUncheck(node);
-    }
   }
   // 强制触发响应式更新
   checkedKeysSet.value = new Set(checkedKeysSet.value);
