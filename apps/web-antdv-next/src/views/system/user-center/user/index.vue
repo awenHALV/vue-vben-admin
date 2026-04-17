@@ -3,12 +3,13 @@ import type { TreeProps } from 'antdv-next';
 
 import type { DeptTreeNode, UserInfo } from '#/api/system/user';
 
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, h, onMounted, reactive, ref, watch } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
 
 import {
+  App,
   Button,
   Card,
   Form,
@@ -16,7 +17,6 @@ import {
   Input,
   InputSearch,
   message,
-  Modal,
   Space,
   Tag,
   Tree,
@@ -38,6 +38,7 @@ import UserForm from './components/UserForm.vue';
 import UserImport from './components/UserImport.vue';
 
 defineOptions({ name: 'SystemUser' });
+const { modal } = App.useApp();
 
 const userFormRef = ref<InstanceType<typeof UserForm>>();
 const userDetailRef = ref<InstanceType<typeof UserDetail>>();
@@ -264,11 +265,27 @@ const handleImportSuccess = () => {
 };
 
 const handleDelete = (record: UserInfo) => {
-  Modal.confirm({
+  modal.confirm({
     title: $t('system.user.confirmDelete'),
     content: $t('system.user.confirmDeleteMessage', { name: record.name }),
     okText: $t('system.common.ok'),
     cancelText: $t('system.common.cancel'),
+    icon: h(
+      'span',
+      {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          marginRight: '12px',
+        },
+      },
+      [
+        h(IconifyIcon, {
+          icon: 'ant-design:exclamation-circle-filled',
+          style: { color: '#FF4D4F', fontSize: '22px' },
+        }),
+      ],
+    ),
     onOk: async () => {
       try {
         await deleteUserApi([record.id]);
@@ -344,11 +361,8 @@ const userStatusColorMap = {
 
       <!-- 右侧：与左侧同一行网格等高 -->
       <div class="flex min-h-0 min-w-0 flex-col gap-4">
-        <Card class="shrink-0">
+        <Card class="ant-card ant-card-bordered shrink-0">
           <div class="flex flex-col gap-4">
-            <h2 class="text-lg/tight font-semibold text-foreground">
-              {{ $t('system.user.title') }}
-            </h2>
             <div
               class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3"
             >
@@ -394,7 +408,8 @@ const userStatusColorMap = {
         <div class="user-grid-host min-h-0 flex-1">
           <Grid>
             <template #toolbar-actions>
-              <div class="flex w-full justify-end">
+              <div class="flex w-full items-center justify-between p-2">
+                <div class="text-base font-bold">用户列表</div>
                 <Space>
                   <Button
                     v-if="canButton(USER_PAGE_BUTTON_CODES.add)"

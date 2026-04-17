@@ -139,16 +139,16 @@ async function handleConfirmInvite() {
 
     <!--搜索结果区域-->
     <div
-      class="min-h-0 flex-1 rounded-lg border border-border bg-background p-5"
+      class="min-h-0 flex-1 rounded-lg border border-border bg-background p-5 flex flex-col"
     >
       <div class="mb-4 text-base font-medium">
         {{ $t('system.agency.searchTitle') }}
       </div>
 
-      <div class="h-[calc(100%-2rem)]">
-        <Spin :spinning="loading" class="h-full">
+      <div class="flex-1 min-h-0 flex flex-col">
+        <Spin :spinning="loading" class="flex-1 h-full">
           <!-- DEFAULT (Before Search) -->
-          <div v-if="!hasSearched" class="flex-col-center h-full py-10">
+          <div v-if="!hasSearched" class="flex flex-col items-center justify-center h-full">
             <img :src="defaultPng" alt="default"
 class="mb-4 w-48" />
             <div class="text-base leading-[22px] font-medium text-foreground">
@@ -159,11 +159,11 @@ class="mb-4 w-48" />
             </div>
           </div>
 
-          <div v-else class="search-content h-full">
+          <div v-else class="search-content flex flex-col h-full">
             <!-- NOT_FOUND -->
             <div
               v-if="result?.status === 'NOT_FOUND' || !result"
-              class="flex-col-center h-full py-10"
+              class="flex flex-col items-center justify-center h-full"
             >
               <img :src="emptyPng" alt="empty"
 class="mb-4 w-48" />
@@ -360,3 +360,13 @@ class="size-6" />
     </Modal>
   </Page>
 </template>
+
+<style scoped>
+:deep(.ant-spin-nested-loading),
+:deep(.ant-spin-container) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+}
+</style>

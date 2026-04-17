@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import type { BackendMenuItem, MenuPageParams } from '#/api/core/menu';
 
-import { nextTick, onMounted, ref } from 'vue';
+import { h, nextTick, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { Page, VbenButton, VbenInput } from '@vben/common-ui';
-import { Plus, Trash2 } from '@vben/icons';
+import { IconifyIcon, Plus, Trash2 } from '@vben/icons';
 import { $t } from '@vben/locales';
 import { preferences } from '@vben/preferences';
 import {
@@ -15,7 +15,7 @@ import {
   useUserStore,
 } from '@vben/stores';
 
-import { Button, message, Modal, Space } from 'antdv-next';
+import { App, Button, message, Modal, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteFeatureApi, getRawMenusApi } from '#/api/core/menu';
@@ -27,6 +27,7 @@ import AddOrUpdate from './AddOrUpdate.vue';
 import { FEATURE_PAGE_BUTTON_CODES } from './button-permissions';
 
 defineOptions({ name: 'SystemMenu' });
+const { modal } = App.useApp();
 
 const router = useRouter();
 const accessStore = useAccessStore();
@@ -215,12 +216,28 @@ function handleEdit(record: BackendMenuItem) {
 }
 
 function handleDelete(record: BackendMenuItem) {
-  const confirmModal = Modal.confirm({
+  const confirmModal = modal.confirm({
     title: $t('menu.action.delete'),
     content: $t('menu.message.deleteConfirm', [record.featureName]),
     okType: 'danger',
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
+    icon: h(
+      'span',
+      {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          marginRight: '12px',
+        },
+      },
+      [
+        h(IconifyIcon, {
+          icon: 'ant-design:exclamation-circle-filled',
+          style: { color: '#FF4D4F', fontSize: '22px' },
+        }),
+      ],
+    ),
     onCancel: () => {
       confirmModal.destroy();
     },
@@ -246,6 +263,22 @@ function handleBatchDelete() {
     okType: 'danger',
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
+    icon: h(
+      'span',
+      {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          marginRight: '12px',
+        },
+      },
+      [
+        h(IconifyIcon, {
+          icon: 'ant-design:exclamation-circle-filled',
+          style: { color: '#FF4D4F', fontSize: '22px' },
+        }),
+      ],
+    ),
     onCancel: () => {
       confirmModal.destroy();
     },
