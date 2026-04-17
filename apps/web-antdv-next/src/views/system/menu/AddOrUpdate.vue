@@ -156,6 +156,7 @@ const [Form, formApi] = useVbenForm({
 });
 
 const [VbenModal, modalApi] = useVbenModal({
+  bordered: true,
   destroyOnClose: true,
   showConfirmButton: true,
   confirmLoading: false,

@@ -248,6 +248,7 @@ async function refreshTenantStatusOptions(): Promise<string | undefined> {
 }
 
 const [VbenModal, modalApi] = useVbenModal({
+  bordered: true,
   destroyOnClose: true,
   showConfirmButton: true,
   confirmLoading: false,

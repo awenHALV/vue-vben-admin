@@ -151,6 +151,7 @@ const handleEntitySaved = async (assets: AssetItem[]) => {
 
 const [VbenModal, modalApi] = useVbenModal({
   destroyOnClose: true,
+  bordered: true,
   title: $t('system.tradeEntity.assetConfig'),
   closeOnClickModal: false,
   showCancelButton: true,
@@ -197,7 +198,6 @@ defineExpose({ open });
       <!-- 列表区域 -->
       <div
         class="flex max-h-[400px] flex-col overflow-y-auto rounded-lg border border-border"
-        style="border-color: #e4e4e7"
       >
         <div class="p-5">
           <div v-if="loading" class="flex-center py-10">
@@ -205,7 +205,7 @@ defineExpose({ open });
           </div>
           <div
             v-else-if="entityList.length === 0"
-            class="py-12 text-center text-gray-400"
+            class="py-12 text-center text-muted-foreground"
           >
             {{ $t('system.tradeEntity.noData') }}
           </div>
@@ -214,7 +214,7 @@ defineExpose({ open });
               <div
                 v-for="entity in entityList"
                 :key="entity.id"
-                class="flex h-10 cursor-pointer items-center gap-2 rounded-md px-2 hover:bg-gray-50"
+                class="flex h-10 cursor-pointer items-center gap-2 rounded-md px-2 hover:bg-muted"
                 @click="handleRowClick(entity)"
               >
                 <Checkbox
@@ -224,13 +224,13 @@ defineExpose({ open });
                   @change="handleCheckOne(entity, $event.target.checked)"
                   @click.stop
                 />
-                <span class="text-sm text-gray-700">
+                <span class="text-sm text-foreground">
                   {{ entity.name }}
                 </span>
                 <Tag
                   :bordered="true"
-                  class="mr-0! box-border bg-white! text-gray-500!"
-                  style="border-color: #e4e4e7; border-radius: 4px"
+                  class="mr-0! box-border bg-transparent! text-muted-foreground!"
+                  style="border-radius: 4px; border-color: hsl(var(--border));"
                 >
                   {{ getEntityTypeLabel(entity.entityType) }}
                 </Tag>
@@ -242,7 +242,7 @@ defineExpose({ open });
     </div>
 
     <template #prepend-footer>
-      <div class="flex-1 text-sm text-gray-500">
+      <div class="flex-1 text-sm text-muted-foreground">
         {{ $t('system.tradeEntity.selectedLabel', '已选择') }}
         <span class="mx-1 font-medium text-primary">{{
           selectedAssets.length

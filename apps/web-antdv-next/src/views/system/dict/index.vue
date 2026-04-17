@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 import type { DictListItem, DictPageParams } from '#/api/core/dict';
 
-import { ref } from 'vue';
+import { h, ref } from 'vue';
 
 import { Page, VbenButton, VbenInput } from '@vben/common-ui';
-import { Plus } from '@vben/icons';
+import { IconifyIcon, Plus } from '@vben/icons';
 import { $t } from '@vben/locales';
 
-import { Button, message, Modal, Space } from 'antdv-next';
+import { App, Button, message, Modal, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteDictApi, getDictPageApi } from '#/api/core/dict';
@@ -18,6 +18,7 @@ import { DICT_PAGE_BUTTON_CODES } from './button-permissions';
 import DictConfigModal from './DictConfigModal.vue';
 
 defineOptions({ name: 'SystemDict' });
+const { modal } = App.useApp();
 
 const { canButton } = usePageButtonAccess();
 
@@ -121,12 +122,28 @@ function openEdit(record: DictListItem) {
 }
 
 function openDelete(record: DictListItem) {
-  Modal.confirm({
+  modal.confirm({
     title: $t('dict.list.deleteConfirm', [record.dictName]),
     content: $t('dict.list.deleteContent'),
     okType: 'danger',
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
+    icon: h(
+      'span',
+      {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          marginRight: '12px',
+        },
+      },
+      [
+        h(IconifyIcon, {
+          icon: 'ant-design:exclamation-circle-filled',
+          style: { color: '#FF4D4F', fontSize: '22px' },
+        }),
+      ],
+    ),
     onOk: async () => {
       await deleteDictApi([record.id]);
       message.success($t('dict.list.batchDeleteSuccess', [record.dictName]));

@@ -4,7 +4,7 @@ import type { TreeProps } from 'antdv-next';
 import type { OrgInfo } from '#/api/system/org';
 import type { RoleInfo } from '#/api/system/role';
 
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, h, onMounted, reactive, ref, watch } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
@@ -18,6 +18,7 @@ import {
   InputSearch,
   message,
   Modal,
+  App,
   Space,
   Tree,
 } from 'antdv-next';
@@ -33,6 +34,7 @@ import RoleForm from './components/RoleForm.vue';
 import RolePermission from './components/RolePermission.vue';
 
 defineOptions({ name: 'SystemRole' });
+const { modal } = App.useApp();
 
 const { canButton } = usePageButtonAccess();
 
@@ -52,12 +54,9 @@ const searchForm = reactive({
 });
 
 // 弹窗状态
-const formVisible = ref(false);
-const formType = ref<'add' | 'edit'>('add');
-const formData = ref<Partial<RoleInfo>>({});
+const roleFormRef = ref<InstanceType<typeof RoleForm>>();
 
-const permissionVisible = ref(false);
-const permissionData = ref<Partial<RoleInfo>>({});
+const rolePermissionRef = ref<InstanceType<typeof RolePermission>>();
 
 // ==================== 计算属性 ====================
 
@@ -189,15 +188,11 @@ const handleDeptSelect: TreeProps['onSelect'] = (keys) => {
 };
 
 const handleAdd = () => {
-  formType.value = 'add';
-  formData.value = { deptId: selectedDeptId.value };
-  formVisible.value = true;
+  roleFormRef.value?.open({ deptId: selectedDeptId.value });
 };
 
 const handleEdit = (record: RoleInfo) => {
-  formType.value = 'edit';
-  formData.value = { ...record };
-  formVisible.value = true;
+  roleFormRef.value?.open({ id: record.id, record });
 };
 
 const handleDelete = async (record: RoleInfo) => {
@@ -206,11 +201,27 @@ const handleDelete = async (record: RoleInfo) => {
     return;
   }
 
-  Modal.confirm({
+  modal.confirm({
     title: $t('system.role.deleteTip'),
     content: $t('system.role.deleteContent'),
     okText: $t('system.common.ok'),
     cancelText: $t('system.common.cancel'),
+    icon: h(
+      'span',
+      {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          marginRight: '12px',
+        },
+      },
+      [
+        h(IconifyIcon, {
+          icon: 'ant-design:exclamation-circle-filled',
+          style: { color: '#FF4D4F', fontSize: '22px' },
+        }),
+      ],
+    ),
     onOk: async () => {
       try {
         await deleteRoleApi(record.id);
@@ -224,17 +235,14 @@ const handleDelete = async (record: RoleInfo) => {
 };
 
 const handlePermission = (record: RoleInfo) => {
-  permissionData.value = { ...record };
-  permissionVisible.value = true;
+  rolePermissionRef.value?.open({ record });
 };
 
 const handleFormSuccess = () => {
-  formVisible.value = false;
   void gridApi.reload();
 };
 
 const handlePermissionSuccess = () => {
-  permissionVisible.value = false;
 };
 
 // ==================== 生命周期 ====================
@@ -249,7 +257,7 @@ watch(selectedDeptId, () => {
 </script>
 
 <template>
-  <Page auto-content-height :title="$t('system.role.title')">
+  <Page auto-content-height>
     <div class="flex h-full gap-4">
       <!-- 左侧组织树 -->
       <Card class="w-80 shrink-0">
@@ -287,8 +295,7 @@ watch(selectedDeptId, () => {
               </FormItem>
             </Form>
             <Space>
-              <Button type="primary" class="w-21"
-@click="handleSearch">
+              <Button type="primary" class="w-21" @click="handleSearch">
                 <template #icon><IconifyIcon icon="lucide:search" /></template>
                 {{ $t('system.common.search') }}
               </Button>
@@ -304,9 +311,10 @@ watch(selectedDeptId, () => {
 
         <!-- 角色列表 -->
         <div class="min-h-0 flex-1">
-          <Grid>
+          <Grid class="ant-card ant-card-bordered">
             <template #toolbar-actions>
-              <div class="flex w-full justify-end">
+              <div class="flex w-full items-center justify-between p-2">
+                <div class="text-base font-bold">角色列表</div>
                 <Button
                   v-if="canButton(ROLE_PAGE_BUTTON_CODES.add)"
                   type="primary"
@@ -356,16 +364,13 @@ watch(selectedDeptId, () => {
 
     <!-- 角色表单弹窗 -->
     <RoleForm
-      v-model:visible="formVisible"
-      :type="formType"
-      :data="formData"
+      ref="roleFormRef"
       @success="handleFormSuccess"
     />
 
     <!-- 权限配置弹窗 -->
     <RolePermission
-      v-model:visible="permissionVisible"
-      :data="permissionData"
+      ref="rolePermissionRef"
       @success="handlePermissionSuccess"
     />
   </Page>
