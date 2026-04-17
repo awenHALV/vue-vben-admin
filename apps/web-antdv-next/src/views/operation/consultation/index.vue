@@ -8,6 +8,7 @@ import { CircleX } from '@vben/icons';
 import { $t } from '#/locales';
 
 import { Space } from 'antdv-next';
+import dayjs from 'dayjs';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getConsultationPageApi } from '#/api/operation/consultation';
@@ -26,7 +27,6 @@ const [Grid, gridApi] = useVbenVxeGrid<ConsultationInfo>({
     height: 'auto',
     rowConfig: {
       isHover: true,
-      height: 46,
     },
     proxyConfig: {
       ajax: {
@@ -62,6 +62,15 @@ const [Grid, gridApi] = useVbenVxeGrid<ConsultationInfo>({
         field: 'requirementDescription',
         title: $t('operation.consultation.description'),
         minWidth: 300,
+        showOverflow: false,
+        align: 'left',
+        className: 'requirement-description-cell',
+      },
+      {
+        field: 'updateTime',
+        title: $t('operation.consultation.createTime'),
+        minWidth: 180,
+        slots: { default: 'createTime' },
       },
     ],
   },
@@ -210,6 +219,26 @@ function clearSearchCompany() {
     </div>
 
     <!-- 表格 -->
-    <Grid />
+    <Grid>
+      <template #createTime="{ row }">
+        {{ row.updateTime ? dayjs(row.updateTime).format('YYYY-MM-DD HH:mm:ss') : '-' }}
+      </template>
+    </Grid>
   </Page>
 </template>
+
+<style scoped>
+/* 需求描述列自动换行 */
+:deep(.vxe-body--column.requirement-description-cell),
+:deep(.vxe-body--column.requirement-description-cell .vxe-cell),
+:deep(.vxe-body--column.requirement-description-cell .vxe-cell__content) {
+  white-space: normal !important;
+  word-break: break-all !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+/* 让表格行高自适应 */
+:deep(.vxe-body--row) {
+  height: auto !important;
+}
+</style>
