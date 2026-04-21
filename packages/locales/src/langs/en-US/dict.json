@@ -51,5 +51,6 @@
     "optionValue": "Item value",
     "optionValueEn": "Item value (EN)",
     "remark": "Remark"
-  }
+  },
+  "dictList": "Dictionary List"
 }

@@ -281,7 +281,7 @@ const formApiRef: { current?: UserFormApi } = {};
 
 const [Form, formApi] = useVbenForm({
   commonConfig: {
-    labelWidth: 80,
+    labelWidth: 90,
   },
   schema: buildFormSchema(),
   showDefaultActions: false,

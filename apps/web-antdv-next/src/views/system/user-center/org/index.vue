@@ -38,6 +38,7 @@ const orgFormRef = ref<InstanceType<typeof OrgForm> | null>(null);
 const [Grid, gridApi] = useVbenVxeGrid<OrgInfo>({
   showSearchForm: false,
   separator: false,
+  gridClass: 'p-6',
   gridOptions: {
     height: 'auto',
     rowConfig: { isHover: true, keyField: 'id', height: 46 },
@@ -204,7 +205,11 @@ const handleEntityConfig = (record: OrgInfo) => {
             {{ $t('menu.action.reset') }}
           </VbenButton>
           <!-- eslint-disable-next-line prettier/prettier -- 与 vue/max-attributes-per-line 每属性单行一致 -->
-          <VbenButton class="w-[60px]" size="sm" @click="handleSearch">
+          <VbenButton
+class="w-[60px]"
+size="sm"
+@click="handleSearch"
+>
             {{ $t('menu.action.search') }}
           </VbenButton>
         </Space>
@@ -212,7 +217,7 @@ const handleEntityConfig = (record: OrgInfo) => {
     </div>
 
     <!-- 组织列表 -->
-    <Grid class="ant-card ant-card-bordered p-4">
+    <Grid class="rounded-sm border border-border bg-background">
       <template #action="{ row }">
         <Button
           v-if="canButton(ORG_PAGE_BUTTON_CODES.edit)"

@@ -10,6 +10,7 @@ import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
 
 import {
+  App,
   Button,
   Card,
   Form,
@@ -17,8 +18,6 @@ import {
   Input,
   InputSearch,
   message,
-  Modal,
-  App,
   Space,
   Tree,
 } from 'antdv-next';
@@ -70,6 +69,7 @@ const filteredDeptTree = computed(() => {
 const [Grid, gridApi] = useVbenVxeGrid<RoleInfo>({
   showSearchForm: false,
   separator: false,
+  gridClass: 'p-6 pt-4',
   gridOptions: {
     height: 'auto',
     rowConfig: { isHover: true },
@@ -242,8 +242,7 @@ const handleFormSuccess = () => {
   void gridApi.reload();
 };
 
-const handlePermissionSuccess = () => {
-};
+const handlePermissionSuccess = () => {};
 
 // ==================== 生命周期 ====================
 
@@ -295,7 +294,8 @@ watch(selectedDeptId, () => {
               </FormItem>
             </Form>
             <Space>
-              <Button type="primary" class="w-21" @click="handleSearch">
+              <Button type="primary" class="w-21"
+@click="handleSearch">
                 <template #icon><IconifyIcon icon="lucide:search" /></template>
                 {{ $t('system.common.search') }}
               </Button>
@@ -311,10 +311,12 @@ watch(selectedDeptId, () => {
 
         <!-- 角色列表 -->
         <div class="min-h-0 flex-1">
-          <Grid class="ant-card ant-card-bordered">
+          <Grid class="rounded-sm border border-border bg-background">
             <template #toolbar-actions>
-              <div class="flex w-full items-center justify-between p-2">
-                <div class="text-base font-bold">角色列表</div>
+              <div class="flex w-full items-center justify-between p-0 pb-2">
+                <div class="text-base font-bold">
+                  {{ $t('system.role.roleList') }}
+                </div>
                 <Button
                   v-if="canButton(ROLE_PAGE_BUTTON_CODES.add)"
                   type="primary"
@@ -363,10 +365,7 @@ watch(selectedDeptId, () => {
     </div>
 
     <!-- 角色表单弹窗 -->
-    <RoleForm
-      ref="roleFormRef"
-      @success="handleFormSuccess"
-    />
+    <RoleForm ref="roleFormRef" @success="handleFormSuccess" />
 
     <!-- 权限配置弹窗 -->
     <RolePermission

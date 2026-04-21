@@ -107,6 +107,7 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendTenantItem>({
   /** 使用与菜单管理一致的自定义搜索区（见模板） */
   showSearchForm: false,
   separator: false,
+  gridClass: 'p-6 pt-4',
   gridOptions: {
     height: 'auto',
     rowConfig: { isHover: true, height: 46 },
@@ -332,11 +333,7 @@ function openChangeTenant(record: BackendTenantItem) {
 </script>
 
 <template>
-  <Page
-    :title="$t('tenant.title')"
-    :auto-content-height="true"
-    content-class="flex flex-col gap-3 p-4"
-  >
+  <Page :auto-content-height="true" content-class="flex flex-col gap-3 p-4">
     <!-- 搜索区域：与 system/menu 同一套布局与按钮样式 -->
     <div
       class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-border bg-background p-6"
@@ -387,9 +384,10 @@ function openChangeTenant(record: BackendTenantItem) {
       </div>
     </div>
 
-    <Grid>
+    <Grid class="rounded-sm border border-border bg-background">
       <template #toolbar-actions>
-        <div class="flex w-full items-center justify-end gap-2">
+        <div class="flex w-full items-center justify-between p-0 pb-2">
+          <div class="text-base font-bold">{{ $t('tenant.tenantList') }}</div>
           <!-- prettier-ignore -->
           <VbenButton
             v-if="canButton(TENANT_PAGE_BUTTON_CODES.add)"
