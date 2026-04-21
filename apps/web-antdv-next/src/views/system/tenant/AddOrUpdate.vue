@@ -40,6 +40,7 @@ const editTenantDetail = ref<BackendTenantItem | null>(null);
 const featureRawList = ref<BackendMenuItem[]>([]);
 
 const PHONE_CN = /^1[3-9]\d{9}$/;
+const CREDIT_CODE_REG = /^[0-9A-Z]{18}$/;
 
 /** 编辑回填：不含功能列表（该字段隐藏，以详情接口为准提交） */
 function getTenantFormValuesWithoutFeatureIds(r: BackendTenantItem) {
@@ -97,7 +98,10 @@ function buildFormSchema() {
       },
       fieldName: 'creditCode',
       label: labelCreditCode,
-      rules: z.string().min(1, $t('ui.formRules.required', [labelCreditCode])),
+      rules: z
+        .string()
+        .min(1, $t('ui.formRules.required', [labelCreditCode]))
+        .regex(CREDIT_CODE_REG, $t('tenant.rules.creditCodeInvalid')),
     },
     {
       component: 'TreeSelect',
@@ -244,6 +248,7 @@ async function refreshTenantStatusOptions(): Promise<string | undefined> {
 }
 
 const [VbenModal, modalApi] = useVbenModal({
+  bordered: true,
   destroyOnClose: true,
   showConfirmButton: true,
   confirmLoading: false,

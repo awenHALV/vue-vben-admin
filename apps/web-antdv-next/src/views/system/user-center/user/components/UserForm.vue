@@ -150,7 +150,7 @@ function schemaNamePhoneEmail(disabled: boolean) {
       componentProps: {
         maxlength: 20,
         placeholder: $t('system.user.namePlaceholder'),
-        disabled
+        disabled,
       },
       fieldName: 'name',
       label: $t('system.user.name'),
@@ -161,7 +161,7 @@ function schemaNamePhoneEmail(disabled: boolean) {
       componentProps: {
         maxlength: 11,
         placeholder: $t('system.user.phonePlaceholder'),
-        disabled
+        disabled,
       },
       fieldName: 'phone',
       label: $t('system.user.phone'),
@@ -172,7 +172,7 @@ function schemaNamePhoneEmail(disabled: boolean) {
       componentProps: {
         maxlength: 50,
         placeholder: $t('system.user.emailPlaceholder'),
-        disabled
+        disabled,
       },
       fieldName: 'email',
       label: $t('system.user.email'),
@@ -267,7 +267,8 @@ function buildFormSchema() {
       ...schemaDeptAndRole(),
     ];
   }
-  const disabled = currentType.value === 'edit' && currentData.value.userType === 'EXTERNAL';
+  const disabled =
+    currentType.value === 'edit' && currentData.value.userType === 'EXTERNAL';
   return [
     schemaAccountField(true),
     schemaStatusField(),
@@ -280,7 +281,7 @@ const formApiRef: { current?: UserFormApi } = {};
 
 const [Form, formApi] = useVbenForm({
   commonConfig: {
-    labelWidth: 100,
+    labelWidth: 90,
   },
   schema: buildFormSchema(),
   showDefaultActions: false,

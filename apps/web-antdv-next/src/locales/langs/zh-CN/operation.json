@@ -5,6 +5,7 @@
     "phone": "电话",
     "company": "公司",
     "description": "需求描述",
+    "createTime": "创建时间",
     "namePlaceholder": "请输入姓名",
     "phonePlaceholder": "请输入电话",
     "companyPlaceholder": "请输入公司"

@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import type { BackendMenuItem, MenuPageParams } from '#/api/core/menu';
 
-import { nextTick, onMounted, ref } from 'vue';
+import { h, nextTick, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { Page, VbenButton, VbenInput } from '@vben/common-ui';
-import { Plus, Trash2 } from '@vben/icons';
+import { IconifyIcon, Plus, Trash2 } from '@vben/icons';
 import { $t } from '@vben/locales';
 import { preferences } from '@vben/preferences';
 import {
@@ -15,7 +15,7 @@ import {
   useUserStore,
 } from '@vben/stores';
 
-import { Button, message, Modal, Space } from 'antdv-next';
+import { App, Button, message, Modal, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteFeatureApi, getRawMenusApi } from '#/api/core/menu';
@@ -27,6 +27,7 @@ import AddOrUpdate from './AddOrUpdate.vue';
 import { FEATURE_PAGE_BUTTON_CODES } from './button-permissions';
 
 defineOptions({ name: 'SystemMenu' });
+const { modal } = App.useApp();
 
 const router = useRouter();
 const accessStore = useAccessStore();
@@ -71,6 +72,7 @@ function featureTypeLabel(
 const [Grid, gridApi] = useVbenVxeGrid<BackendMenuItem>({
   showSearchForm: false,
   separator: false,
+  gridClass: 'p-6 pt-4',
   gridOptions: {
     height: 'auto',
     rowConfig: {
@@ -215,12 +217,28 @@ function handleEdit(record: BackendMenuItem) {
 }
 
 function handleDelete(record: BackendMenuItem) {
-  const confirmModal = Modal.confirm({
+  const confirmModal = modal.confirm({
     title: $t('menu.action.delete'),
     content: $t('menu.message.deleteConfirm', [record.featureName]),
     okType: 'danger',
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
+    icon: h(
+      'span',
+      {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          marginRight: '12px',
+        },
+      },
+      [
+        h(IconifyIcon, {
+          icon: 'ant-design:exclamation-circle-filled',
+          style: { color: '#FF4D4F', fontSize: '22px' },
+        }),
+      ],
+    ),
     onCancel: () => {
       confirmModal.destroy();
     },
@@ -246,6 +264,22 @@ function handleBatchDelete() {
     okType: 'danger',
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
+    icon: h(
+      'span',
+      {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          marginRight: '12px',
+        },
+      },
+      [
+        h(IconifyIcon, {
+          icon: 'ant-design:exclamation-circle-filled',
+          style: { color: '#FF4D4F', fontSize: '22px' },
+        }),
+      ],
+    ),
     onCancel: () => {
       confirmModal.destroy();
     },
@@ -585,11 +619,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <Page
-    :title="$t('menu.title')"
-    :auto-content-height="true"
-    content-class="flex flex-col gap-3 p-4"
-  >
+  <Page :auto-content-height="true" content-class="flex flex-col gap-3 p-4">
     <!-- 搜索区域 -->
     <div
       class="flex items-center justify-between rounded-lg border border-border bg-background p-6"
@@ -624,68 +654,66 @@ size="sm" @click="handleSearch"
     </div>
 
     <!-- 表格卡片 -->
-    <div
-      class="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-background"
-    >
-      <!-- 操作栏 -->
-      <div class="flex items-center justify-end gap-2 border-border p-6">
-        <VbenButton
-          v-if="canButton(FEATURE_PAGE_BUTTON_CODES.add)"
-          class="w-[84px]"
-          size="sm"
-          @click="() => handleAdd()"
+    <Grid class="rounded-sm border border-border bg-background">
+      <template #toolbar-actions>
+        <div class="flex w-full items-center justify-between p-0 pb-2">
+          <div class="text-base font-bold">{{ $t('menu.menuList') }}</div>
+          <Space>
+            <VbenButton
+              v-if="canButton(FEATURE_PAGE_BUTTON_CODES.add)"
+              class="w-[84px]"
+              size="sm"
+              @click="() => handleAdd()"
+            >
+              <Plus class="mr-1 size-4" />
+              {{ $t('common.create') }}
+            </VbenButton>
+            <VbenButton
+              v-if="canButton(FEATURE_PAGE_BUTTON_CODES.batchDelete)"
+              size="sm"
+              class="w-[84px]"
+              :disabled="selectedRowIds.length === 0"
+              variant="outline-destructive"
+              @click="handleBatchDelete"
+            >
+              <Trash2 class="mr-1 size-4" />
+              {{ $t('common.delete') }}
+            </VbenButton>
+          </Space>
+        </div>
+      </template>
+      <template #action="{ row }">
+        <Button
+          type="link"
+          size="small"
+          class="text-primary"
+          v-if="canButton(FEATURE_PAGE_BUTTON_CODES.edit)"
+          @click="handleEdit(row)"
         >
-          <Plus class="mr-1 size-4" />
-          {{ $t('common.create') }}
-        </VbenButton>
-        <VbenButton
-          v-if="canButton(FEATURE_PAGE_BUTTON_CODES.batchDelete)"
-          size="sm"
-          class="w-[84px]"
-          :disabled="selectedRowIds.length === 0"
-          variant="outline-destructive"
-          @click="handleBatchDelete"
+          <span class="text-primary">
+            {{ $t('menu.action.edit') }}
+          </span>
+        </Button>
+        <Button
+          danger
+          type="link"
+          size="small"
+          v-if="canButton(FEATURE_PAGE_BUTTON_CODES.delete)"
+          @click="handleDelete(row)"
         >
-          <Trash2 class="mr-1 size-4" />
-          {{ $t('common.delete') }}
-        </VbenButton>
-      </div>
-
-      <Grid>
-        <template #action="{ row }">
-          <Button
-            type="link"
-            size="small"
-            class="text-primary"
-            v-if="canButton(FEATURE_PAGE_BUTTON_CODES.edit)"
-            @click="handleEdit(row)"
-          >
-            <span class="text-primary">
-              {{ $t('menu.action.edit') }}
-            </span>
-          </Button>
-          <Button
-            danger
-            type="link"
-            size="small"
-            v-if="canButton(FEATURE_PAGE_BUTTON_CODES.delete)"
-            @click="handleDelete(row)"
-          >
-            {{ $t('menu.action.delete') }}
-          </Button>
-          <Button
-            v-if="canButton(FEATURE_PAGE_BUTTON_CODES.addSub)"
-            size="small"
-            type="link"
-            class="text-primary"
-            @click="handleAdd(row)"
-          >
-            {{ $t('menu.action.addChild') }}
-          </Button>
-        </template>
-      </Grid>
-    </div>
-
+          {{ $t('menu.action.delete') }}
+        </Button>
+        <Button
+          v-if="canButton(FEATURE_PAGE_BUTTON_CODES.addSub)"
+          size="small"
+          type="link"
+          class="text-primary"
+          @click="handleAdd(row)"
+        >
+          {{ $t('menu.action.addChild') }}
+        </Button>
+      </template>
+    </Grid>
     <!-- 新增/编辑弹窗 -->
     <AddOrUpdate ref="addOrUpdateRef" @success="handleAddOrUpdateSuccess" />
   </Page>

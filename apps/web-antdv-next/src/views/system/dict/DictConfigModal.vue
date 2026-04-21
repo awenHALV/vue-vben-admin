@@ -5,13 +5,13 @@ import type {
   DictOptionPageParams,
 } from '#/api/core/dict';
 
-import { nextTick, ref } from 'vue';
+import { h, nextTick, ref } from 'vue';
 
 import { useVbenModal, VbenButton, VbenInput } from '@vben/common-ui';
-import { Plus, Trash2 } from '@vben/icons';
+import { IconifyIcon, Plus, Trash2 } from '@vben/icons';
 import { $t } from '@vben/locales';
 
-import { message, Modal } from 'antdv-next';
+import { App, message, Modal } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
@@ -22,6 +22,7 @@ import {
 import DictOptionAddOrUpdate from './DictOptionAddOrUpdate.vue';
 
 defineOptions({ name: 'DictConfigModal' });
+const { modal } = App.useApp();
 
 const dictIdRef = ref<null | number | string>(null);
 /** 列表行未带 dictCode 时用于展示父级字典编码 */
@@ -164,13 +165,29 @@ function openEditOption(row: DictOptionItem) {
 function openDeleteOption(row: DictOptionItem) {
   const dictId = dictIdRef.value;
   if (dictId === null) return;
-  Modal.confirm({
+  modal.confirm({
     title: $t('dict.config.deleteOneConfirm', [
       row.optionValue || row.optionKey,
     ]),
     okType: 'danger',
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
+    icon: h(
+      'span',
+      {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          marginRight: '12px',
+        },
+      },
+      [
+        h(IconifyIcon, {
+          icon: 'ant-design:exclamation-circle-filled',
+          style: { color: '#FF4D4F', fontSize: '22px' },
+        }),
+      ],
+    ),
     onOk: async () => {
       await batchDeleteDictOptionApi(dictId, [row.id]);
       message.success($t('dict.config.deleteSuccess'));
@@ -195,6 +212,22 @@ function handleBatchDelete() {
     okType: 'danger',
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
+    icon: h(
+      'span',
+      {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          marginRight: '12px',
+        },
+      },
+      [
+        h(IconifyIcon, {
+          icon: 'ant-design:exclamation-circle-filled',
+          style: { color: '#FF4D4F', fontSize: '22px' },
+        }),
+      ],
+    ),
     onOk: async () => {
       await batchDeleteDictOptionApi(
         dictId,

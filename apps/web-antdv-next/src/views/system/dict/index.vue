@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 import type { DictListItem, DictPageParams } from '#/api/core/dict';
 
-import { ref } from 'vue';
+import { h, ref } from 'vue';
 
 import { Page, VbenButton, VbenInput } from '@vben/common-ui';
-import { Plus } from '@vben/icons';
+import { IconifyIcon, Plus } from '@vben/icons';
 import { $t } from '@vben/locales';
 
-import { Button, message, Modal, Space } from 'antdv-next';
+import { App, Button, message, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteDictApi, getDictPageApi } from '#/api/core/dict';
@@ -18,6 +18,7 @@ import { DICT_PAGE_BUTTON_CODES } from './button-permissions';
 import DictConfigModal from './DictConfigModal.vue';
 
 defineOptions({ name: 'SystemDict' });
+const { modal } = App.useApp();
 
 const { canButton } = usePageButtonAccess();
 
@@ -34,6 +35,7 @@ const [Grid, gridApi] = useVbenVxeGrid<DictListItem>({
   /** 使用与菜单管理一致的自定义搜索区（见模板） */
   showSearchForm: false,
   separator: false,
+  gridClass: 'p-6 pt-4',
   gridOptions: {
     height: 'auto',
     rowConfig: {
@@ -121,12 +123,28 @@ function openEdit(record: DictListItem) {
 }
 
 function openDelete(record: DictListItem) {
-  Modal.confirm({
+  modal.confirm({
     title: $t('dict.list.deleteConfirm', [record.dictName]),
     content: $t('dict.list.deleteContent'),
     okType: 'danger',
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
+    icon: h(
+      'span',
+      {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          marginRight: '12px',
+        },
+      },
+      [
+        h(IconifyIcon, {
+          icon: 'ant-design:exclamation-circle-filled',
+          style: { color: '#FF4D4F', fontSize: '22px' },
+        }),
+      ],
+    ),
     onOk: async () => {
       await deleteDictApi([record.id]);
       message.success($t('dict.list.batchDeleteSuccess', [record.dictName]));
@@ -141,11 +159,7 @@ function openDictConfig(record: DictListItem) {
 </script>
 
 <template>
-  <Page
-    :title="$t('dict.title')"
-    :auto-content-height="true"
-    content-class="flex flex-col gap-3 p-4"
-  >
+  <Page :auto-content-height="true" content-class="flex flex-col gap-3 p-4">
     <!-- 搜索区域：与 system/menu 同一套布局与按钮样式 -->
     <div
       class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-border bg-background p-6"
@@ -196,9 +210,10 @@ function openDictConfig(record: DictListItem) {
       </div>
     </div>
 
-    <Grid>
+    <Grid class="rounded-sm border border-border bg-background">
       <template #toolbar-actions>
-        <div class="flex w-full items-center justify-end gap-2">
+        <div class="flex w-full items-center justify-between p-0 pb-2">
+          <div class="text-base font-bold">{{ $t('dict.dictList') }}</div>
           <!-- prettier-ignore -->
           <VbenButton
             v-if="canButton(DICT_PAGE_BUTTON_CODES.add)"

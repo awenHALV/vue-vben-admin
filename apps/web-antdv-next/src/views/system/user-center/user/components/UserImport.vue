@@ -90,7 +90,7 @@ async function handleUpload(options: UploadRequestOptions) {
 
 const [Form, formApi] = useVbenForm({
   commonConfig: {
-    labelWidth: 100,
+    labelWidth: 60,
   },
   showDefaultActions: false,
   schema: [

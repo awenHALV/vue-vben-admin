@@ -30,6 +30,7 @@
   },
   "user": {
     "title": "User Management",
+    "userList": "User List",
     "account": "Log Account",
     "name": "User Name",
     "phone": "User Phone",
@@ -69,6 +70,7 @@
   },
   "org": {
     "title": "Organization Management",
+    "orgList": "Organization List",
     "orgName": "Organization Name",
     "parentOrg": "Parent Organization",
     "orgAttribute": "Organization Attribute",
@@ -96,6 +98,7 @@
   },
   "role": {
     "title": "Role Management",
+    "roleList": "Role List",
     "roleName": "Role Name",
     "roleCode": "Role Code",
     "organization": "Organization",

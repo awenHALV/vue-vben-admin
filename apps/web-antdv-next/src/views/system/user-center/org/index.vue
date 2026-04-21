@@ -2,11 +2,12 @@
 <script lang="ts" setup>
 import type { OrgInfo } from '#/api/system/org';
 
-import { ref } from 'vue';
+import { h, ref } from 'vue';
 
 import { Page, VbenButton, VbenInput } from '@vben/common-ui';
+import { IconifyIcon } from '@vben/icons';
 
-import { Button, message, Modal, Space } from 'antdv-next';
+import { App, Button, message, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteOrgApi, getOrgTreeApi } from '#/api/system/org';
@@ -18,6 +19,7 @@ import EntityConfigModal from './components/EntityConfigModal.vue';
 import OrgForm from './components/OrgForm.vue';
 
 defineOptions({ name: 'SystemOrg' });
+const { modal } = App.useApp();
 const { canButton } = usePageButtonAccess();
 const entityConfigRef = ref<InstanceType<typeof EntityConfigModal> | null>(
   null,
@@ -36,6 +38,7 @@ const orgFormRef = ref<InstanceType<typeof OrgForm> | null>(null);
 const [Grid, gridApi] = useVbenVxeGrid<OrgInfo>({
   showSearchForm: false,
   separator: false,
+  gridClass: 'p-6',
   gridOptions: {
     height: 'auto',
     rowConfig: { isHover: true, keyField: 'id', height: 46 },
@@ -131,18 +134,34 @@ const handleDelete = async (record: OrgInfo) => {
     return;
   }
 
-  Modal.confirm({
+  modal.confirm({
     title: $t('system.org.deleteTip'),
     content: $t('system.org.deleteContent'),
     okText: $t('system.common.ok'),
     cancelText: $t('system.common.cancel'),
+    icon: h(
+      'span',
+      {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          marginRight: '12px',
+        },
+      },
+      [
+        h(IconifyIcon, {
+          icon: 'ant-design:exclamation-circle-filled',
+          style: { color: '#FF4D4F', fontSize: '22px' },
+        }),
+      ],
+    ),
     onOk: async () => {
       try {
         await deleteOrgApi([record.id]);
         message.success($t('system.common.deleteSuccess'));
         getTableData();
       } catch (error: any) {
-        console.warn(error?.message || $t('system.common.deleteFailed'))
+        console.warn(error?.message || $t('system.common.deleteFailed'));
       }
     },
   });
@@ -159,11 +178,7 @@ const handleEntityConfig = (record: OrgInfo) => {
 </script>
 
 <template>
-  <Page
-    auto-content-height
-    :title="$t('system.org.title')"
-    content-class="flex flex-col gap-3 p-4"
-  >
+  <Page auto-content-height content-class="flex flex-col gap-3 p-4">
     <!-- 搜索区域 -->
     <div
       class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-border bg-background p-6"
@@ -191,10 +206,10 @@ const handleEntityConfig = (record: OrgInfo) => {
           </VbenButton>
           <!-- eslint-disable-next-line prettier/prettier -- 与 vue/max-attributes-per-line 每属性单行一致 -->
           <VbenButton
-            class="w-[60px]"
-            size="sm"
-            @click="handleSearch"
-          >
+class="w-[60px]"
+size="sm"
+@click="handleSearch"
+>
             {{ $t('menu.action.search') }}
           </VbenButton>
         </Space>
@@ -202,7 +217,7 @@ const handleEntityConfig = (record: OrgInfo) => {
     </div>
 
     <!-- 组织列表 -->
-    <Grid>
+    <Grid class="rounded-sm border border-border bg-background">
       <template #action="{ row }">
         <Button
           v-if="canButton(ORG_PAGE_BUTTON_CODES.edit)"

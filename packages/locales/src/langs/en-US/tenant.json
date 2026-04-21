@@ -68,7 +68,8 @@
     "ems": "EMS"
   },
   "rules": {
-    "phoneInvalid": "Please enter a valid 11-digit mobile number"
+    "phoneInvalid": "Please enter a valid 11-digit mobile number",
+    "creditCodeInvalid": "Please enter a valid 18-character unified social credit code (digits or uppercase letters)"
   },
   "status": {
     "enabled": "Normal",
@@ -99,5 +100,6 @@
     "switchTenantSuccess": "Tenant switched successfully",
     "switchTenantFailed": "Failed to switch tenant",
     "switchTenantMissingId": "Tenant id is missing; cannot switch"
-  }
+  },
+  "tenantList": "Tenant List"
 }

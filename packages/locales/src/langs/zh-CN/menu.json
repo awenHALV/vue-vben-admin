@@ -61,5 +61,6 @@
     "selectFirst": "请先选择要删除的菜单",
     "batchDeleteConfirm": "确定删除所选 {0} 项菜单？",
     "batchDeleteSuccess": "批量删除成功"
-  }
+  },
+  "menuList": "功能列表"
 }

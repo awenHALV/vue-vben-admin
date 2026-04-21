@@ -1,183 +1,141 @@
 <script lang="ts" setup>
 import type { RoleInfo } from '#/api/system/role';
-import type { OrgInfo } from '#/api/system/org';
-import { getOrgTreeApi } from '#/api/system/org';
-import { computed, ref, watch } from 'vue';
 
+import { ref } from 'vue';
+
+import { useVbenModal, z } from '@vben/common-ui';
+
+import { message } from 'antdv-next';
+
+import { useVbenForm } from '#/adapter/form';
+import { getOrgTreeApi } from '#/api/system/org';
+import { createRoleApi, updateRoleApi } from '#/api/system/role';
 import { $t } from '#/locales';
 
-import {
-  Button, Divider,
-  Form,
-  FormItem,
-  Input,
-  InputNumber,
-  message,
-  Modal,
-  Switch,
-  TextArea,
-  TreeSelect,
-} from 'antdv-next';
-import type { FormInstance } from 'antdv-next';
-import {createRoleApi, updateRoleApi} from "#/api/system/role";
-
-// ==================== Props & Emits ====================
-
-interface Props {
-  visible: boolean;
-  type: 'add' | 'edit';
-  data?: Partial<RoleInfo>;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  visible: false,
-  type: 'add',
-  data: () => ({}),
-});
+defineOptions({ name: 'RoleForm' });
 
 const emit = defineEmits<{
-  'update:visible': [value: boolean];
   success: [];
 }>();
 
-// ==================== 状态定义 ====================
+const isEdit = ref(false);
+const currentId = ref<string>('');
 
-const formRef = ref<FormInstance>();
-const loading = ref(false);
-const okLoading = ref(false);
-const deptTreeData = ref<OrgInfo[]>([]);
-
-const formData = ref({
-  id: '',
-  roleName: '',
-  code: '',
-  deptId: '',
-  remark: '',
+const [Form, formApi] = useVbenForm({
+  commonConfig: {
+    labelWidth: 65,
+    wrapperClass: 'grid-cols-1',
+  },
+  schema: [
+    {
+      component: 'Input',
+      componentProps: {
+        placeholder: $t('system.role.roleNamePlaceholder'),
+        maxlength: 50,
+        allowClear: true,
+      },
+      fieldName: 'roleName',
+      label: $t('system.role.roleName'),
+      rules: z.string().min(1, $t('system.role.roleNameRequired')),
+    },
+    {
+      component: 'TreeSelect',
+      componentProps: {
+        placeholder: $t('system.role.organizationPlaceholder'),
+        treeDefaultExpandAll: true,
+        style: { width: '100%' },
+        allowClear: true,
+        showSearch: true,
+        fieldNames: { label: 'deptName', value: 'id', children: 'children' },
+        filterTreeNode: (searchValue: string, node: any) =>
+          node.deptName?.toLowerCase().includes(searchValue.toLowerCase()),
+        treeData: [],
+      },
+      fieldName: 'deptId',
+      label: $t('system.role.organization'),
+      rules: z.string().min(1, $t('system.role.organizationRequired')),
+    },
+  ],
+  showDefaultActions: false,
 });
 
-// ==================== 计算属性 ====================
+const [VbenModal, modalApi] = useVbenModal({
+  bordered: true,
+  destroyOnClose: true,
+  onOpenChange: async (open) => {
+    if (!open) return;
 
-const modalTitle = $t(`system.role.${props.type === 'edit' ? 'editRole' : 'addRole'}`);
+    modalApi.setState({ confirmLoading: false });
+    const { id, record, deptId } = modalApi.getData<any>() || {};
 
-// Switch 状态绑定
+    // 加载部门树
+    try {
+      const depts = await getOrgTreeApi();
+      await formApi.updateSchema([
+        {
+          fieldName: 'deptId',
+          componentProps: {
+            treeData: depts || [],
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error('获取部门树失败:', error);
+    }
 
-
-// ==================== 表单规则 ====================
-
-const rules = {
-  roleName: [{ required: true, message: $t('system.role.roleNameRequired'), trigger: 'blur' }],
-  deptId: [{ required: true, message: $t('system.role.organizationRequired'), trigger: 'change' }],
-};
-
-// ==================== 方法 ====================
-
-const loadDeptTree = async () => {
-  try {
-    loading.value = true;
-    const res = await getOrgTreeApi();
-    deptTreeData.value = res || [];
-  } catch (error) {
-    console.error('获取部门树失败:', error);
-  } finally {
-    loading.value = false;
-  }
-};
-
-const handleOk = async () => {
-  try {
-    await formRef.value?.validate();
-    okLoading.value = true;
-
-    if (props.type === 'edit') {
-      await updateRoleApi(formData.value);
-      message.success($t('system.common.editSuccess'));
+    if (id) {
+      isEdit.value = true;
+      currentId.value = id;
+      modalApi.setState({ title: $t('system.role.editRole') });
+      if (record) {
+        await formApi.setValues(record);
+      }
     } else {
-      await createRoleApi(formData.value);
-      message.success($t('system.common.addSuccess'));
-    }
-
-    emit('success');
-    handleClose();
-  } catch (error: any) {
-    if (!error?.errorFields) {
-      message.error(error?.message || '操作失败');
-    }
-  } finally {
-    okLoading.value = false;
-  }
-};
-
-const handleClose = () => {
-  emit('update:visible', false);
-  formRef.value?.resetFields();
-  formData.value = {
-    id: '',
-    roleName: '',
-    code: '',
-    deptId: '',
-    remark: '',
-  };
-};
-
-// ==================== 监听 ====================
-
-watch(
-  () => props.visible,
-  (visible) => {
-    if (visible) {
-      loadDeptTree();
-      formData.value = {
-        id: props.data?.id || '',
-        roleName: props.data?.roleName || '',
-        code: props.data?.code || '',
-        deptId: props.data?.deptId || '',
-        remark: props.data?.remark || '',
-      };
+      isEdit.value = false;
+      currentId.value = '';
+      modalApi.setState({ title: $t('system.role.addRole') });
+      await formApi.resetForm();
+      if (deptId) {
+        await formApi.setFieldValue('deptId', deptId);
+      }
     }
   },
-);
+  onConfirm: async () => {
+    const { valid } = await formApi.validate();
+    if (!valid) return;
+
+    modalApi.setState({ confirmLoading: true });
+    try {
+      const values = await formApi.getValues();
+      if (isEdit.value) {
+        await updateRoleApi({ ...values, id: currentId.value });
+        message.success($t('system.common.editSuccess'));
+      } else {
+        await createRoleApi(values);
+        message.success($t('system.common.addSuccess'));
+      }
+      emit('success');
+      modalApi.close();
+    } catch (error: any) {
+      message.error(error?.message || (isEdit.value ? '编辑失败' : '新增失败'));
+    } finally {
+      modalApi.setState({ confirmLoading: false });
+    }
+  },
+});
+
+function open(data: { deptId?: string; id?: string; record?: RoleInfo }) {
+  modalApi.setData(data);
+  modalApi.open();
+}
+
+defineExpose({ open });
 </script>
 
 <template>
-  <Modal
-    :open="visible"
-    :title="modalTitle"
-    :width="500"
-    :confirm-loading="okLoading"
-    
-    @ok="handleOk"
-    @cancel="handleClose"
-  >
-    <Divider/>
-    <Form
-      ref="formRef"
-      :model="formData"
-      :rules="rules"
-      :label-col="{ span: 6 }"
-      :wrapper-col="{ span: 16 }"
-    >
-      <FormItem :label="$t('system.role.roleName')" name="roleName">
-        <Input
-          v-model:value="formData.roleName"
-          :placeholder="$t('system.role.roleNamePlaceholder')"
-          allow-clear
-          :maxlength="50"
-        />
-      </FormItem>
-
-      <FormItem :label="$t('system.role.organization')" name="deptId">
-        <TreeSelect
-          v-model:value="formData.deptId"
-          :tree-data="deptTreeData"
-          :field-names="{ label: 'deptName', value: 'id', children: 'children' }"
-          :placeholder="$t('system.role.organizationPlaceholder')"
-          tree-default-expand-all
-          allow-clear
-          show-search
-          :filter-tree-node="(searchValue: string, node: any) => node.deptName?.toLowerCase().includes(searchValue.toLowerCase())"
-        />
-      </FormItem>
-
-    </Form>
-  </Modal>
+  <VbenModal>
+    <div class="px-4 py-2">
+      <Form />
+    </div>
+  </VbenModal>
 </template>
