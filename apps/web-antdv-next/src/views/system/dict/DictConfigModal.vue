@@ -169,7 +169,6 @@ function openDeleteOption(row: DictOptionItem) {
     title: $t('dict.config.deleteOneConfirm', [
       row.optionValue || row.optionKey,
     ]),
-    okType: 'danger',
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
     icon: h(
@@ -209,7 +208,6 @@ function handleBatchDelete() {
   }
   Modal.confirm({
     title: $t('dict.config.batchDeleteConfirm', [String(selected.length)]),
-    okType: 'danger',
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
     icon: h(
