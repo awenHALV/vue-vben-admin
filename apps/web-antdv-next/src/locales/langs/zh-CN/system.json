@@ -30,6 +30,7 @@
   },
   "user": {
     "title": "用户管理",
+    "userList": "用户列表",
     "account": "登录账号",
     "name": "用户姓名",
     "phone": "用户手机号",
@@ -71,6 +72,7 @@
   },
   "org": {
     "title": "组织管理",
+    "orgList": "组织列表",
     "orgName": "组织名称",
     "parentOrg": "上级组织",
     "orgAttribute": "组织属性",
@@ -98,6 +100,7 @@
   },
   "role": {
     "title": "角色管理",
+    "roleList": "角色列表",
     "roleName": "角色名称",
     "roleCode": "角色编码",
     "organization": "所属组织",

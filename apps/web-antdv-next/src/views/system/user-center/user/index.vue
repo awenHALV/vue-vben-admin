@@ -78,6 +78,7 @@ const filteredDeptTree = computed(() => {
 const [Grid, gridApi] = useVbenVxeGrid<UserInfo>({
   showSearchForm: false,
   separator: false,
+  gridClass: 'p-6 pt-4',
   gridOptions: {
     height: 'auto',
     rowConfig: { isHover: true },
@@ -361,7 +362,7 @@ const userStatusColorMap = {
 
       <!-- 右侧：与左侧同一行网格等高 -->
       <div class="flex min-h-0 min-w-0 flex-col gap-4">
-        <Card class="ant-card ant-card-bordered shrink-0">
+        <Card class="rounded-sm border border-border bg-background">
           <div class="flex flex-col gap-4">
             <div
               class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3"
@@ -387,7 +388,10 @@ const userStatusColorMap = {
                 </Form>
               </div>
               <Space class="shrink-0">
-                <Button class="w-21" type="primary" @click="handleSearch">
+                <Button
+class="w-21"
+type="primary" @click="handleSearch"
+>
                   <template #icon>
                     <IconifyIcon icon="lucide:search" />
                   </template>
@@ -406,10 +410,12 @@ const userStatusColorMap = {
 
         <!-- 用户列表 -->
         <div class="user-grid-host min-h-0 flex-1">
-          <Grid>
+          <Grid class="rounded-sm border border-border bg-background">
             <template #toolbar-actions>
-              <div class="flex w-full items-center justify-between p-2">
-                <div class="text-base font-bold">用户列表</div>
+              <div class="flex w-full items-center justify-between p-0 pb-2">
+                <div class="text-base font-bold">
+                  {{ $t('system.user.userList') }}
+                </div>
                 <Space>
                   <Button
                     v-if="canButton(USER_PAGE_BUTTON_CODES.add)"

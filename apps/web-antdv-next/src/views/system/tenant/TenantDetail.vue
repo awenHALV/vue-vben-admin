@@ -1,3 +1,7 @@
+<!-- TenantDetail.vue -->
+<!-- 作者: inspur-iep-ai -->
+<!-- 根据 MasterGo 设计稿优化样式，使用 Tailwind CSS 支持暗黑模式 -->
+
 <script lang="ts" setup>
 import type { BackendTenantItem } from '#/api/core/tenant';
 
@@ -33,7 +37,7 @@ function displayText(v: unknown) {
 
 /** 兼容详情接口 camelCase / snake_case */
 function normalizeDetail(raw: BackendTenantItem): BackendTenantItem {
-  const anyRaw = raw as Record<string, unknown>;
+  const anyRaw = raw as unknown as Record<string, unknown>;
   return {
     ...raw,
     id: raw.id,
@@ -52,8 +56,8 @@ const [VbenModal, modalApi] = useVbenModal({
   cancelText: $t('common.cancel'),
   confirmText: $t('common.confirm'),
   title: $t('tenant.modal.detailTenant'),
-  class: 'w-[min(100%,520px)]',
-  contentClass: 'px-1',
+  class: 'w-[min(100%,560px)]',
+  contentClass: 'p-0',
   async onOpenChange(open) {
     if (!open) {
       detail.value = null;
@@ -93,122 +97,162 @@ defineExpose({ open });
 </script>
 
 <template>
-  <VbenModal>
-    <Spin :spinning="loading" class="min-h-[100px] w-full">
-      <div v-if="detail && !loading" class="mx-6 flex flex-col gap-5">
+  <VbenModal :footer="false">
+    <Spin :spinning="loading" class="min-h-[200px] w-full">
+      <div v-if="detail && !loading" class="flex w-full flex-col gap-5 p-6">
         <!-- 租户信息 -->
-        <section>
-          <div class="mb-2 text-sm font-medium text-foreground">
-            {{ $t('tenant.detail.sectionTenant') }}
-          </div>
-          <div
-            class="overflow-hidden rounded-sm border border-border text-sm/6"
+        <section class="flex flex-col gap-5">
+          <h3
+            class="m-0 text-base/6 font-semibold text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
           >
-            <div
-              class="grid grid-cols-[minmax(0,140px)_1fr] border-b border-border last:border-b-0"
-            >
-              <div
-                class="border-r border-border bg-muted/50 px-3 py-2 text-muted-foreground"
+            {{ $t('tenant.detail.sectionTenant') }}
+          </h3>
+          <div class="flex flex-col gap-5">
+            <!-- 租户ID -->
+            <div class="flex flex-col gap-1">
+              <label
+                class="text-sm leading-[22px] text-[rgba(0,0,0,0.65)] dark:text-[rgba(255,255,255,0.65)]"
               >
                 {{ $t('tenant.list.id') }}
-              </div>
-              <div class="bg-background px-3 py-2">
-                {{ displayText(detail.tenantId) }}
+              </label>
+              <div
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+              >
+                <span
+                  class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
+                >
+                  {{ displayText(detail.tenantId) }}
+                </span>
               </div>
             </div>
-            <div
-              class="grid grid-cols-[minmax(0,140px)_1fr] border-b border-border last:border-b-0"
-            >
-              <div
-                class="border-r border-border bg-muted/50 px-3 py-2 text-muted-foreground"
+            <!-- 租户名称 -->
+            <div class="flex flex-col gap-1">
+              <label
+                class="text-sm leading-[22px] text-[rgba(0,0,0,0.65)] dark:text-[rgba(255,255,255,0.65)]"
               >
                 {{ $t('tenant.list.tenantName') }}
-              </div>
-              <div class="bg-background px-3 py-2">
-                {{ displayText(detail.tenantName) }}
+              </label>
+              <div
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+              >
+                <span
+                  class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
+                >
+                  {{ displayText(detail.tenantName) }}
+                </span>
               </div>
             </div>
-            <div
-              class="grid grid-cols-[minmax(0,140px)_1fr] border-b border-border last:border-b-0"
-            >
-              <div
-                class="border-r border-border bg-muted/50 px-3 py-2 text-muted-foreground"
+            <!-- 公司名称 -->
+            <div class="flex flex-col gap-1">
+              <label
+                class="text-sm leading-[22px] text-[rgba(0,0,0,0.65)] dark:text-[rgba(255,255,255,0.65)]"
               >
                 {{ $t('tenant.list.companyName') }}
-              </div>
-              <div class="bg-background px-3 py-2">
-                {{ displayText(detail.companyName) }}
+              </label>
+              <div
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+              >
+                <span
+                  class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
+                >
+                  {{ displayText(detail.companyName) }}
+                </span>
               </div>
             </div>
-            <div
-              class="grid grid-cols-[minmax(0,140px)_1fr] border-b border-border last:border-b-0"
-            >
-              <div
-                class="border-r border-border bg-muted/50 px-3 py-2 text-muted-foreground"
+            <!-- 社会信用代码 -->
+            <div class="flex flex-col gap-1">
+              <label
+                class="text-sm leading-[22px] text-[rgba(0,0,0,0.65)] dark:text-[rgba(255,255,255,0.65)]"
               >
                 {{ $t('tenant.list.creditCode') }}
-              </div>
-              <div class="bg-background px-3 py-2">
-                {{ displayText(detail.creditCode) }}
+              </label>
+              <div
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+              >
+                <span
+                  class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
+                >
+                  {{ displayText(detail.creditCode) }}
+                </span>
               </div>
             </div>
-            <div
-              class="grid grid-cols-[minmax(0,140px)_1fr] border-b border-border last:border-b-0"
-            >
-              <div
-                class="border-r border-border bg-muted/50 px-3 py-2 text-muted-foreground"
+            <!-- 状态 -->
+            <div class="flex flex-col gap-1">
+              <label
+                class="text-sm leading-[22px] text-[rgba(0,0,0,0.65)] dark:text-[rgba(255,255,255,0.65)]"
               >
                 {{ $t('tenant.list.status') }}
-              </div>
-              <div class="bg-background px-3 py-2">
-                {{ formatStatus(detail.status) }}
+              </label>
+              <div
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+              >
+                <span
+                  class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
+                >
+                  {{ formatStatus(detail.status) }}
+                </span>
               </div>
             </div>
           </div>
         </section>
 
         <!-- 管理员信息 -->
-        <section>
-          <div class="mb-2 text-sm font-medium text-foreground">
-            {{ $t('tenant.detail.sectionAdmin') }}
-          </div>
-          <div
-            class="overflow-hidden rounded-sm border border-border text-sm/6"
+        <section class="flex flex-col gap-5">
+          <h3
+            class="m-0 text-base/6 font-semibold text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
           >
-            <div
-              class="grid grid-cols-[minmax(0,140px)_1fr] border-b border-border last:border-b-0"
-            >
-              <div
-                class="border-r border-border bg-muted/50 px-3 py-2 text-muted-foreground"
+            {{ $t('tenant.detail.sectionAdmin') }}
+          </h3>
+          <div class="flex flex-col gap-5">
+            <!-- 管理员姓名 -->
+            <div class="flex flex-col gap-1">
+              <label
+                class="text-sm leading-[22px] text-[rgba(0,0,0,0.65)] dark:text-[rgba(255,255,255,0.65)]"
               >
                 {{ $t('tenant.form.adminName') }}
-              </div>
-              <div class="bg-background px-3 py-2">
-                {{ displayText(detail.adminName) }}
+              </label>
+              <div
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+              >
+                <span
+                  class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
+                >
+                  {{ displayText(detail.adminName) }}
+                </span>
               </div>
             </div>
-            <div
-              class="grid grid-cols-[minmax(0,140px)_1fr] border-b border-border last:border-b-0"
-            >
-              <div
-                class="border-r border-border bg-muted/50 px-3 py-2 text-muted-foreground"
+            <!-- 管理员手机号 -->
+            <div class="flex flex-col gap-1">
+              <label
+                class="text-sm leading-[22px] text-[rgba(0,0,0,0.65)] dark:text-[rgba(255,255,255,0.65)]"
               >
                 {{ $t('tenant.list.adminPhone') }}
-              </div>
-              <div class="bg-background px-3 py-2">
-                {{ displayText(detail.adminPhone) }}
+              </label>
+              <div
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+              >
+                <span
+                  class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
+                >
+                  {{ displayText(detail.adminPhone) }}
+                </span>
               </div>
             </div>
-            <div
-              class="grid grid-cols-[minmax(0,140px)_1fr] border-b border-border last:border-b-0"
-            >
-              <div
-                class="border-r border-border bg-muted/50 px-3 py-2 text-muted-foreground"
+            <!-- 管理员登录账号 -->
+            <div class="flex flex-col gap-1">
+              <label
+                class="text-sm leading-[22px] text-[rgba(0,0,0,0.65)] dark:text-[rgba(255,255,255,0.65)]"
               >
                 {{ $t('tenant.detail.adminLoginAccount') }}
-              </div>
-              <div class="bg-background px-3 py-2">
-                {{ displayText(detail.adminAccount) }}
+              </label>
+              <div
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+              >
+                <span
+                  class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
+                >
+                  {{ displayText(detail.adminAccount) }}
+                </span>
               </div>
             </div>
           </div>

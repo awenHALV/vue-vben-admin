@@ -101,5 +101,6 @@
     "switchTenantSuccess": "租户切换成功",
     "switchTenantFailed": "租户切换失败",
     "switchTenantMissingId": "租户主键缺失，无法切换"
-  }
+  },
+  "tenantList": "租户列表"
 }
