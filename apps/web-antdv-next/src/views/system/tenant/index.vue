@@ -109,7 +109,7 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendTenantItem>({
   separator: false,
   gridClass: 'p-6 pt-4',
   gridOptions: {
-    height: 'auto',
+    maxHeight: '100%',
     rowConfig: { isHover: true, height: 46 },
     checkboxConfig: {
       highlight: true,
@@ -333,7 +333,10 @@ function openChangeTenant(record: BackendTenantItem) {
 </script>
 
 <template>
-  <Page :auto-content-height="true" content-class="flex flex-col gap-3 p-4">
+  <Page
+    :auto-content-height="true"
+    content-class="flex min-h-0 flex-col gap-3 p-4"
+  >
     <!-- 搜索区域：与 system/menu 同一套布局与按钮样式 -->
     <div
       class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-border bg-background p-6"
@@ -384,64 +387,70 @@ function openChangeTenant(record: BackendTenantItem) {
       </div>
     </div>
 
-    <Grid class="rounded-sm border border-border bg-background">
-      <template #toolbar-actions>
-        <div class="flex w-full items-center justify-between p-0 pb-2">
-          <div class="text-base font-bold">{{ $t('tenant.tenantList') }}</div>
-          <!-- prettier-ignore -->
-          <VbenButton
-            v-if="canButton(TENANT_PAGE_BUTTON_CODES.add)"
-            class="w-[84px]"
-            size="sm"
-            @click="openAdd"
+    <div class="min-h-0 flex-1 rounded-lg border border-border bg-background">
+      <Grid class="h-full min-h-0">
+        <template #toolbar-actions>
+          <div class="flex w-full items-center justify-between p-0 pb-2">
+            <div class="text-base font-bold">{{ $t('tenant.tenantList') }}</div>
+            <!-- prettier-ignore -->
+            <VbenButton
+              v-if="canButton(TENANT_PAGE_BUTTON_CODES.add)"
+              class="w-[84px]"
+              size="sm"
+              @click="openAdd"
+            >
+              <Plus class="mr-1 size-4" />
+              {{ $t('tenant.action.add') }}
+            </VbenButton>
+          </div>
+        </template>
+
+        <template #action="{ row }">
+          <Button
+            v-if="canButton(TENANT_PAGE_BUTTON_CODES.detail)"
+            type="link"
+            size="small"
+            class="text-primary"
+            @click="openDetail(row)"
           >
-            <Plus class="mr-1 size-4" />
-            {{ $t('tenant.action.add') }}
-          </VbenButton>
-        </div>
-      </template>
+            {{ $t('tenant.action.detail') }}
+          </Button>
 
-      <template #action="{ row }">
-        <Button
-          type="link"
-          size="small"
-          class="text-primary"
-          v-if="canButton(TENANT_PAGE_BUTTON_CODES.detail)"
-          @click="openDetail(row)"
-        >
-          {{ $t('tenant.action.detail') }}
-        </Button>
-
-        <Button
-          v-if="canButton(TENANT_PAGE_BUTTON_CODES.edit)"
-          type="link"
-          size="small"
-          class="text-primary"
-          @click="openEdit(row)"
-        >
-          {{ $t('tenant.action.edit') }}
-        </Button>
-        <Button
-          v-if="canButton(TENANT_PAGE_BUTTON_CODES.menuConfig)"
-          type="link"
-          size="small"
-          class="text-primary"
-          @click="openMenu(row)"
-        >
-          {{ $t('tenant.action.menuConfig') }}
-        </Button>
-        <Button
-          v-if="canButton(TENANT_PAGE_BUTTON_CODES.changeTenant)"
-          type="link"
-          size="small"
-          class="text-primary"
-          :disabled="switchingTenant"
-          @click="openChangeTenant(row)"
-        >
-          {{ $t('tenant.action.changeTenant') }}
-        </Button>
-      </template>
-    </Grid>
+          <Button
+            v-if="canButton(TENANT_PAGE_BUTTON_CODES.edit)"
+            type="link"
+            size="small"
+            class="text-primary"
+            @click="openEdit(row)"
+          >
+            {{ $t('tenant.action.edit') }}
+          </Button>
+          <Button
+            v-if="canButton(TENANT_PAGE_BUTTON_CODES.menuConfig)"
+            type="link"
+            size="small"
+            class="text-primary"
+            @click="openMenu(row)"
+          >
+            {{ $t('tenant.action.menuConfig') }}
+          </Button>
+          <Button
+            v-if="canButton(TENANT_PAGE_BUTTON_CODES.changeTenant)"
+            type="link"
+            size="small"
+            class="text-primary"
+            :disabled="switchingTenant"
+            @click="openChangeTenant(row)"
+          >
+            {{ $t('tenant.action.changeTenant') }}
+          </Button>
+        </template>
+      </Grid>
+      <!-- 有些情况下 Grid 内层背景会“盖住”边框，额外补一条底线保证可见 -->
+      <div
+        class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border"
+      ></div>
+    </div>
 
     <!-- prettier-ignore -->
     <AddOrUpdate

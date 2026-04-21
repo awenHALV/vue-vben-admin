@@ -71,7 +71,7 @@ const [Grid, gridApi] = useVbenVxeGrid<RoleInfo>({
   separator: false,
   gridClass: 'p-6 pt-4',
   gridOptions: {
-    height: 'auto',
+    maxHeight: '100%',
     rowConfig: { isHover: true },
     proxyConfig: {
       ajax: {
@@ -168,7 +168,7 @@ function getAllKeys(data: OrgInfo[]): string[] {
 
 function getFirstKey(data: OrgInfo[]): null | string {
   if (data.length === 0) return null;
-  return data[0].id;
+  return data[0]?.id ?? null;
 }
 
 const handleSearch = () => {
@@ -257,7 +257,7 @@ watch(selectedDeptId, () => {
 
 <template>
   <Page auto-content-height>
-    <div class="flex h-full gap-4">
+    <div class="flex h-full min-h-0 gap-4">
       <!-- 左侧组织树 -->
       <Card class="w-80 shrink-0">
         <div class="mb-3">
@@ -294,8 +294,10 @@ watch(selectedDeptId, () => {
               </FormItem>
             </Form>
             <Space>
-              <Button type="primary" class="w-21"
-@click="handleSearch">
+              <Button
+type="primary"
+class="w-21" @click="handleSearch"
+>
                 <template #icon><IconifyIcon icon="lucide:search" /></template>
                 {{ $t('system.common.search') }}
               </Button>
@@ -311,7 +313,10 @@ watch(selectedDeptId, () => {
 
         <!-- 角色列表 -->
         <div class="min-h-0 flex-1">
-          <Grid class="rounded-sm border border-border bg-background">
+          <div
+            class="flex h-full min-h-0 flex-col rounded-lg border border-border bg-background"
+          >
+            <Grid class="h-full min-h-0">
             <template #toolbar-actions>
               <div class="flex w-full items-center justify-between p-0 pb-2">
                 <div class="text-base font-bold">
@@ -359,7 +364,8 @@ watch(selectedDeptId, () => {
                 </Button>
               </template>
             </template>
-          </Grid>
+            </Grid>
+          </div>
         </div>
       </div>
     </div>

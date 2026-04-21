@@ -116,7 +116,7 @@ defineExpose({ open });
                 {{ $t('tenant.list.id') }}
               </label>
               <div
-                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.02)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
               >
                 <span
                   class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
@@ -133,7 +133,7 @@ defineExpose({ open });
                 {{ $t('tenant.list.tenantName') }}
               </label>
               <div
-                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.02)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
               >
                 <span
                   class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
@@ -150,7 +150,7 @@ defineExpose({ open });
                 {{ $t('tenant.list.companyName') }}
               </label>
               <div
-                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.02)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
               >
                 <span
                   class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
@@ -167,7 +167,7 @@ defineExpose({ open });
                 {{ $t('tenant.list.creditCode') }}
               </label>
               <div
-                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.02)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
               >
                 <span
                   class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
@@ -184,7 +184,7 @@ defineExpose({ open });
                 {{ $t('tenant.list.status') }}
               </label>
               <div
-                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.02)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
               >
                 <span
                   class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
@@ -212,7 +212,7 @@ defineExpose({ open });
                 {{ $t('tenant.form.adminName') }}
               </label>
               <div
-                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.02)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
               >
                 <span
                   class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
@@ -229,7 +229,7 @@ defineExpose({ open });
                 {{ $t('tenant.list.adminPhone') }}
               </label>
               <div
-                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.02)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
               >
                 <span
                   class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
@@ -246,7 +246,7 @@ defineExpose({ open });
                 {{ $t('tenant.detail.adminLoginAccount') }}
               </label>
               <div
-                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.04)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
+                class="flex h-8 items-center rounded-md border border-transparent bg-[rgba(0,0,0,0.02)] px-3 py-[5px] dark:bg-[rgba(255,255,255,0.08)]"
               >
                 <span
                   class="text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-[rgba(255,255,255,0.85)]"
