@@ -53,7 +53,7 @@ async function loadEntityList() {
     const res = await getTradeEntityListApi({
       name: searchKeyword.value || undefined,
     });
-    entityList.value = res.filter((item) => item.entityType !== '3') || [];
+    entityList.value = res || [];
   } finally {
     loading.value = false;
   }
