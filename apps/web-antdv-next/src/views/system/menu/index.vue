@@ -255,7 +255,7 @@ function handleBatchDelete() {
     message.warning($t('menu.message.selectFirst'));
     return;
   }
-  const confirmModal = Modal.confirm({
+  const confirmModal = modal.confirm({
     title: $t('menu.action.batchDelete'),
     content: $t('menu.message.batchDeleteConfirm', {
       0: selectedRowIds.value.length,
