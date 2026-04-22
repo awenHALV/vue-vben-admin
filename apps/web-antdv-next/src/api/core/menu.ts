@@ -1,5 +1,7 @@
 import type { RouteRecordStringComponent } from '@vben/types';
 
+import { isHttpUrl } from '@vben/utils';
+
 import { requestClient } from '#/api/request';
 import { mappedFeatureCodes } from '#/router/component-map';
 import {
@@ -20,6 +22,22 @@ export interface BackendMenuItem {
   routePath: string;
   sort?: number;
   resourceCode?: string;
+}
+
+function isExternalMenuRoutePath(routePath: string | undefined): boolean {
+  return isHttpUrl(String(routePath ?? '').trim());
+}
+
+function buildExternalMenuRoutePath(
+  item: BackendMenuItem,
+  parentAbsoluteRoutePath?: string,
+): string {
+  const routeKey = encodeURIComponent(
+    String(item.featureCode || item.id || 'external'),
+  );
+  return parentAbsoluteRoutePath
+    ? `__external__/${routeKey}`
+    : `/__external__/${routeKey}`;
 }
 
 function isMenuFeatureType(featureType: string | undefined): boolean {
@@ -45,6 +63,9 @@ export function normalizeMenuPermissionPath(routePath: string): string {
   const t = String(routePath ?? '').trim();
   if (!t) {
     return '';
+  }
+  if (isExternalMenuRoutePath(t)) {
+    return t;
   }
   const withSlash = t.startsWith('/') ? t : `/${t}`;
   const noTrail = withSlash.replace(/\/+$/, '');
@@ -136,7 +157,13 @@ function toNestedRoutePath(
   absolutePath: string,
   parentAbsolutePath?: string,
 ): string {
+  if (isExternalMenuRoutePath(absolutePath)) {
+    return absolutePath;
+  }
   const full = absolutePath.startsWith('/') ? absolutePath : `/${absolutePath}`;
+  if (isExternalMenuRoutePath(parentAbsolutePath)) {
+    return full;
+  }
   if (!parentAbsolutePath) {
     return full;
   }
@@ -182,10 +209,18 @@ function resolveMenuAbsoluteRoutePath(
     return parentAbsoluteRoutePath ?? '';
   }
 
+  if (isExternalMenuRoutePath(trimmed)) {
+    return trimmed;
+  }
+
   const raw = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
   const rawSegments = raw.split('/').filter(Boolean);
 
   if (!parentAbsoluteRoutePath) {
+    return raw;
+  }
+
+  if (isExternalMenuRoutePath(parentAbsoluteRoutePath)) {
     return raw;
   }
 
@@ -231,10 +266,11 @@ function mapMenuToRoute(
     parentAbsoluteRoutePath,
   );
 
-  const pathForRouter = toNestedRoutePath(
-    absoluteRoutePath,
-    parentAbsoluteRoutePath,
-  );
+  const isExternalRoute = isExternalMenuRoutePath(absoluteRoutePath);
+
+  const pathForRouter = isExternalRoute
+    ? buildExternalMenuRoutePath(item, parentAbsoluteRoutePath)
+    : toNestedRoutePath(absoluteRoutePath, parentAbsoluteRoutePath);
 
   /**
    * 微前端：用拼接后的完整基座路径判断首段是否为 projectCode（如 vpp）；
@@ -242,7 +278,7 @@ function mapMenuToRoute(
    * 外链 http/https 不走微前端。
    */
   const microCode =
-    absoluteRoutePath && !absoluteRoutePath.toLowerCase().startsWith('http')
+    absoluteRoutePath && !isExternalRoute
       ? getMicroProjectCodeFromRoutePath(absoluteRoutePath)
       : undefined;
 
@@ -256,10 +292,12 @@ function mapMenuToRoute(
       ? 'ParentLayout'
       : 'BasicLayout';
   } else if (absoluteRoutePath) {
-    inferredComponent = microCode
-      ? 'micro/index'
-      : `${absoluteRoutePath.replace(/^\//, '')}/index`;
-    if (!microCode) {
+    inferredComponent = isExternalRoute
+      ? 'IFrameView'
+      : microCode
+        ? 'micro/index'
+        : `${absoluteRoutePath.replace(/^\//, '')}/index`;
+    if (!microCode && !isExternalRoute) {
       console.debug(`[Route Mapping] ${item.featureCode} -> 使用路径解析 (Fallback)`);
     }
   } else {
@@ -282,6 +320,11 @@ function mapMenuToRoute(
       featureName: item.featureName,
       featureNameEn: item.featureNameEn,
       featureIcon: item.featureIcon || undefined,
+      ...(isExternalRoute
+        ? {
+            link: absoluteRoutePath,
+          }
+        : {}),
       ...(microCode
         ? {
             microName: microCode,
