@@ -7,7 +7,7 @@ import { Page, VbenButton, VbenInput } from '@vben/common-ui';
 import { IconifyIcon, Plus } from '@vben/icons';
 import { $t } from '@vben/locales';
 
-import { App, Button, message, Modal, Space } from 'antdv-next';
+import { App, Button, message, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteDictApi, getDictPageApi } from '#/api/core/dict';
@@ -35,8 +35,13 @@ const [Grid, gridApi] = useVbenVxeGrid<DictListItem>({
   /** 使用与菜单管理一致的自定义搜索区（见模板） */
   showSearchForm: false,
   separator: false,
+  gridClass: 'p-6 pt-4',
   gridOptions: {
-    height: 'auto',
+    /**
+     * 避免 `Page auto-content-height` 下 auto 高度反复测量撑高页面，
+     * 用 maxHeight 约束整体高度，让滚动发生在表格内部。
+     */
+    maxHeight: '100%',
     rowConfig: {
       isHover: true,
       height: 46,
@@ -125,7 +130,6 @@ function openDelete(record: DictListItem) {
   modal.confirm({
     title: $t('dict.list.deleteConfirm', [record.dictName]),
     content: $t('dict.list.deleteContent'),
-    okType: 'danger',
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
     icon: h(
@@ -159,9 +163,8 @@ function openDictConfig(record: DictListItem) {
 
 <template>
   <Page
-    :title="$t('dict.title')"
     :auto-content-height="true"
-    content-class="flex flex-col gap-3 p-4"
+    content-class="flex min-h-0 flex-col gap-3 p-4"
   >
     <!-- 搜索区域：与 system/menu 同一套布局与按钮样式 -->
     <div
@@ -213,52 +216,55 @@ function openDictConfig(record: DictListItem) {
       </div>
     </div>
 
-    <Grid>
-      <template #toolbar-actions>
-        <div class="flex w-full items-center justify-end gap-2">
-          <!-- prettier-ignore -->
-          <VbenButton
-            v-if="canButton(DICT_PAGE_BUTTON_CODES.add)"
-            class="w-[84px]"
-            size="sm"
-            @click="openAdd"
-          >
-            <Plus class="mr-1 size-4" />
-            {{ $t('dict.list.add') }}
-          </VbenButton>
-        </div>
-      </template>
+    <div class="min-h-0 flex-1 rounded-lg border border-border bg-background">
+      <Grid class="h-full min-h-0">
+        <template #toolbar-actions>
+          <div class="flex w-full items-center justify-between p-0 pb-2">
+            <div class="text-base font-bold">{{ $t('dict.dictList') }}</div>
+            <!-- prettier-ignore -->
+            <VbenButton
+              v-if="canButton(DICT_PAGE_BUTTON_CODES.add)"
+              class="w-[84px]"
+              size="sm"
+              @click="openAdd"
+            >
+              <Plus class="mr-1 size-4" />
+              {{ $t('dict.list.add') }}
+            </VbenButton>
+          </div>
+        </template>
 
-      <template #action="{ row }">
-        <Button
-          v-if="canButton(DICT_PAGE_BUTTON_CODES.edit)"
-          type="link"
-          size="small"
-          class="text-primary"
-          @click="openEdit(row)"
-        >
-          {{ $t('dict.list.edit') }}
-        </Button>
-        <Button
-          danger
-          v-if="canButton(DICT_PAGE_BUTTON_CODES.delete)"
-          type="link"
-          size="small"
-          @click="openDelete(row)"
-        >
-          {{ $t('dict.list.delete') }}
-        </Button>
-        <Button
-          v-if="canButton(DICT_PAGE_BUTTON_CODES.dictConfig)"
-          type="link"
-          size="small"
-          class="text-primary"
-          @click="openDictConfig(row)"
-        >
-          {{ $t('dict.list.dictConfig') }}
-        </Button>
-      </template>
-    </Grid>
+        <template #action="{ row }">
+          <Button
+            v-if="canButton(DICT_PAGE_BUTTON_CODES.edit)"
+            type="link"
+            size="small"
+            class="text-primary"
+            @click="openEdit(row)"
+          >
+            {{ $t('dict.list.edit') }}
+          </Button>
+          <Button
+            danger
+            v-if="canButton(DICT_PAGE_BUTTON_CODES.delete)"
+            type="link"
+            size="small"
+            @click="openDelete(row)"
+          >
+            {{ $t('dict.list.delete') }}
+          </Button>
+          <Button
+            v-if="canButton(DICT_PAGE_BUTTON_CODES.dictConfig)"
+            type="link"
+            size="small"
+            class="text-primary"
+            @click="openDictConfig(row)"
+          >
+            {{ $t('dict.list.dictConfig') }}
+          </Button>
+        </template>
+      </Grid>
+    </div>
 
     <!-- prettier-ignore -->
     <AddOrUpdate

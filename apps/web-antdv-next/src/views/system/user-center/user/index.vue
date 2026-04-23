@@ -78,8 +78,9 @@ const filteredDeptTree = computed(() => {
 const [Grid, gridApi] = useVbenVxeGrid<UserInfo>({
   showSearchForm: false,
   separator: false,
+  gridClass: 'p-6 pt-4',
   gridOptions: {
-    height: 'auto',
+    maxHeight: '100%',
     rowConfig: { isHover: true },
     proxyConfig: {
       ajax: {
@@ -208,7 +209,7 @@ function getAllKeys(data: DeptTreeNode[]): string[] {
 
 function getFirstKey(data: DeptTreeNode[]): null | string {
   if (data.length === 0) return null;
-  return data[0].id;
+  return data[0]?.id ?? null;
 }
 
 const handleSearch = () => {
@@ -324,7 +325,7 @@ watch(selectedDeptId, () => {
 });
 
 // 用户状态 tag color映射表
-const userStatusColorMap = {
+const userStatusColorMap: Record<number, string> = {
   0: 'red',
   1: 'green',
   2: 'gold',
@@ -332,7 +333,7 @@ const userStatusColorMap = {
 </script>
 
 <template>
-  <Page auto-content-height content-class="flex min-h-0 flex-1 flex-col">
+  <Page auto-content-height>
     <div class="user-split-grid size-full min-h-0 min-w-0 flex-1 gap-4">
       <!-- 左侧组织树：与右侧网格行同高，树超出时在内部滚动 -->
       <Card class="dept-tree-card min-h-0 w-full overflow-hidden">
@@ -361,7 +362,7 @@ const userStatusColorMap = {
 
       <!-- 右侧：与左侧同一行网格等高 -->
       <div class="flex min-h-0 min-w-0 flex-col gap-4">
-        <Card class="ant-card ant-card-bordered shrink-0">
+        <Card class="rounded-lg border border-border bg-background">
           <div class="flex flex-col gap-4">
             <div
               class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3"
@@ -387,7 +388,8 @@ const userStatusColorMap = {
                 </Form>
               </div>
               <Space class="shrink-0">
-                <Button class="w-21" type="primary" @click="handleSearch">
+                <Button class="w-21" type="primary"
+@click="handleSearch">
                   <template #icon>
                     <IconifyIcon icon="lucide:search" />
                   </template>
@@ -406,110 +408,116 @@ const userStatusColorMap = {
 
         <!-- 用户列表 -->
         <div class="user-grid-host min-h-0 flex-1">
-          <Grid>
-            <template #toolbar-actions>
-              <div class="flex w-full items-center justify-between p-2">
-                <div class="text-base font-bold">用户列表</div>
-                <Space>
-                  <Button
-                    v-if="canButton(USER_PAGE_BUTTON_CODES.add)"
-                    type="primary"
-                    class="w-21"
-                    @click="handleAdd"
-                  >
-                    <template #icon>
-                      <IconifyIcon icon="lucide:plus" />
-                    </template>
-                    {{ $t('system.common.add') }}
-                  </Button>
-                  <Button
-                    v-if="canButton(USER_PAGE_BUTTON_CODES.batchImport)"
-                    class="w-26"
-                    @click="handleImport"
-                  >
-                    <template #icon>
-                      <IconifyIcon icon="lucide:upload" />
-                    </template>
-                    {{ $t('system.user.batchImport') }}
-                  </Button>
-                </Space>
-              </div>
-            </template>
+          <div
+            class="flex h-full min-h-0 flex-col rounded-lg border border-border bg-background"
+          >
+            <Grid class="h-full min-h-0">
+              <template #toolbar-actions>
+                <div class="flex w-full items-center justify-between p-0 pb-2">
+                  <div class="text-base font-bold">
+                    {{ $t('system.user.userList') }}
+                  </div>
+                  <Space>
+                    <Button
+                      v-if="canButton(USER_PAGE_BUTTON_CODES.add)"
+                      class="w-21"
+                      type="primary"
+                      @click="handleAdd"
+                    >
+                      <template #icon>
+                        <IconifyIcon icon="lucide:plus" />
+                      </template>
+                      {{ $t('system.common.add') }}
+                    </Button>
+                    <Button
+                      v-if="canButton(USER_PAGE_BUTTON_CODES.batchImport)"
+                      class="w-26"
+                      @click="handleImport"
+                    >
+                      <template #icon>
+                        <IconifyIcon icon="lucide:upload" />
+                      </template>
+                      {{ $t('system.user.batchImport') }}
+                    </Button>
+                  </Space>
+                </div>
+              </template>
 
-            <template #userType="{ row }">
-              <Tag
-                :color="row.userType === 'INTERNAL' ? 'blue' : 'gold'"
-                variant="outlined"
-              >
-                {{
-                  userTypeOptions.find(
-                    (opt) => opt.optionKey === String(row.userType),
-                  )?.optionValue || row.userType
-                }}
-              </Tag>
-            </template>
-
-            <template #userStatus="{ row }">
-              <Tag :color="userStatusColorMap[row.status]" variant="outlined">
-                {{
-                  userStatusOptions.find(
-                    (opt) => opt.optionKey === String(row.status),
-                  )?.optionValue || row.status
-                }}
-              </Tag>
-            </template>
-
-            <template #roleName="{ row }">
-              <template v-if="row.roleName">
+              <template #userType="{ row }">
                 <Tag
-                  v-for="(role, idx) in row.roleName.split(',')"
-                  :key="idx"
-                  color="blue"
+                  :color="row.userType === 'INTERNAL' ? 'blue' : 'gold'"
+                  variant="outlined"
                 >
-                  {{ role }}
+                  {{
+                    userTypeOptions.find(
+                      (opt) => opt.optionKey === String(row.userType),
+                    )?.optionValue || row.userType
+                  }}
                 </Tag>
               </template>
-            </template>
 
-            <template #action="{ row }">
-              <Button
-                type="link"
-                size="small"
-                class="text-primary"
-                v-if="canButton(USER_PAGE_BUTTON_CODES.detail)"
-                @click="handleView(row)"
-              >
-                {{ $t('system.common.view') }}
-              </Button>
-              <Button
-                type="link"
-                size="small"
-                class="text-primary"
-                v-if="canButton(USER_PAGE_BUTTON_CODES.edit)"
-                @click="handleEdit(row)"
-              >
-                {{ $t('system.common.edit') }}
-              </Button>
-              <Button
-                type="link"
-                size="small"
-                v-if="canButton(USER_PAGE_BUTTON_CODES.resetPwd)"
-                :disabled="row.userType === 'EXTERNAL'"
-                @click="handlePasswordReset(row)"
-              >
-                {{ $t('system.user.editPassword') }}
-              </Button>
-              <Button
-                type="link"
-                size="small"
-                danger
-                v-if="canButton(USER_PAGE_BUTTON_CODES.delete)"
-                @click="handleDelete(row)"
-              >
-                {{ $t('system.common.delete') }}
-              </Button>
-            </template>
-          </Grid>
+              <template #userStatus="{ row }">
+                <Tag :color="userStatusColorMap[row.status]" variant="outlined">
+                  {{
+                    userStatusOptions.find(
+                      (opt) => opt.optionKey === String(row.status),
+                    )?.optionValue || row.status
+                  }}
+                </Tag>
+              </template>
+
+              <template #roleName="{ row }">
+                <template v-if="row.roleName">
+                  <Tag
+                    v-for="(role, idx) in row.roleName.split(',')"
+                    :key="idx"
+                    color="blue"
+                  >
+                    {{ role }}
+                  </Tag>
+                </template>
+              </template>
+
+              <template #action="{ row }">
+                <Button
+                  v-if="canButton(USER_PAGE_BUTTON_CODES.detail)"
+                  class="text-primary"
+                  size="small"
+                  type="link"
+                  @click="handleView(row)"
+                >
+                  {{ $t('system.common.view') }}
+                </Button>
+                <Button
+                  v-if="canButton(USER_PAGE_BUTTON_CODES.edit)"
+                  class="text-primary"
+                  size="small"
+                  type="link"
+                  @click="handleEdit(row)"
+                >
+                  {{ $t('system.common.edit') }}
+                </Button>
+                <Button
+                  v-if="canButton(USER_PAGE_BUTTON_CODES.resetPwd)"
+                  :disabled="row.userType === 'EXTERNAL'"
+                  size="small"
+                  type="link"
+                  @click="handlePasswordReset(row)"
+                >
+                  {{ $t('system.user.editPassword') }}
+                </Button>
+                <Button
+                  v-if="canButton(USER_PAGE_BUTTON_CODES.delete)"
+                  danger
+                  size="small"
+                  type="link"
+                  @click="handleDelete(row)"
+                >
+                  {{ $t('system.common.delete') }}
+                </Button>
+              </template>
+            </Grid>
+          </div>
         </div>
       </div>
     </div>

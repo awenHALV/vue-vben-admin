@@ -72,8 +72,9 @@ function featureTypeLabel(
 const [Grid, gridApi] = useVbenVxeGrid<BackendMenuItem>({
   showSearchForm: false,
   separator: false,
+  gridClass: 'p-6 pt-4',
   gridOptions: {
-    height: 'auto',
+    maxHeight: '100%',
     rowConfig: {
       isHover: true,
       keyField: 'id',
@@ -185,13 +186,13 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendMenuItem>({
       const records = (gridApi.grid as any).getCheckboxRecords?.() ?? [];
       selectedRowIds.value = records
         .map((item: BackendMenuItem) => item.id)
-        .filter((id) => id !== null && id !== undefined);
+        .filter((id: BackendMenuItem['id']) => id !== null && id !== undefined);
     },
     checkboxChange: () => {
       const records = (gridApi.grid as any).getCheckboxRecords?.() ?? [];
       selectedRowIds.value = records
         .map((item: BackendMenuItem) => item.id)
-        .filter((id) => id !== null && id !== undefined);
+        .filter((id: BackendMenuItem['id']) => id !== null && id !== undefined);
     },
   },
 });
@@ -219,7 +220,6 @@ function handleDelete(record: BackendMenuItem) {
   const confirmModal = modal.confirm({
     title: $t('menu.action.delete'),
     content: $t('menu.message.deleteConfirm', [record.featureName]),
-    okType: 'danger',
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
     icon: h(
@@ -255,12 +255,11 @@ function handleBatchDelete() {
     message.warning($t('menu.message.selectFirst'));
     return;
   }
-  const confirmModal = Modal.confirm({
+  const confirmModal = modal.confirm({
     title: $t('menu.action.batchDelete'),
     content: $t('menu.message.batchDeleteConfirm', {
       0: selectedRowIds.value.length,
     }),
-    okType: 'danger',
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
     icon: h(
@@ -619,9 +618,8 @@ onMounted(() => {
 
 <template>
   <Page
-    :title="$t('menu.title')"
     :auto-content-height="true"
-    content-class="flex flex-col gap-3 p-4"
+    content-class="flex min-h-0 flex-col gap-3 p-4"
   >
     <!-- 搜索区域 -->
     <div
@@ -647,10 +645,12 @@ onMounted(() => {
         >
           {{ $t('menu.action.reset') }}
         </VbenButton>
+        <!-- eslint-disable-next-line -->
         <VbenButton
-class="w-[60px]"
-size="sm" @click="handleSearch"
->
+          class="w-[60px]"
+          size="sm"
+          @click="handleSearch"
+        >
           {{ $t('menu.action.search') }}
         </VbenButton>
       </Space>
@@ -658,33 +658,36 @@ size="sm" @click="handleSearch"
 
     <!-- 表格卡片 -->
     <div
-      class="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-background"
+      class="relative min-h-0 flex-1 rounded-lg border border-border bg-background"
     >
-      <!-- 操作栏 -->
-      <div class="flex items-center justify-end gap-2 border-border p-6">
-        <VbenButton
-          v-if="canButton(FEATURE_PAGE_BUTTON_CODES.add)"
-          class="w-[84px]"
-          size="sm"
-          @click="() => handleAdd()"
-        >
-          <Plus class="mr-1 size-4" />
-          {{ $t('common.create') }}
-        </VbenButton>
-        <VbenButton
-          v-if="canButton(FEATURE_PAGE_BUTTON_CODES.batchDelete)"
-          size="sm"
-          class="w-[84px]"
-          :disabled="selectedRowIds.length === 0"
-          variant="outline-destructive"
-          @click="handleBatchDelete"
-        >
-          <Trash2 class="mr-1 size-4" />
-          {{ $t('common.delete') }}
-        </VbenButton>
-      </div>
-
-      <Grid>
+      <Grid class="h-full min-h-0">
+        <template #toolbar-actions>
+          <div class="flex w-full items-center justify-between p-0 pb-2">
+            <div class="text-base font-bold">{{ $t('menu.menuList') }}</div>
+            <Space>
+              <VbenButton
+                v-if="canButton(FEATURE_PAGE_BUTTON_CODES.add)"
+                class="w-[84px]"
+                size="sm"
+                @click="() => handleAdd()"
+              >
+                <Plus class="mr-1 size-4" />
+                {{ $t('common.create') }}
+              </VbenButton>
+              <VbenButton
+                v-if="canButton(FEATURE_PAGE_BUTTON_CODES.batchDelete)"
+                size="sm"
+                class="w-[84px]"
+                :disabled="selectedRowIds.length === 0"
+                variant="destructive"
+                @click="handleBatchDelete"
+              >
+                <Trash2 class="mr-1 size-4" />
+                {{ $t('common.delete') }}
+              </VbenButton>
+            </Space>
+          </div>
+        </template>
         <template #action="{ row }">
           <Button
             type="link"
@@ -717,8 +720,10 @@ size="sm" @click="handleSearch"
           </Button>
         </template>
       </Grid>
+      <div
+        class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border"
+      ></div>
     </div>
-
     <!-- 新增/编辑弹窗 -->
     <AddOrUpdate ref="addOrUpdateRef" @success="handleAddOrUpdateSuccess" />
   </Page>

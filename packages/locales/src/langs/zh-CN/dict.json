@@ -55,5 +55,6 @@
     "optionValue": "字典项值",
     "optionValueEn": "字典项值(英文)",
     "remark": "备注"
-  }
+  },
+  "dictList": "字典列表"
 }

@@ -38,8 +38,10 @@ const orgFormRef = ref<InstanceType<typeof OrgForm> | null>(null);
 const [Grid, gridApi] = useVbenVxeGrid<OrgInfo>({
   showSearchForm: false,
   separator: false,
+  gridClass: 'p-6',
   gridOptions: {
-    height: 'auto',
+    height: '100%',
+    maxHeight: '100%',
     rowConfig: { isHover: true, keyField: 'id', height: 46 },
     checkboxConfig: {
       highlight: true,
@@ -121,7 +123,7 @@ const handleAddChild = (record: OrgInfo) => {
     'addChild',
     {
       parentId: record.id,
-      parentInternal: record.internal ?? '',
+      parentInternal: '',
     },
     '',
   );
@@ -177,7 +179,7 @@ const handleEntityConfig = (record: OrgInfo) => {
 </script>
 
 <template>
-  <Page auto-content-height content-class="flex flex-col gap-3 p-4">
+  <Page auto-content-height content-class="flex min-h-0 flex-col gap-3 p-4">
     <!-- 搜索区域 -->
     <div
       class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-border bg-background p-6"
@@ -204,7 +206,11 @@ const handleEntityConfig = (record: OrgInfo) => {
             {{ $t('menu.action.reset') }}
           </VbenButton>
           <!-- eslint-disable-next-line prettier/prettier -- 与 vue/max-attributes-per-line 每属性单行一致 -->
-          <VbenButton class="w-[60px]" size="sm" @click="handleSearch">
+          <VbenButton
+class="w-[60px]"
+size="sm"
+@click="handleSearch"
+>
             {{ $t('menu.action.search') }}
           </VbenButton>
         </Space>
@@ -212,49 +218,56 @@ const handleEntityConfig = (record: OrgInfo) => {
     </div>
 
     <!-- 组织列表 -->
-    <Grid class="ant-card ant-card-bordered p-4">
-      <template #action="{ row }">
-        <Button
-          v-if="canButton(ORG_PAGE_BUTTON_CODES.edit)"
-          type="link"
-          size="small"
-          class="text-primary"
-          @click="handleEdit(row)"
-        >
-          {{ $t('system.common.edit') }}
-        </Button>
-        <Button
-          danger
-          v-if="canButton(ORG_PAGE_BUTTON_CODES.delete)"
-          type="link"
-          size="small"
-          :disabled="!row.parentId || row.parentId === '0'"
-          @click="handleDelete(row)"
-        >
-          {{ $t('system.common.delete') }}
-        </Button>
-        <Button
-          v-if="canButton(ORG_PAGE_BUTTON_CODES.addSub)"
-          type="link"
-          size="small"
-          class="text-primary"
-          @click="handleAddChild(row)"
-        >
-          {{ $t('system.org.addSubitem') }}
-        </Button>
-        <Button
-          v-if="canButton(ORG_PAGE_BUTTON_CODES.assetConfig)"
-          type="link"
-          size="small"
-          class="text-primary"
-          @click="handleEntityConfig(row)"
-        >
-          <span class="text-primary">{{
-            $t('system.tradeEntity.assetConfig')
-          }}</span>
-        </Button>
-      </template>
-    </Grid>
+    <div
+      class="relative min-h-0 flex-1 rounded-lg border border-border bg-background"
+    >
+      <Grid class="h-full min-h-0">
+        <template #action="{ row }">
+          <Button
+            v-if="canButton(ORG_PAGE_BUTTON_CODES.edit)"
+            type="link"
+            size="small"
+            class="text-primary"
+            @click="handleEdit(row)"
+          >
+            {{ $t('system.common.edit') }}
+          </Button>
+          <Button
+            danger
+            v-if="canButton(ORG_PAGE_BUTTON_CODES.delete)"
+            type="link"
+            size="small"
+            :disabled="!row.parentId || row.parentId === '0'"
+            @click="handleDelete(row)"
+          >
+            {{ $t('system.common.delete') }}
+          </Button>
+          <Button
+            v-if="canButton(ORG_PAGE_BUTTON_CODES.addSub)"
+            type="link"
+            size="small"
+            class="text-primary"
+            @click="handleAddChild(row)"
+          >
+            {{ $t('system.org.addSubitem') }}
+          </Button>
+          <Button
+            v-if="canButton(ORG_PAGE_BUTTON_CODES.assetConfig)"
+            type="link"
+            size="small"
+            class="text-primary"
+            @click="handleEntityConfig(row)"
+          >
+            <span class="text-primary">{{
+              $t('system.tradeEntity.assetConfig')
+            }}</span>
+          </Button>
+        </template>
+      </Grid>
+      <div
+        class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border"
+      ></div>
+    </div>
 
     <!-- 组织表单弹窗 -->
     <!-- eslint-disable-next-line prettier/prettier -- 与 vue/max-attributes-per-line 每属性单行一致 -->

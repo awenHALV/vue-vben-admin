@@ -60,5 +60,6 @@
     "selectFirst": "Please select the menus to delete first",
     "batchDeleteConfirm": "Are you sure you want to delete the selected {0} menus?",
     "batchDeleteSuccess": "Batch delete successful "
-  }
+  },
+  "menuList": "Feature List"
 }
