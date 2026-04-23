@@ -40,6 +40,14 @@ function buildExternalMenuRoutePath(
     : `/__external__/${routeKey}`;
 }
 
+function buildEmptyGroupMenuRoutePath(
+  item: BackendMenuItem,
+  nested = false,
+): string {
+  const routeKey = encodeURIComponent(String(item.featureCode || item.id || 'group'));
+  return nested ? `__group__/${routeKey}` : `/__group__/${routeKey}`;
+}
+
 function isMenuFeatureType(featureType: string | undefined): boolean {
   return (
     String(featureType ?? '')
@@ -54,6 +62,17 @@ function isButtonFeatureType(featureType: string | undefined): boolean {
       .toUpperCase()
       .trim() === 'BUTTON'
   );
+}
+
+function hasMenuRoutePath(routePath: string | undefined): boolean {
+  return !!String(routePath ?? '').trim();
+}
+
+function resolveChildParentAbsoluteRoutePath(
+  routePath: string | undefined,
+  absoluteRoutePath: string,
+): string | undefined {
+  return hasMenuRoutePath(routePath) ? absoluteRoutePath : undefined;
 }
 
 /**
@@ -108,6 +127,10 @@ export function collectMenuButtonPermissionsFromRaw(
       menu.routePath,
       parentAbsoluteRoutePath,
     );
+    const childParentAbsoluteRoutePath = resolveChildParentAbsoluteRoutePath(
+      menu.routePath,
+      absoluteRoutePath,
+    );
     const pathKey = normalizeMenuPermissionPath(absoluteRoutePath);
     const children = menu.children ?? [];
     for (const child of children) {
@@ -126,7 +149,7 @@ export function collectMenuButtonPermissionsFromRaw(
           set.add(code);
         }
       } else if (isMenuFeatureType(child.featureType)) {
-        visitMenuNode(child, absoluteRoutePath);
+        visitMenuNode(child, childParentAbsoluteRoutePath);
       }
     }
   }
@@ -255,6 +278,7 @@ function resolveMenuAbsoluteRoutePath(
 function mapMenuToRoute(
   item: BackendMenuItem,
   parentAbsoluteRoutePath?: string,
+  nested = false,
 ): RouteRecordStringComponent {
   const menuChildren = (item.children ?? []).filter((child) =>
     isMenuFeatureType(child.featureType),
@@ -265,11 +289,20 @@ function mapMenuToRoute(
     item.routePath,
     parentAbsoluteRoutePath,
   );
+  const childParentAbsoluteRoutePath = resolveChildParentAbsoluteRoutePath(
+    item.routePath,
+    absoluteRoutePath,
+  );
 
   const isExternalRoute = isExternalMenuRoutePath(absoluteRoutePath);
+  const hasOwnRoutePath = hasMenuRoutePath(item.routePath);
 
   const pathForRouter = isExternalRoute
     ? buildExternalMenuRoutePath(item, parentAbsoluteRoutePath)
+    : !hasOwnRoutePath && hasChildren
+      ? nested && parentAbsoluteRoutePath
+        ? toNestedRoutePath(absoluteRoutePath, parentAbsoluteRoutePath)
+        : buildEmptyGroupMenuRoutePath(item, nested)
     : toNestedRoutePath(absoluteRoutePath, parentAbsoluteRoutePath);
 
   /**
@@ -287,10 +320,8 @@ function mapMenuToRoute(
   if (mappedFeatureCodes.includes(item.featureCode)) {
     inferredComponent = item.featureCode;
     console.debug(`[Route Mapping] ${item.featureCode} -> 使用映射解析`);
-  } else if (hasChildren && !microCode) {
-    inferredComponent = parentAbsoluteRoutePath
-      ? 'ParentLayout'
-      : 'BasicLayout';
+  } else if (hasChildren) {
+    inferredComponent = nested ? 'ParentLayout' : 'BasicLayout';
   } else if (absoluteRoutePath) {
     inferredComponent = isExternalRoute
       ? 'IFrameView'
@@ -333,7 +364,9 @@ function mapMenuToRoute(
         : {}),
     },
     children: hasChildren
-      ? menuChildren.map((child) => mapMenuToRoute(child, absoluteRoutePath))
+      ? menuChildren.map((child) =>
+          mapMenuToRoute(child, childParentAbsoluteRoutePath, true),
+        )
       : [],
   } as RouteRecordStringComponent;
 }

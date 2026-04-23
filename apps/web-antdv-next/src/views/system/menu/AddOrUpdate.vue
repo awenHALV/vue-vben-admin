@@ -131,11 +131,13 @@ const [Form, formApi] = useVbenForm({
         rules(values) {
           if (values.featureType === 'MENU') {
             return z
-              .string({
-                required_error: $t('menu.formRules.routePath'),
-                invalid_type_error: $t('menu.formRules.routePath'),
-              })
-              .min(1, { message: $t('menu.formRules.routePath') })
+              // .string({
+              //   required_error: $t('menu.formRules.routePath'),
+              //   invalid_type_error: $t('menu.formRules.routePath'),
+              // })
+              // .min(1, { message: $t('menu.formRules.routePath') })
+              .string()
+              .optional()
               .superRefine((v, ctx) => {
                 if (!v) {
                   return;
