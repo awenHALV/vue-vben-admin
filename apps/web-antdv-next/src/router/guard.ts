@@ -110,13 +110,18 @@ function setupAccessGuard(router: Router) {
             preferences.app.defaultHomePath,
         );
       }
+        // 挂在 coreRoutes 下的微前端隐藏详情页仍需走登录校验与菜单初始化，
+        // 否则刷新深链时会提前放行，导致 accessMenus 为空、侧栏不渲染。
+        const isCoreMicroDetailRoute = Boolean(to.meta.microName);
       // 个人中心 / 无权限落地页挂在 BasicLayout 下，侧栏依赖 generateAccess 写入的菜单；
       // 刷新直达时若尚未生成权限，不可在此提前 return，否则 accessMenus 未初始化。
       const coreRouteNeedsAccessGeneration =
         accessStore.accessToken &&
         !accessStore.isAccessChecked &&
-        (to.name === 'Profile' || to.name === 'NoMenuPermission');
-      if (!coreRouteNeedsAccessGeneration) {
+          (to.name === 'Profile' ||
+            to.name === 'NoMenuPermission' ||
+            isCoreMicroDetailRoute);
+        if (!coreRouteNeedsAccessGeneration && !isCoreMicroDetailRoute) {
         return true;
       }
     }
