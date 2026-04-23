@@ -76,6 +76,17 @@ const coreRoutes: RouteRecordRaw[] = [
           title: $t('page.auth.profile'),
         },
       },
+      {
+        name: 'GridChargeGunDetail',
+        path: 'grid/equipmentMonitoring/chargeGun/:id',
+        component: () => import('#/views/micro/index.vue'),
+        meta: {
+          hideInBreadcrumb: true,
+          hideInMenu: true,
+          microName: 'grid',
+          title: '充电枪详情',
+        },
+      },
     ],
   },
   {
