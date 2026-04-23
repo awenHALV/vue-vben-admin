@@ -134,7 +134,11 @@ export function setupWujieHostBridge() {
   bus.$on(
     JUMPROUTE_EVENT,
     (payload: { path: string; query?: Record<string, string> }) => {
-      router.push(payload);
+      const target = router.resolve(payload);
+      if (target.fullPath === router.currentRoute.value.fullPath) {
+        return;
+      }
+      void router.push(payload);
     },
   );
 
