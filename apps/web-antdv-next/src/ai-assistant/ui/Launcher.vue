@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { Modal } from 'antdv-next';
+import { h } from 'vue';
+
+import { IconifyIcon } from '@vben/icons';
+
+import { App } from 'antdv-next';
 import { storeToRefs } from 'pinia';
 
 import { useAiAssistantChatStore } from '#/store/chat';
@@ -11,6 +15,8 @@ import Fullscreen from './Fullscreen.vue';
 defineOptions({
   name: 'Launcher',
 });
+
+const { modal } = App.useApp();
 
 const chatStore = useAiAssistantChatStore();
 const {
@@ -71,10 +77,26 @@ function handleFeedback(payload: {
 
 async function handleDeleteConversation(id: string) {
   const ok = await new Promise<boolean>((resolve) => {
-    Modal.confirm({
+    modal.confirm({
       cancelText: '取消',
       content: '删除后，聊天记录将不可恢复。',
       okText: '删除',
+      icon: h(
+        'span',
+        {
+          style: {
+            display: 'inline-flex',
+            alignItems: 'center',
+            marginRight: '12px',
+          },
+        },
+        [
+          h(IconifyIcon, {
+            icon: 'ant-design:exclamation-circle-filled',
+            style: { color: '#FF4D4F', fontSize: '22px' },
+          }),
+        ],
+      ),
       onCancel: () => resolve(false),
       onOk: () => resolve(true),
       title: '确认删除？',
