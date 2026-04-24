@@ -59,8 +59,27 @@ export type AssistantMessageMeta = {
   thinkingFinishedAt?: number;
 };
 
+function safeUUID() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+
+  // 退化：优先使用 getRandomValues
+  const cryptoObj = globalThis.crypto;
+  if (cryptoObj?.getRandomValues) {
+    const buf = new Uint8Array(16);
+    cryptoObj.getRandomValues(buf);
+    // RFC4122 v4
+    buf[6] = (buf[6] & 0x0F) | 0x40;
+    buf[8] = (buf[8] & 0x3F) | 0x80;
+    const hex = [...buf].map((b) => b.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  }
+
+  // 最后兜底（不强随机，但至少不报错）
+  return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
+}
+
 function newMessageId() {
-  return crypto.randomUUID();
+  return safeUUID();
 }
 
 /** 统一换行；收束行尾多余 `|`，便于 GFM 表格被前端解析 */
@@ -69,7 +88,7 @@ function normalizeSseMarkdownText(md: string): string {
     .replaceAll('\r\n', '\n')
     .replaceAll('\r', '\n')
     .split('\n')
-    .map((line) => line.trimEnd().replace(/\|\|+\s*$/g, '|'))
+    .map((line) => line.trimEnd().replaceAll(/\|{2,}\s*$/g, '|'))
     .join('\n');
 }
 
@@ -131,12 +150,16 @@ function parseChartPayload(payload: Record<string, unknown>): null | {
   };
 }
 
-function mapHistoryToChatMessages(history: ChatHistoryItemRest[]): AiChatMessage[] {
+function mapHistoryToChatMessages(
+  history: ChatHistoryItemRest[],
+): AiChatMessage[] {
   // 历史回显：assistant 输出统一走 sseEvents 回放；
   // 这里仅映射 user 消息，并保持顺序（便于后续按 history 顺序插入 assistant 回放）
   return history.flatMap<AiChatMessage>((h) => {
     if (h.role !== 'user') return [];
-    return [{ id: h.messageId ?? newMessageId(), role: 'user', text: h.content }];
+    return [
+      { id: h.messageId ?? newMessageId(), role: 'user', text: h.content },
+    ];
   });
 }
 
