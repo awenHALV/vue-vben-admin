@@ -16,7 +16,7 @@ export default defineConfig(async (config) => {
     vite: {
       server: {
         proxy: {
-          '/api/chat': {
+          '/ai-assistant': {
             changeOrigin: true,
             headers: {
               referer: proxyTargetAiAssistant,
