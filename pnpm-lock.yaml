@@ -619,6 +619,9 @@ importers:
       dayjs:
         specifier: 'catalog:'
         version: 1.11.20
+      event-source-polyfill:
+        specifier: ^1.0.31
+        version: 1.0.31
       pinia:
         specifier: ^3.0.4
         version: 3.0.4(typescript@5.9.3)(vue@3.5.30(typescript@5.9.3))
@@ -3762,6 +3765,11 @@ packages:
     cpu: [x64]
     os: [linux]
 
+  '@turbo/linux-arm64@2.8.20':
+    resolution: {integrity: sha512-Gn5yjlZGLRZWarLWqdQzv0wMqyBNIdq1QLi48F1oY5Lo9kiohuf7BPQWtWxeNVS2NgJ1+nb/DzK1JduYC4AWOA==}
+    cpu: [arm64]
+    os: [linux]
+
   '@turbo/windows-64@2.8.20':
     resolution: {integrity: sha512-vyaDpYk/8T6Qz5V/X+ihKvKFEZFUoC0oxYpC1sZanK6gaESJlmV3cMRT3Qhcg4D2VxvtC2Jjs9IRkrZGL+exLw==}
     cpu: [x64]
@@ -5908,6 +5916,9 @@ packages:
   etag@1.8.1:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
+
+  event-source-polyfill@1.0.31:
+    resolution: {integrity: sha512-4IJSItgS/41IxN5UVAVuAyczwZF7ZIEsM1XAoUzIHA6A+xzusEZUutdXz2Nr+MQPLxfTiCvqE79/C8HT8fKFvA==}
 
   event-target-shim@5.0.1:
     resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==}
@@ -11908,6 +11919,9 @@ snapshots:
   '@turbo/linux-64@2.8.20':
     optional: true
 
+  '@turbo/linux-arm64@2.8.20':
+    optional: true
+
   '@turbo/windows-64@2.8.20':
     optional: true
 
@@ -14403,6 +14417,8 @@ snapshots:
   esutils@2.0.3: {}
 
   etag@1.8.1: {}
+
+  event-source-polyfill@1.0.31: {}
 
   event-target-shim@5.0.1: {}
 
@@ -17384,6 +17400,7 @@ snapshots:
       '@turbo/darwin-64': 2.8.20
       '@turbo/darwin-arm64': 2.8.20
       '@turbo/linux-64': 2.8.20
+      '@turbo/linux-arm64': 2.8.20
       '@turbo/windows-64': 2.8.20
       '@turbo/windows-arm64': 2.8.20
 
