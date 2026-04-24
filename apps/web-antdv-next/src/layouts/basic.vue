@@ -18,6 +18,7 @@ import { useAccessStore, useUserStore } from '@vben/stores';
 import { message } from 'antdv-next';
 import { storeToRefs } from 'pinia';
 
+import { AiAssistantLauncher } from '#/ai-assistant';
 import { getTenantListApi } from '#/api/core/auth';
 import { useTenantSwitchFlow } from '#/composables/use-tenant-switch-flow';
 import { $t } from '#/locales';
@@ -234,6 +235,8 @@ watch(
       >
         <LoginForm />
       </AuthenticationLoginExpiredModal>
+
+      <AiAssistantLauncher />
     </template>
     <template #lock-screen>
       <LockScreen :avatar="avatar" @to-login="handleLogout" />

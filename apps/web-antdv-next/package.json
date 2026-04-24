@@ -45,6 +45,7 @@
     "antdv-next": "catalog:",
     "crypto-js": "catalog:",
     "dayjs": "catalog:",
+    "event-source-polyfill": "^1.0.31",
     "pinia": "catalog:",
     "vue": "catalog:",
     "vue-router": "catalog:",

@@ -7,6 +7,7 @@ export default defineConfig(async (config) => {
   const env = loadEnv(config.mode, process.cwd(), '');
   const proxyTarget = env.VITE_DEV_PROXY_TARGET;
   const proxyTargetEnergy = env.VITE_DEV_PROXY_TARGET_ENERGY;
+  const proxyTargetAiAssistant = env.VITE_DEV_PROXY_TARGET_AI_ASSISTANT;
   return {
     application: {
       // 登录之前的loading页
@@ -15,6 +16,16 @@ export default defineConfig(async (config) => {
     vite: {
       server: {
         proxy: {
+          '/api/chat': {
+            changeOrigin: true,
+            headers: {
+              referer: proxyTargetAiAssistant,
+            },
+            // rewrite: (path) => path.replace(/^\/api\/chat/, ''),
+            // mock代理目标地址
+            target: proxyTargetAiAssistant,
+            ws: true,
+          },
           // 研发环境
           '/api': {
             changeOrigin: true,
