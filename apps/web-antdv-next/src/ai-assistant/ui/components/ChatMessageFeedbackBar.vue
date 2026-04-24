@@ -22,7 +22,7 @@ function onPick(type: 'dislike' | 'like') {
 
 <template>
   <div
-    class="mt-1 flex justify-start gap-2 opacity-0 transition-opacity group-hover:opacity-100"
+    class="flex justify-start gap-2 opacity-0 transition-opacity group-hover:opacity-100"
   >
     <Tooltip title="赞成">
       <button

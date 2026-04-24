@@ -8,6 +8,7 @@ import { computed, nextTick, ref, watch, watchEffect } from 'vue';
 import { IconifyIcon } from '@vben/icons';
 
 import { AI_ASSISTANT_DEMO_MESSAGES } from '../../mock/demo-messages';
+import { renderMarkdown } from '../../utils/markdown';
 import Avatar from './Avatar.vue';
 import ChartMessage from './ChartMessage.vue';
 import ChatMessageFeedbackBar from './ChatMessageFeedbackBar.vue';
@@ -104,6 +105,14 @@ function handleFeedback(messageId: string, type: 'dislike' | 'like') {
   emit('feedback', { messageId, type });
 }
 
+function canShowFeedbackBar(messageId: string): boolean {
+  const meta = assistantMeta(messageId);
+  // 接入 SSE 后：只有当 type=done（qaFinished=true）时才展示反馈
+  if (meta) return Boolean(meta.qaFinished);
+  // demo / 无 meta 的历史消息默认允许展示
+  return true;
+}
+
 watchEffect(() => {
   // 非全屏时：当思考完成，自动收起（仅触发一次，避免干扰用户手动展开）
   if (props.variant === 'fullscreen') return;
@@ -133,148 +142,6 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
   if (meta.thinkingFinished) return '思考完成';
   return '思考中...';
 }
-
-type MarkdownBlock =
-  | { content: string; type: 'text' }
-  | { header: string[]; rows: string[][]; type: 'table' };
-
-function normalizeMdTableLine(line: string): string {
-  return line.trimEnd().replaceAll(/\|{2,}\s*$/g, '|');
-}
-
-function isMdTableSeparatorRow(line: string): boolean {
-  const raw = line.trim();
-  if (!raw.includes('|')) return false;
-  const withoutEdges = raw.startsWith('|') ? raw.slice(1) : raw;
-  const trimmed = withoutEdges.endsWith('|')
-    ? withoutEdges.slice(0, -1)
-    : withoutEdges;
-  const cells = trimmed
-    .split('|')
-    .map((c) => c.trim())
-    .filter((c) => c.length > 0);
-  if (cells.length < 2) return false;
-  return cells.every((c) => /^:?-{2,}:?$/.test(c));
-}
-
-function parseMdTableRow(line: string): string[] {
-  const raw = normalizeMdTableLine(line).trim();
-  const withoutEdges = raw.startsWith('|') ? raw.slice(1) : raw;
-  const trimmed = withoutEdges.endsWith('|')
-    ? withoutEdges.slice(0, -1)
-    : withoutEdges;
-  const cells = trimmed.split('|').map((c) => c.trim());
-  while (cells.length > 1 && cells[cells.length - 1] === '') {
-    cells.pop();
-  }
-  return cells;
-}
-
-function looksLikeMdTableHeaderRow(line: string): boolean {
-  const t = line.trim();
-  if (!t.includes('|')) return false;
-  if (isMdTableSeparatorRow(t)) return false;
-  const cells = parseMdTableRow(t).filter((c) => c.length > 0);
-  return cells.length >= 2;
-}
-
-function indexOfNextNonEmptyLine(lines: string[], fromIdx: number): number {
-  for (let j = fromIdx; j < lines.length; j++) {
-    if ((lines[j] ?? '').trim().length > 0) return j;
-  }
-  return -1;
-}
-
-function parseMarkdownBlocks(markdown: string): MarkdownBlock[] {
-  const lines = (markdown ?? '')
-    .replaceAll('\r\n', '\n')
-    .replaceAll('\r', '\n')
-    .split('\n');
-  const blocks: MarkdownBlock[] = [];
-  let textBuf: string[] = [];
-
-  function flushText() {
-    const content = textBuf.join('\n');
-    if (content.trim().length > 0) blocks.push({ type: 'text', content });
-    textBuf = [];
-  }
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i] ?? '';
-    const sepIdx = indexOfNextNonEmptyLine(lines, i + 1);
-    const sepLine = sepIdx === -1 ? '' : (lines[sepIdx] ?? '');
-
-    if (looksLikeMdTableHeaderRow(line) && isMdTableSeparatorRow(sepLine)) {
-      const header = parseMdTableRow(line);
-      if (header.filter((c) => c.length > 0).length < 2) {
-        textBuf.push(line);
-        continue;
-      }
-
-      let j = sepIdx + 1;
-      const rows: string[][] = [];
-      while (j < lines.length) {
-        const rowRaw = lines[j] ?? '';
-        const rowLine = normalizeMdTableLine(rowRaw).trim();
-        if (!rowLine.includes('|')) break;
-        if (isMdTableSeparatorRow(rowLine)) {
-          j++;
-          continue;
-        }
-        rows.push(parseMdTableRow(rowLine));
-        j++;
-      }
-
-      if (rows.length === 0) {
-        textBuf.push(line);
-        continue;
-      }
-
-      flushText();
-      i = j - 1;
-
-      const colCount = Math.max(header.length, ...rows.map((r) => r.length));
-      const normHeader = Array.from(
-        { length: colCount },
-        (_, idx) => header[idx] ?? '',
-      );
-      const normRows = rows.map((r) =>
-        Array.from({ length: colCount }, (_, idx) => r[idx] ?? ''),
-      );
-
-      blocks.push({ type: 'table', header: normHeader, rows: normRows });
-      continue;
-    }
-
-    textBuf.push(line);
-  }
-
-  flushText();
-  return blocks;
-}
-
-type InlineToken = { bold: boolean; text: string };
-
-function tokenizeInlineMarkdown(input = ''): InlineToken[] {
-  const text = input;
-  const re = /\*\*(.+?)\*\*/g;
-  const tokens: InlineToken[] = [];
-  let lastIndex = 0;
-  for (const match of text.matchAll(re)) {
-    const start = match.index ?? 0;
-    const full = match[0] ?? '';
-    const inner = match[1] ?? '';
-    if (start > lastIndex) {
-      tokens.push({ bold: false, text: text.slice(lastIndex, start) });
-    }
-    if (inner) tokens.push({ bold: true, text: inner });
-    lastIndex = start + full.length;
-  }
-  if (lastIndex < text.length) {
-    tokens.push({ bold: false, text: text.slice(lastIndex) });
-  }
-  return tokens;
-}
 </script>
 
 <template>
@@ -285,7 +152,7 @@ function tokenizeInlineMarkdown(input = ''): InlineToken[] {
         <div
           :class="
             props.variant === 'fullscreen'
-              ? 'max-w-[min(100%,216px)] rounded-lg bg-muted px-3 py-2 text-sm/6'
+              ? 'max-w-[min(100%,600px)] rounded-lg bg-muted px-3 py-2 text-sm/6'
               : 'max-w-[216px] rounded-lg bg-[rgba(0,0,0,0.06)] px-4 py-3 text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:bg-muted dark:text-foreground'
           "
         >
@@ -299,10 +166,18 @@ function tokenizeInlineMarkdown(input = ''): InlineToken[] {
         class="flex gap-3"
       >
         <Avatar />
-        <div class="group flex w-full max-w-[324px] flex-col gap-2">
+        <div
+          class="group flex flex-col gap-2"
+          :class="[
+            props.variant === 'fullscreen' ? 'w-full' : 'w-full max-w-[324px]',
+          ]"
+        >
           <!-- 深度思考（时间轴） -->
           <div v-if="assistantMeta(msg.id)" class="flex flex-col gap-2">
-            <div class="flex-start flex items-center gap-3">
+            <div
+              class="flex-start flex cursor-pointer items-center gap-1"
+              @click="emit('toggleThinking', msg.id)"
+            >
               <div
                 :class="
                   props.variant === 'fullscreen'
@@ -315,7 +190,6 @@ function tokenizeInlineMarkdown(input = ''): InlineToken[] {
               <button
                 class="text-muted-foreground hover:text-foreground"
                 type="button"
-                @click="emit('toggleThinking', msg.id)"
               >
                 <IconifyIcon
                   :icon="
@@ -373,9 +247,8 @@ function tokenizeInlineMarkdown(input = ''): InlineToken[] {
                         ? 'text-sm/6 whitespace-pre-line text-foreground'
                         : 'text-sm leading-[22px] whitespace-pre-line text-[rgba(0,0,0,0.88)] dark:text-foreground'
                     "
-                  >
-                    {{ step.content }}
-                  </div>
+                    v-html="renderMarkdown(step.content)"
+                  ></div>
                 </div>
               </div>
             </div>
@@ -424,64 +297,16 @@ function tokenizeInlineMarkdown(input = ''): InlineToken[] {
           <!-- 结果（token 拼接 / markdown 文本） -->
           <div
             v-if="markdownOf(msg).trim().length > 0"
-            class="flex flex-col gap-2"
-          >
-            <template
-              v-for="(block, blockIdx) in parseMarkdownBlocks(markdownOf(msg))"
-              :key="`${msg.id}-${block.type}-${blockIdx}`"
-            >
-              <div
-                v-if="block.type === 'text'"
-                :class="
-                  props.variant === 'fullscreen'
-                    ? 'text-sm/6 whitespace-pre-line text-foreground'
-                    : 'text-sm leading-[22px] whitespace-pre-line text-[rgba(0,0,0,0.88)] dark:text-foreground'
-                "
-              >
-                <template
-                  v-for="(t, ti) in tokenizeInlineMarkdown(block.content)"
-                  :key="ti"
-                >
-                  <span :class="t.bold ? 'font-semibold' : ''">
-                    {{ t.text }}
-                  </span>
-                </template>
-              </div>
-
-              <div v-else class="overflow-x-auto">
-                <table class="w-full border-collapse text-left text-xs/5">
-                  <thead>
-                    <tr class="border-b border-muted-foreground/20">
-                      <th
-                        v-for="(h, hi) in block.header"
-                        :key="hi"
-                        class="px-2 py-1 font-medium text-foreground"
-                      >
-                        {{ h }}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      v-for="(row, ri) in block.rows"
-                      :key="ri"
-                      class="border-b border-muted-foreground/10"
-                    >
-                      <td
-                        v-for="(cell, ci) in row"
-                        :key="ci"
-                        class="px-2 py-1 align-top text-[rgba(0,0,0,0.88)] dark:text-foreground"
-                      >
-                        <span class="whitespace-pre-line">{{ cell }}</span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </template>
-          </div>
+            :class="
+              props.variant === 'fullscreen'
+                ? 'text-sm/6 text-foreground'
+                : 'text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-foreground'
+            "
+            v-html="renderMarkdown(markdownOf(msg))"
+          ></div>
 
           <ChatMessageFeedbackBar
+            v-if="canShowFeedbackBar(msg.id)"
             :model-value="feedbackByMessageId[msg.id] ?? null"
             @feedback="(type) => handleFeedback(msg.id, type)"
           />
@@ -492,11 +317,12 @@ function tokenizeInlineMarkdown(input = ''): InlineToken[] {
       <div v-else-if="msg.kind === 'card'" class="flex gap-3">
         <Avatar />
         <div
-          :class="
+          class="rounded-lg border text-sm text-muted-foreground"
+          :class="[
             props.variant === 'fullscreen'
-              ? 'w-full max-w-[324px] rounded-lg border bg-card p-3 text-sm text-muted-foreground'
-              : 'w-[324px] rounded-lg border border-[#F0F0F0] bg-white p-3 text-sm dark:border-border dark:bg-card dark:text-muted-foreground'
-          "
+              ? 'w-full bg-card p-3'
+              : 'w-[324px] border-[#F0F0F0] bg-white p-3 dark:border-border dark:bg-card dark:text-muted-foreground',
+          ]"
         >
           <div
             :class="
@@ -518,11 +344,12 @@ function tokenizeInlineMarkdown(input = ''): InlineToken[] {
             {{ msg.subtitle }}
           </div>
           <div
-            :class="
+            class="mt-2 h-[58px] rounded-sm"
+            :class="[
               props.variant === 'fullscreen'
-                ? 'mt-2 h-[58px] max-w-full rounded-sm bg-muted'
-                : 'mt-2 h-[58px] w-[230px] rounded-sm bg-[rgba(0,0,0,0.04)] dark:bg-muted'
-            "
+                ? 'w-full bg-muted'
+                : 'w-[230px] bg-[rgba(0,0,0,0.04)] dark:bg-muted',
+            ]"
           ></div>
         </div>
       </div>

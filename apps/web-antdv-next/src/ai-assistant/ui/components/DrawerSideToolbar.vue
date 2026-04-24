@@ -21,7 +21,7 @@ const assistantIconSrc = AI_ASSISTANT_ICON_URL;
 
 <template>
   <div
-    class="w-[84px] shrink-0 border-l border-[rgba(0,0,0,0.06)] bg-[#FAFAFA] p-2 dark:border-border dark:bg-muted/30"
+    class="w-[60px] shrink-0 border-l border-[rgba(0,0,0,0.06)] bg-[#FAFAFA] p-2 dark:border-border dark:bg-muted/30"
   >
     <div class="flex h-full flex-col items-center gap-2">
       <div
