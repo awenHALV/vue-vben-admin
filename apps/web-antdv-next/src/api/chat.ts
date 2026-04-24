@@ -14,10 +14,13 @@ const CHAT_DEV_FRAME_STUB_HEADERS: Record<string, string> = {
   'DEFrame-UserId': 'user_001',
 };
 
-type ViteImportMeta = ImportMeta & { env: { PROD: boolean } };
+type ViteImportMeta = ImportMeta & { env: { DEV: boolean; PROD: boolean } };
 
 function chatRequestOptions() {
-  if ((import.meta as ViteImportMeta).env.PROD) {
+  if (
+    (import.meta as ViteImportMeta).env.PROD ||
+    (import.meta as ViteImportMeta).env.DEV
+  ) {
     return {};
   }
   return { headers: { ...CHAT_DEV_FRAME_STUB_HEADERS } };
