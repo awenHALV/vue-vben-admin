@@ -17,6 +17,7 @@ import { EventSourcePolyfill } from 'event-source-polyfill';
 import { defineStore } from 'pinia';
 
 import {
+  BASE_URL,
   deleteChatSessionApi,
   getChatSessionsApi,
   postChatFeedbackApi,
@@ -449,7 +450,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     if (currentStreamingMsgId) {
       streamingAssistantMessageId.value = currentStreamingMsgId;
     }
-    const url = `/api/chat/stream/${encodeURIComponent(sessionId)}`;
+    const url = `/api/${BASE_URL}/chat/stream/${encodeURIComponent(sessionId)}`;
 
     const es = new EventSourcePolyfill(url, {
       headers: {

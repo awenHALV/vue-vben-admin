@@ -14,6 +14,8 @@ const CHAT_DEV_FRAME_STUB_HEADERS: Record<string, string> = {
   'DEFrame-UserId': 'user_001',
 };
 
+export const BASE_URL = '/ai-assistant/external/private/api';
+
 type ViteImportMeta = ImportMeta & { env: { DEV: boolean; PROD: boolean } };
 
 function chatRequestOptions() {
@@ -38,7 +40,7 @@ export interface ChatSessionSummary {
  */
 export function getChatSessionsApi(): Promise<ChatSessionSummary[]> {
   return requestClient.get<ChatSessionSummary[]>(
-    '/chat/sessions',
+    `${BASE_URL}/chat/sessions`,
     chatRequestOptions(),
   );
 }
@@ -69,7 +71,7 @@ export function postChatSendApi(
     data.sessionId = body.sessionId;
   }
   return requestClient.post<PostChatSendData>(
-    '/chat/send',
+    `${BASE_URL}/chat/send`,
     data,
     chatRequestOptions(),
   );
@@ -98,7 +100,7 @@ export function postChatRestoreApi(
   sessionId: string,
 ): Promise<PostChatRestoreData> {
   return requestClient.post<PostChatRestoreData>(
-    `/chat/sessions/${encodeURIComponent(sessionId)}/restore`,
+    `${BASE_URL}/chat/sessions/${encodeURIComponent(sessionId)}/restore`,
     {},
     { ...chatRequestOptions() },
   );
@@ -110,7 +112,7 @@ export function postChatRestoreApi(
  */
 export function deleteChatSessionApi(sessionId: string): Promise<null> {
   return requestClient.delete<null>(
-    `/chat/sessions/${encodeURIComponent(sessionId)}`,
+    `${BASE_URL}/chat/sessions/${encodeURIComponent(sessionId)}`,
     chatRequestOptions(),
   );
 }
@@ -135,7 +137,11 @@ export function postChatFeedbackApi(body: PostChatFeedbackBody): Promise<null> {
   if (body.messageId) {
     data.messageId = body.messageId;
   }
-  return requestClient.post<null>('/chat/feedback', data, chatRequestOptions());
+  return requestClient.post<null>(
+    `${BASE_URL}/chat/feedback`,
+    data,
+    chatRequestOptions(),
+  );
 }
 
 export function formatChatSessionListTime(iso: string): string {
