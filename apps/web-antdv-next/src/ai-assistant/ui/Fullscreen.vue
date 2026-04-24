@@ -48,7 +48,9 @@ const emit = defineEmits<{
     v-if="props.open"
     class="fixed inset-6 z-1100 flex overflow-hidden rounded-xl bg-background shadow-[0px_4px_16px_0px_rgba(0,0,0,0.16)]"
   >
-    <div class="flex w-64 shrink-0 flex-col border-r border-border bg-muted/20">
+    <div
+      class="flex w-64 shrink-0 flex-col border-r border-border bg-[#FAFAFA] dark:bg-black"
+    >
       <div
         class="flex h-12 items-center justify-between border-b border-border px-4"
       >
@@ -103,7 +105,7 @@ const emit = defineEmits<{
         />
       </div>
 
-      <div class="min-h-0 flex-1 overflow-auto p-4">
+      <div class="min-h-0 flex-1 overflow-auto">
         <HistoryPanel
           v-if="props.panelMode === 'history'"
           variant="fullscreen"
@@ -113,21 +115,23 @@ const emit = defineEmits<{
           @select-conversation="emit('selectConversation', $event)"
         />
 
-        <ChatPanel
-          v-else
-          variant="fullscreen"
-          :active-conversation-id="props.activeConversationId"
-          :assistant-meta-by-id="props.assistantMetaById"
-          :messages="props.messages"
-          @toggle-thinking="emit('toggleThinking', $event)"
-          @feedback="emit('feedback', $event)"
+        <div v-else class="mx-auto w-[800px] p-4">
+          <ChatPanel
+            variant="fullscreen"
+            :active-conversation-id="props.activeConversationId"
+            :assistant-meta-by-id="props.assistantMetaById"
+            :messages="props.messages"
+            @toggle-thinking="emit('toggleThinking', $event)"
+            @feedback="emit('feedback', $event)"
+          />
+        </div>
+      </div>
+      <div v-if="props.panelMode !== 'history'" class="mx-auto w-[800px] p-4">
+        <ComposerFooter
+          :pending="props.pending"
+          @submit="emit('sendMessage', $event)"
         />
       </div>
-      <ComposerFooter
-        v-if="props.panelMode !== 'history'"
-        :pending="props.pending"
-        @submit="emit('sendMessage', $event)"
-      />
     </div>
   </div>
 </template>

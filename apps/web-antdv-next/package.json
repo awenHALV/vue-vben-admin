@@ -46,6 +46,7 @@
     "crypto-js": "catalog:",
     "dayjs": "catalog:",
     "event-source-polyfill": "^1.0.31",
+    "markdown-it": "^14.1.1",
     "pinia": "catalog:",
     "vue": "catalog:",
     "vue-router": "catalog:",
