@@ -109,7 +109,7 @@ async function handleDeleteConversation(id: string) {
 
 <template>
   <button
-    class="fixed right-[17px] bottom-[55px] z-50 flex-center size-12 cursor-pointer rounded-full border border-solid border-[#D9D9D9] bg-white p-0 shadow-[0px_4px_16px_rgba(0,0,0,0.16)] outline-none select-none dark:border-[#2B2B2B] dark:bg-[#0B0B0B]"
+    class="fixed right-[17px] bottom-[55px] z-999 flex-center size-12 cursor-pointer rounded-full border border-solid border-[#D9D9D9] bg-white p-0 shadow-[0px_4px_16px_rgba(0,0,0,0.16)] outline-none select-none dark:border-[#2B2B2B] dark:bg-[#0B0B0B]"
     type="button"
     aria-label="打开小曦助手"
     @click="handleOpen"

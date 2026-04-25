@@ -55,8 +55,10 @@ function chartPartOf(msg: AiChatMessage) {
 function markdownOf(msg: AiChatMessage): string {
   if (msg.role !== 'assistant') return '';
   if (msg.kind === 'text') return msg.text ?? '';
+  console.log(msg.kind);
   if (msg.kind === 'rich') {
     const part = msg.parts.find((p) => p.type === 'markdown');
+    console.log(part);
     return part?.type === 'markdown' ? (part.content ?? '') : '';
   }
   return '';
@@ -97,6 +99,13 @@ watch(
   { deep: true, flush: 'post' },
 );
 
+watch(
+  () => props.activeConversationId,
+  () => {
+    feedbackByMessageId.value = {};
+  },
+);
+
 function handleFeedback(messageId: string, type: 'dislike' | 'like') {
   feedbackByMessageId.value = {
     ...feedbackByMessageId.value,
@@ -135,6 +144,15 @@ watchEffect(() => {
 
 function assistantMeta(messageId: string): AssistantMessageMeta | null {
   return props.assistantMetaById?.[messageId] ?? null;
+}
+
+/** 本会话内点击优先；否则用 store restore / submitFeedback 写入的 feedbackStatus */
+function feedbackModelFor(messageId: string): 'dislike' | 'like' | null {
+  const local = feedbackByMessageId.value[messageId];
+  if (local !== undefined) return local;
+  const fromMeta = assistantMeta(messageId)?.feedbackStatus;
+  if (fromMeta === 'like' || fromMeta === 'dislike') return fromMeta;
+  return null;
 }
 
 function thinkingTitle(meta: AssistantMessageMeta): string {
@@ -233,25 +251,31 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
 
                 <div class="flex flex-1 flex-col gap-1">
                   <div
-                    :class="
-                      props.variant === 'fullscreen'
-                        ? 'text-xs text-muted-foreground'
-                        : 'text-xs text-[rgba(0,0,0,0.45)] dark:text-muted-foreground'
-                    "
+                    class="text-xs text-[rgba(0,0,0,0.45)] dark:text-muted-foreground"
                   >
                     {{ step.step }}
                   </div>
                   <div
-                    :class="
-                      props.variant === 'fullscreen'
-                        ? 'text-sm/6 whitespace-pre-line text-foreground'
-                        : 'text-sm leading-[22px] whitespace-pre-line text-[rgba(0,0,0,0.88)] dark:text-foreground'
-                    "
+                    class="text-xs text-[rgba(0,0,0,0.45)] dark:text-muted-foreground"
                     v-html="renderMarkdown(step.content)"
                   ></div>
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- 思考完成到输出结果之间的过渡动画 -->
+          <div
+            v-if="
+              assistantMeta(msg.id)?.thinkingFinished &&
+              markdownOf(msg).trim().length === 0 &&
+              !chartPartOf(msg)
+            "
+            class="flex items-center"
+          >
+            <span class="chat-panel-generating-text text-sm font-medium">
+              正在生成回答...
+            </span>
           </div>
 
           <!-- 图表片段（若存在，优先展示） -->
@@ -297,6 +321,7 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
           <!-- 结果（token 拼接 / markdown 文本） -->
           <div
             v-if="markdownOf(msg).trim().length > 0"
+            class="markdown-body"
             :class="
               props.variant === 'fullscreen'
                 ? 'text-sm/6 text-foreground'
@@ -307,7 +332,7 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
 
           <ChatMessageFeedbackBar
             v-if="canShowFeedbackBar(msg.id)"
-            :model-value="feedbackByMessageId[msg.id] ?? null"
+            :model-value="feedbackModelFor(msg.id)"
             @feedback="(type) => handleFeedback(msg.id, type)"
           />
         </div>
@@ -373,3 +398,59 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
     ></div>
   </div>
 </template>
+
+<style scoped>
+@keyframes chat-panel-generating-sweep {
+  0% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.chat-panel-generating-text {
+  display: inline-block;
+  background-image: linear-gradient(
+    90deg,
+    rgb(163 163 163) 0%,
+    rgb(163 163 163) 36%,
+    rgb(17 24 39) 50%,
+    rgb(163 163 163) 64%,
+    rgb(163 163 163) 100%
+  );
+  background-size: 240% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: chat-panel-generating-sweep 2.4s ease-in-out infinite;
+}
+
+:global(html.dark) .chat-panel-generating-text {
+  background-image: linear-gradient(
+    90deg,
+    rgb(163 163 163 / 0.4) 0%,
+    rgb(163 163 163 / 0.4) 36%,
+    rgb(243 244 246) 50%,
+    rgb(163 163 163 / 0.4) 64%,
+    rgb(163 163 163 / 0.4) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-panel-generating-text {
+    animation: none;
+    background: none;
+    background-clip: unset;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: unset;
+    color: rgb(115 115 115);
+  }
+
+  :global(html.dark) .chat-panel-generating-text {
+    color: rgb(163 163 163);
+  }
+}
+</style>
