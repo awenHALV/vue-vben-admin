@@ -29,7 +29,7 @@ import { TENANT_PAGE_BUTTON_CODES } from './button-permissions';
 import TenantDetail from './TenantDetail.vue';
 import TenantMenuConfig from './TenantMenuConfig.vue';
 
-defineOptions({ name: 'SystemTenant' });
+defineOptions({ name: 'TenantManagement' });
 
 const router = useRouter();
 const accessStore = useAccessStore();
@@ -275,7 +275,7 @@ async function applyTenantTokenAndRefresh(token: string) {
 5）fetchUserInfo()
 6）generateAccess 刷新菜单与动态路由并写回 accessStore
 7）若当前路由在新菜单里不存在，则跳到首个可访问菜单或首页。
- * @param record 
+ * @param record
  */
 async function runSwitchTenant(record: BackendTenantItem) {
   const tenantPk = record.id ?? record.tenantId;
