@@ -78,7 +78,7 @@ export interface TradeEntityQueryParams {
  */
 export async function getTradeEntityListApi(params?: TradeEntityQueryParams) {
   return requestClient.get<TradeEntityListItem[]>(
-    '/iep-res-entity-service/external/private/tradeEntity/list',
+    '/iep-res-entity-service/external/private/tradeEntity/list-all',
     { params },
   );
 }
