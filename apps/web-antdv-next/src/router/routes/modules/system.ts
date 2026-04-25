@@ -44,6 +44,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'lucide:building-2',
           title: '租户管理',
+          keepAlive:true
         },
       },
       {
