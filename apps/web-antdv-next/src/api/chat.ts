@@ -77,11 +77,15 @@ export function postChatSendApi(
   );
 }
 
+export type ChatHistoryFeedbackStatus = 'dislike' | 'like' | null;
+
 export interface ChatHistoryItemRest {
   content: string;
   /** 后端消息 id（用于回放/反馈等） */
   messageId?: string;
   role: 'assistant' | 'user';
+  /** assistant：该条是否已提交反馈（restore 回显） */
+  feedbackStatus?: ChatHistoryFeedbackStatus;
   /** assistant 侧可选：与实时 SSE 帧一致的事件列表 */
   sseEvents?: Array<Record<string, unknown>>;
 }

@@ -6,8 +6,6 @@ import type {
   AiChatMessage,
 } from '../ai-assistant/types';
 
-import type { ChatHistoryItemRest } from '#/api/chat';
-
 import { computed, ref } from 'vue';
 
 import { useAccessStore } from '@vben/stores';
@@ -52,6 +50,8 @@ export type AssistantAnswerMeta = {
 
 export type AssistantMessageMeta = {
   answer: AssistantAnswerMeta;
+  /** restore / 提交反馈后：已赞、已踩或未反馈 */
+  feedbackStatus?: 'dislike' | 'like' | null;
   /** 问答整轮是否已结束（对应 SSE type=done） */
   qaFinished: boolean;
   thinking: AssistantThinkingMeta;
@@ -151,17 +151,12 @@ function parseChartPayload(payload: Record<string, unknown>): null | {
   };
 }
 
-function mapHistoryToChatMessages(
-  history: ChatHistoryItemRest[],
-): AiChatMessage[] {
-  // 历史回显：assistant 输出统一走 sseEvents 回放；
-  // 这里仅映射 user 消息，并保持顺序（便于后续按 history 顺序插入 assistant 回放）
-  return history.flatMap<AiChatMessage>((h) => {
-    if (h.role !== 'user') return [];
-    return [
-      { id: h.messageId ?? newMessageId(), role: 'user', text: h.content },
-    ];
-  });
+function feedbackStatusFromRestore(
+  raw: unknown,
+): 'dislike' | 'like' | null | undefined {
+  if (raw === 'like' || raw === 'dislike') return raw;
+  if (raw === null) return null;
+  return undefined;
 }
 
 export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
@@ -450,7 +445,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     if (currentStreamingMsgId) {
       streamingAssistantMessageId.value = currentStreamingMsgId;
     }
-    const url = `/api/${BASE_URL}/chat/stream/${encodeURIComponent(sessionId)}`;
+    const url = `/api${BASE_URL}/chat/stream/${encodeURIComponent(sessionId)}`;
 
     const es = new EventSourcePolyfill(url, {
       headers: {
@@ -642,6 +637,20 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
         for (const e of events) {
           applySsePayload(replayMsgId, e, { finalizeStream: false });
         }
+
+        const restoredFeedback = feedbackStatusFromRestore(h.feedbackStatus);
+        if (restoredFeedback !== undefined) {
+          const metaAfter = assistantMetaById.value[replayMsgId];
+          if (metaAfter) {
+            assistantMetaById.value = {
+              ...assistantMetaById.value,
+              [replayMsgId]: {
+                ...metaAfter,
+                feedbackStatus: restoredFeedback,
+              },
+            };
+          }
+        }
       }
 
       if (chatMessages.value.length === 0) ensureWelcomeMessage();
@@ -734,6 +743,16 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
         messageId: payload.messageId,
         type: payload.type,
       });
+      if (payload.messageId) {
+        const mid = payload.messageId;
+        const meta = assistantMetaById.value[mid];
+        if (meta) {
+          assistantMetaById.value = {
+            ...assistantMetaById.value,
+            [mid]: { ...meta, feedbackStatus: payload.type },
+          };
+        }
+      }
       antdMessage.success(payload.type === 'like' ? '已赞成' : '已反馈');
     } catch (error) {
       console.error(error);
