@@ -49,14 +49,14 @@ const chartDetailMessageId = ref<null | string>(null);
 /** 图表详情全屏：与 Fullscreen 视图相同的 inset-6 视口区域 */
 const chartDetailFullscreen = ref(false);
 
-const detailMessage = computed(() => {
+const detailCharts = computed(() => {
   const id = chartDetailMessageId.value;
   if (!id) return null;
   const msg = props.messages?.find((m) => m.id === id);
   if (!msg || msg.role !== 'assistant') return null;
   if (msg.kind !== 'rich') return null;
-  const part = msg.parts.find((p) => p.type === 'chart');
-  return part?.type === 'chart' ? part : null;
+  const parts = msg.parts.filter((p) => p.type === 'chart');
+  return parts.length > 0 ? parts : null;
 });
 
 function openDetail(messageId: string) {
@@ -86,14 +86,14 @@ function toggleChartDetailFullscreen() {
   >
     <!-- 详情抽屉放在左侧（靠近页面主体） -->
     <div
-      v-if="chartDetailOpen && detailMessage && !chartDetailFullscreen"
+      v-if="chartDetailOpen && detailCharts && !chartDetailFullscreen"
       class="flex w-[484px] shrink-0 flex-col border-r border-border bg-background"
     >
       <div
         class="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4"
       >
         <div class="truncate text-base font-semibold text-foreground">
-          {{ detailMessage.chartConfig.title ?? '图表详情' }}
+          {{ detailCharts[0]?.chartConfig.title ?? '图表详情' }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -125,10 +125,14 @@ function toggleChartDetailFullscreen() {
 
       <div class="min-h-0 flex-1 overflow-auto p-4">
         <div class="rounded-lg border border-border bg-card p-3">
-          <ChartMessage
-            :chart-config="detailMessage.chartConfig"
-            :chart-data="detailMessage.chartData"
-          />
+          <div class="flex flex-col gap-3">
+            <ChartMessage
+              v-for="(chart, idx) in detailCharts"
+              :key="`detail-${chartDetailMessageId}-${idx}`"
+              :chart-config="chart.chartConfig"
+              :chart-data="chart.chartData"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -211,14 +215,14 @@ function toggleChartDetailFullscreen() {
 
   <Teleport to="body">
     <div
-      v-if="chartDetailOpen && chartDetailFullscreen && detailMessage"
+      v-if="chartDetailOpen && chartDetailFullscreen && detailCharts"
       class="fixed inset-6 z-1100 flex flex-col overflow-hidden rounded-xl border border-border bg-background shadow-[0px_4px_16px_0px_rgba(0,0,0,0.16)]"
     >
       <div
         class="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4"
       >
         <div class="truncate text-base font-semibold text-foreground">
-          {{ detailMessage.chartConfig.title ?? '图表详情' }}
+          {{ detailCharts[0]?.chartConfig.title ?? '图表详情' }}
         </div>
 
         <div class="flex items-center gap-2">
@@ -243,10 +247,14 @@ function toggleChartDetailFullscreen() {
 
       <div class="min-h-0 flex-1 overflow-auto p-4">
         <div class="rounded-lg border border-border bg-card p-3">
-          <ChartMessage
-            :chart-config="detailMessage.chartConfig"
-            :chart-data="detailMessage.chartData"
-          />
+          <div class="flex flex-col gap-3">
+            <ChartMessage
+              v-for="(chart, idx) in detailCharts"
+              :key="`detail-full-${chartDetailMessageId}-${idx}`"
+              :chart-config="chart.chartConfig"
+              :chart-data="chart.chartData"
+            />
+          </div>
         </div>
       </div>
     </div>
