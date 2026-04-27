@@ -8,7 +8,7 @@ import {
   ref,
 } from 'vue';
 import { useRoute } from 'vue-router';
-
+import { emitChangeThemeToChildNew } from '#/wujie-config/hostBridge.ts';
 import { useAccessStore, useTabbarStore } from '@vben/stores';
 
 import WujieVue from 'wujie-vue3';
@@ -41,6 +41,9 @@ const renderWujie = ref(false);
 const safeMount = () => {
   setTimeout(() => {
     renderWujie.value = true;
+    setTimeout(() => {
+      emitChangeThemeToChildNew()
+    }, 500);
   }, 100);
 };
 
@@ -50,6 +53,7 @@ onMounted(() => {
 });
 
 onActivated(() => {
+
   console.log(`🌞 [唤醒沙箱] ${myUniqueName}`);
   safeMount();
 });
@@ -100,8 +104,8 @@ onBeforeUnmount(() => {
       :alive="true"
     />
 
-    <div v-else class="flex-center size-full text-muted-foreground/50">
-      <span class="animate-pulse">Loading Sandbox...</span>
+    <div v-else class="flex h-full w-full items-center justify-center text-muted-foreground/50">
+      <span class="animate-pulse">Loading...</span>
     </div>
   </div>
 </template>
