@@ -17,5 +17,20 @@
     "title": "概览",
     "analytics": "分析页",
     "workspace": "工作台"
+  },
+  "downloadCenter": {
+    "title": "下载中心",
+    "fileName": "文件名称",
+    "fileStatus": "文件状态",
+    "generateTime": "生成时间",
+    "download": "下载",
+    "generating": "生成中",
+    "failed": "生成失败",
+    "completed": "已完成",
+    "total": "共 {0} 条",
+    "selected": "已选择 {0} 项",
+    "usageTip": "使用说明：1.包含数据量较大动态信息的文件下载进程在本页面显示。2.生成后超过7日的文件将被清理，不可重新下载。",
+    "refresh": "刷新",
+    "downloadSuccess": "下载成功"
   }
 }

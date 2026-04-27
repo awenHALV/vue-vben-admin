@@ -137,6 +137,13 @@ const menus = computed(() => {
       icon: 'lucide:user',
       text: $t('page.auth.profile'),
     },
+    {
+      handler: () => {
+        router.push({ name: 'DownloadCenter' });
+      },
+      icon: 'lucide:download',
+      text: $t('page.downloadCenter.title'),
+    },
   ];
   if (isMultiTenant.value) {
     items.push({

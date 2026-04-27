@@ -5,6 +5,7 @@
     "add": "Add",
     "edit": "Edit",
     "delete": "Delete",
+    "batchDelete": "Batch Delete",
     "view": "View",
     "cancel": "Cancel",
     "ok": "OK",

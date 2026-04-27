@@ -77,6 +77,15 @@ const coreRoutes: RouteRecordRaw[] = [
         },
       },
       {
+        name: 'DownloadCenter',
+        path: 'download-center',
+        component: () => import('#/views/_core/download/index.vue'),
+        meta: {
+          hideInMenu: true,
+          title: $t('page.downloadCenter.title'),
+        },
+      },
+      {
         name: 'GridChargeGunDetail',
         path: 'grid/equipmentMonitoring/chargeGun/:id',
         component: () => import('#/views/micro/index.vue'),
