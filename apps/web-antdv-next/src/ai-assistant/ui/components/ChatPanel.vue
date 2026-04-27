@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import type { AiAssistantPanelVariant, AiChatMessage } from '../../types';
+import type {
+  AiAssistantPanelVariant,
+  AiChatAssistantMessagePartChart,
+  AiChatMessage,
+} from '../../types';
 
 import type { AssistantMessageMeta } from '#/store/chat';
 
@@ -48,8 +52,9 @@ const displayMessages = computed(
 function chartPartOf(msg: AiChatMessage) {
   if (msg.role !== 'assistant') return null;
   if (msg.kind !== 'rich') return null;
-  const part = msg.parts.find((p) => p.type === 'chart');
-  return part?.type === 'chart' ? part : null;
+  return msg.parts.filter(
+    (p): p is AiChatAssistantMessagePartChart => p.type === 'chart',
+  );
 }
 
 function markdownOf(msg: AiChatMessage): string {
@@ -269,8 +274,7 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
             v-if="
               assistantMeta(msg.id)?.thinkingFinished &&
               assistantMeta(msg.id)?.thinking.status !== 'error' &&
-              markdownOf(msg).trim().length === 0 &&
-              !chartPartOf(msg)
+              markdownOf(msg).trim().length === 0
             "
             class="flex items-center"
           >
@@ -280,18 +284,24 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
           </div>
 
           <!-- 图表片段（若存在，优先展示） -->
-          <div v-if="chartPartOf(msg)" class="w-full">
+          <div v-if="chartPartOf(msg)?.length" class="w-full">
             <div
               v-if="props.variant === 'fullscreen'"
               class="w-full rounded-lg border bg-card p-3"
             >
-              <ChartMessage
-                :chart-config="chartPartOf(msg)!.chartConfig"
-                :chart-data="chartPartOf(msg)!.chartData"
-              />
+              <div class="flex flex-col gap-3">
+                <ChartMessage
+                  v-for="(chart, idx) in chartPartOf(msg)!"
+                  :key="`${msg.id}-${idx}`"
+                  :chart-config="chart.chartConfig"
+                  :chart-data="chart.chartData"
+                />
+              </div>
             </div>
             <div v-else class="group flex w-full flex-col gap-2">
               <div
+                v-for="(chart, idx) in chartPartOf(msg)!"
+                :key="`${msg.id}-${idx}`"
                 class="flex cursor-pointer items-center gap-3 rounded-lg border border-[#F0F0F0] bg-white px-3 py-2 transition-colors hover:bg-[rgba(0,0,0,0.02)] dark:border-border dark:bg-card dark:hover:bg-accent"
                 role="button"
                 tabindex="0"
@@ -307,7 +317,7 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
                   <div
                     class="truncate text-sm font-medium text-[rgba(0,0,0,0.88)] dark:text-foreground"
                   >
-                    {{ chartPartOf(msg)!.chartConfig.title ?? '图表' }}
+                    {{ chart.chartConfig.title ?? '图表' }}
                   </div>
                   <div
                     class="mt-0.5 text-xs text-[rgba(0,0,0,0.45)] dark:text-muted-foreground"

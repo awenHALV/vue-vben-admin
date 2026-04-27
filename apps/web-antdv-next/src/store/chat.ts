@@ -2,6 +2,7 @@ import type {
   AiAssistantHistoryItem,
   AiChatAssistantChartConfig,
   AiChatAssistantMessagePart,
+  AiChatAssistantMessagePartChart,
   AiChatAssistantRichMessage,
   AiChatMessage,
 } from '../ai-assistant/types';
@@ -69,8 +70,8 @@ function safeUUID() {
     const buf = new Uint8Array(16);
     cryptoObj.getRandomValues(buf);
     // RFC4122 v4
-    buf[6] = (buf[6] & 0x0F) | 0x40;
-    buf[8] = (buf[8] & 0x3F) | 0x80;
+    buf[6] = ((buf[6] ?? 0) & 0x0F) | 0x40;
+    buf[8] = ((buf[8] ?? 0) & 0x3F) | 0x80;
     const hex = [...buf].map((b) => b.toString(16).padStart(2, '0')).join('');
     return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
   }
@@ -103,18 +104,9 @@ function normalizeRichMarkdownParts(
   );
 }
 
-function parseChartPayload(payload: Record<string, unknown>): null | {
-  chartConfig: AiChatAssistantChartConfig;
-  chartData: Record<string, unknown>[];
-} {
-  const chartConfigRaw =
-    typeof payload.chartConfig === 'object' && payload.chartConfig
-      ? (payload.chartConfig as Record<string, unknown>)
-      : null;
-  const chartData = Array.isArray(payload.chartData)
-    ? (payload.chartData as Record<string, unknown>[])
-    : [];
-  if (!chartConfigRaw) return null;
+function parseChartConfig(raw: unknown): AiChatAssistantChartConfig | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const chartConfigRaw = raw as Record<string, unknown>;
 
   const chartType =
     chartConfigRaw.type === 'bar' || chartConfigRaw.type === 'line'
@@ -137,18 +129,53 @@ function parseChartPayload(payload: Record<string, unknown>): null | {
     : undefined;
 
   if (!chartType || !xAxis || !yAxis) return null;
+  return { type: chartType, title, xAxis, yAxis, dataPath, fields };
+}
 
-  return {
-    chartConfig: {
-      type: chartType,
-      title,
-      xAxis,
-      yAxis,
-      dataPath,
-      fields,
-    },
-    chartData,
-  };
+function parseChartData(raw: unknown): Record<string, unknown>[] {
+  return Array.isArray(raw) ? (raw as Record<string, unknown>[]) : [];
+}
+
+function parseChartPayload(
+  payload: Record<string, unknown>,
+): AiChatAssistantMessagePartChart[] {
+  const configRaw = payload.chartConfig;
+  const dataRaw = payload.chartData;
+
+  // 单图：对象配置 + 数据数组
+  if (!Array.isArray(configRaw)) {
+    const config = parseChartConfig(configRaw);
+    if (!config) return [];
+    return [
+      {
+        type: 'chart',
+        chartConfig: config,
+        chartData: parseChartData(dataRaw),
+      },
+    ];
+  }
+
+  // 多图：配置数组 + 数据（可能是数组-数组、也可能复用同一份数组）
+  const configs = configRaw
+    .map((c) => parseChartConfig(c))
+    .filter((v): v is AiChatAssistantChartConfig => Boolean(v));
+  if (configs.length === 0) return [];
+
+  const dataList: Array<Record<string, unknown>[]> = (() => {
+    if (!Array.isArray(dataRaw)) return configs.map(() => []);
+    const isNested = dataRaw.some((v) => Array.isArray(v));
+    if (isNested) {
+      return dataRaw.map((v) => parseChartData(v));
+    }
+    const shared = parseChartData(dataRaw);
+    return configs.map(() => shared);
+  })();
+
+  return configs.map((chartConfig, idx) => ({
+    type: 'chart',
+    chartConfig,
+    chartData: dataList[idx] ?? [],
+  }));
 }
 
 function feedbackStatusFromRestore(
@@ -228,19 +255,13 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     const type = typeof p.type === 'string' ? p.type : '';
 
     if (type === 'chart') {
-      const parsed = parseChartPayload(p);
-      if (!parsed) return;
       const rich = ensureRichAssistantMessage(messageId);
-      const nextChartPart = {
-        type: 'chart' as const,
-        chartConfig: parsed.chartConfig,
-        chartData: parsed.chartData,
-      };
-      const nextParts = (() => {
-        const idx = rich.parts.findIndex((part) => part.type === 'chart');
-        if (idx === -1) return [nextChartPart, ...rich.parts];
-        return rich.parts.map((part, i) => (i === idx ? nextChartPart : part));
-      })();
+      const nextChartParts = parseChartPayload(p);
+      if (nextChartParts.length === 0) return;
+      const nextParts = [
+        ...nextChartParts,
+        ...rich.parts.filter((part) => part.type !== 'chart'),
+      ];
 
       chatMessages.value = chatMessages.value.map((m) => {
         if (m.id !== messageId) return m;
