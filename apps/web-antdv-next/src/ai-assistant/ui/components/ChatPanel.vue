@@ -268,6 +268,7 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
           <div
             v-if="
               assistantMeta(msg.id)?.thinkingFinished &&
+              assistantMeta(msg.id)?.thinking.status !== 'error' &&
               markdownOf(msg).trim().length === 0 &&
               !chartPartOf(msg)
             "

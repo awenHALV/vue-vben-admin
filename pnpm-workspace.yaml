@@ -128,6 +128,8 @@ catalog:
   lefthook: ^2.1.2
   lodash.clonedeep: ^4.5.0
   lucide-vue-next: ^0.577.0
+  markdown-it: ^14.1.1
+  markdown-it-multimd-table: ^4.2.3
   medium-zoom: ^1.1.0
   naive-ui: ^2.43.2
   nitropack: ^2.13.1

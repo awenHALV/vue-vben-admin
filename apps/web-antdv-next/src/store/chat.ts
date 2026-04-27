@@ -510,20 +510,61 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
       handleSsePayload({ type: 'done' });
     });
 
-    es.addEventListener('error', () => {
+    es.addEventListener('error', (e: Event) => {
+      // 尝试从 e.data 中解析错误信息
+      let errorMsg = 'SSE 连接异常';
+      try {
+        const raw = (e as MessageEvent<string>).data;
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed.error === 'string') {
+            errorMsg = parsed.error;
+          }
+        }
+      } catch {
+        /* 解析失败时使用默认错误信息 */
+      }
+
       const msgId = streamingAssistantMessageId.value;
       if (msgId) {
         const meta = ensureAssistantMeta(msgId);
+
+        // 将错误信息添加到消息的 markdown parts 中
+        const rich = ensureRichAssistantMessage(msgId);
+        const nextParts = (() => {
+          const idx = rich.parts.findIndex((part) => part.type === 'markdown');
+          if (idx === -1) {
+            return [
+              ...rich.parts,
+              { type: 'markdown' as const, content: errorMsg },
+            ];
+          }
+          return rich.parts.map((part, i) => {
+            if (i !== idx) return part;
+            if (part.type !== 'markdown') return part;
+            return { ...part, content: errorMsg };
+          });
+        })();
+
+        chatMessages.value = chatMessages.value.map((m) => {
+          if (m.id !== msgId) return m;
+          if (m.role !== 'assistant') return m;
+          if (m.kind !== 'rich') return m;
+          return { ...m, parts: nextParts };
+        });
+
         assistantMetaById.value = {
           ...assistantMetaById.value,
           [msgId]: {
             ...meta,
             answer: { ...meta.answer, streaming: false },
+            qaFinished: true,
             thinking: {
               ...meta.thinking,
               endedAt: Date.now(),
               status: 'error',
             },
+            thinkingFinished: true,
           },
         };
       }
@@ -548,7 +589,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
       streamingAssistantMessageId.value = null;
       isThinking.value = false;
       disconnectEventSource();
-      antdMessage.error('SSE 连接异常');
+      console.error(errorMsg);
     });
   }
 
