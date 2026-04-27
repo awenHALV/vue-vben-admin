@@ -1,7 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, onActivated, onDeactivated, onBeforeUnmount, computed } from 'vue';
+import {
+  computed,
+  onActivated,
+  onBeforeUnmount,
+  onDeactivated,
+  onMounted,
+  ref,
+} from 'vue';
 import { useRoute } from 'vue-router';
+
 import { useAccessStore, useTabbarStore } from '@vben/stores';
+
 import WujieVue from 'wujie-vue3';
 
 defineOptions({ name: 'WujieWrapper' });
@@ -61,18 +70,18 @@ onBeforeUnmount(() => {
 
     // 校验组件初始绑定的路径 (myPath) 是否仍存在于当前的页签列表中
     const stillExists = tabs.some(
-      (tab: any) => tab.fullPath === myPath || tab.path === myPath
+      (tab: any) => tab.fullPath === myPath || tab.path === myPath,
     );
 
-    if (!stillExists) {
-      // 若不在页签列表中，说明用户主动关闭了该标签页 (Tag)
-      // 此时执行彻底销毁，清空无界缓存，释放内存
-      console.log(`🔥 [彻底销毁] 页签已关闭，清空无界内存: ${myUniqueName}`);
-      destroyApp(myUniqueName);
-    } else {
+    if (stillExists) {
       // 若仍在页签列表中，说明仅是 Vue 路由正常切换导致的组件卸载
       // 保留无界实例，等待下次 keep-alive 唤醒
-      console.log(`🛡️ [保护沙箱] 壳子被卸载，但页签仍在: ${myUniqueName}`);
+      console.log(`�️ [保护沙箱] 壳子被卸载，但页签仍在: ${myUniqueName}`);
+    } else {
+      // 若不在页签列表中，说明用户主动关闭了该标签页 (Tag)
+      // 此时执行彻底销毁，清空无界缓存，释放内存
+      console.log(`� [彻底销毁] 页签已关闭，清空无界内存: ${myUniqueName}`);
+      destroyApp(myUniqueName);
     }
   }, 150);
 });
@@ -83,7 +92,7 @@ onBeforeUnmount(() => {
     <WujieVue
       v-if="renderWujie && microUrl"
       width="100%"
-      height="100%"
+      height="calc(100vh - var(--vben-header-height, 0px))"
       :name="myUniqueName"
       :url="microUrl"
       :props="microProps"
@@ -91,7 +100,7 @@ onBeforeUnmount(() => {
       :alive="true"
     />
 
-    <div v-else class="flex h-full w-full items-center justify-center text-muted-foreground/50">
+    <div v-else class="flex-center size-full text-muted-foreground/50">
       <span class="animate-pulse">Loading Sandbox...</span>
     </div>
   </div>
