@@ -235,6 +235,13 @@ const tabbarStore = useTabbarStore();
 
 function refreshAll() {
   tabbarStore.cachedTabs.clear();
+
+  // 微前端页面有自己的语言同步链；这里若继续刷新当前页，
+  // 会先把 Wujie 容器按旧语言重挂一次，导致首切语言落后一轮。
+  if (route.meta?.microName) {
+    return;
+  }
+
   refresh();
 }
 
