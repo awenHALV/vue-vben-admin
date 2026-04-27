@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
+import { LOGIN_PATH } from '@vben/constants';
 import { $t } from '@vben/locales';
+import { useAccessStore } from '@vben/stores';
 
 import { useVbenModal } from '@vben-core/popup-ui';
 
@@ -24,14 +27,33 @@ const currentVersionTag = ref('');
 const lastVersionTag = ref('');
 const timer = ref<ReturnType<typeof setInterval>>();
 
+const router = useRouter();
+const accessStore = useAccessStore();
+
+function isTokenInvalid() {
+  return !accessStore.accessToken || accessStore.loginExpired;
+}
+
+function forceToLoginAndReload() {
+  accessStore.setLoginExpired(true);
+  accessStore.setAccessToken(null);
+  accessStore.setRefreshToken(null);
+  window.location.replace(LOGIN_PATH);
+  window.location.reload();
+}
+
 const [UpdateNoticeModal, modalApi] = useVbenModal({
   closable: false,
   closeOnPressEscape: false,
   closeOnClickModal: false,
   onConfirm() {
     lastVersionTag.value = currentVersionTag.value;
-    window.location.reload();
-    // handleSubmitLogout();
+    if (isTokenInvalid()) {
+      window.location.reload();
+      return;
+    }
+
+    forceToLoginAndReload();
   },
 });
 
@@ -77,6 +99,13 @@ async function checkForUpdates() {
 }
 function handleNotice(versionTag: string) {
   currentVersionTag.value = versionTag;
+  if (isTokenInvalid()) {
+    router.replace(LOGIN_PATH).finally(() => {
+      modalApi.open();
+    });
+    return;
+  }
+
   modalApi.open();
 }
 
