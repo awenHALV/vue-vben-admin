@@ -76,6 +76,26 @@ const coreRoutes: RouteRecordRaw[] = [
           title: $t('page.auth.profile'),
         },
       },
+      {
+        name: 'DownloadCenter',
+        path: 'download-center',
+        component: () => import('#/views/_core/download/index.vue'),
+        meta: {
+          hideInMenu: true,
+          title: $t('page.downloadCenter.title'),
+        },
+      },
+      {
+        name: 'GridChargeGunDetail',
+        path: 'grid/equipmentMonitoring/chargeGun/:id',
+        component: () => import('#/views/micro/index.vue'),
+        meta: {
+          hideInBreadcrumb: true,
+          hideInMenu: true,
+          microName: 'grid',
+          title: '充电枪详情',
+        },
+      },
     ],
   },
   {
