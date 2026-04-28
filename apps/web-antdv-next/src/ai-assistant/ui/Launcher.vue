@@ -70,7 +70,7 @@ function handleToggleThinking(messageId: string) {
 
 function handleFeedback(payload: {
   messageId: string;
-  type: 'dislike' | 'like';
+  type: 'dislike' | 'like' | null;
 }) {
   void chatStore.submitFeedback(payload);
 }
