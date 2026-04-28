@@ -209,7 +209,7 @@ export function setupWujieHostBridge() {
   );
 }
 
-export function emitChangeThemeToChildNew() {
+export function emitChangeThemeToChildWithTab() {
   const payload: HostBridgeThemeChangePayload = {
     builtinType: preferences.theme.builtinType,
     colorMode: getResolvedColorMode(),
