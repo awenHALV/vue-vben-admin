@@ -70,8 +70,8 @@ function safeUUID() {
     const buf = new Uint8Array(16);
     cryptoObj.getRandomValues(buf);
     // RFC4122 v4
-    buf[6] = ((buf[6] ?? 0) & 0x0F) | 0x40;
-    buf[8] = ((buf[8] ?? 0) & 0x3F) | 0x80;
+    buf[6] = ((buf[6] ?? 0) & 15) | 64;
+    buf[8] = ((buf[8] ?? 0) & 63) | 128;
     const hex = [...buf].map((b) => b.toString(16).padStart(2, '0')).join('');
     return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
   }
@@ -158,7 +158,7 @@ function parseChartPayload(
   // 多图：配置数组 + 数据（可能是数组-数组、也可能复用同一份数组）
   const configs = configRaw
     .map((c) => parseChartConfig(c))
-    .filter((v): v is AiChatAssistantChartConfig => Boolean(v));
+    .filter((v): v is AiChatAssistantChartConfig => v !== null);
   if (configs.length === 0) return [];
 
   const dataList: Array<Record<string, unknown>[]> = (() => {
@@ -792,14 +792,26 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
 
   async function submitFeedback(payload: {
     messageId?: string;
-    type: 'dislike' | 'like';
+    type: 'dislike' | 'like' | null;
   }) {
     const sessionId = activeConversationId.value;
-    if (!sessionId) {
-      antdMessage.warning('暂无会话，无法提交反馈');
-      return;
-    }
+    if (!sessionId) return;
     try {
+      // 取消反馈：仅本地更新，不触发 toast，也不请求后端
+      if (payload.type === null) {
+        if (payload.messageId) {
+          const mid = payload.messageId;
+          const meta = assistantMetaById.value[mid];
+          if (meta) {
+            assistantMetaById.value = {
+              ...assistantMetaById.value,
+              [mid]: { ...meta, feedbackStatus: null },
+            };
+          }
+        }
+        return;
+      }
+
       await postChatFeedbackApi({
         sessionId,
         messageId: payload.messageId,
@@ -815,10 +827,8 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
           };
         }
       }
-      antdMessage.success(payload.type === 'like' ? '已赞成' : '已反馈');
     } catch (error) {
       console.error(error);
-      antdMessage.error('提交反馈失败');
     }
   }
 
