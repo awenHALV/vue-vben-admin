@@ -23,6 +23,7 @@ import {
   postChatRestoreApi,
   postChatSendApi,
 } from '#/api/chat';
+import { useAuthStore } from '#/store';
 
 type PanelMode = 'chat' | 'history';
 type ViewMode = 'full' | 'right';
@@ -201,6 +202,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
 
   // pending / thinking
   const sendLoading = ref(false);
+  const restoreLoading = ref(false);
   const isThinking = ref(false);
   const streamingAssistantMessageId = ref<null | string>(null);
 
@@ -212,6 +214,21 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
   );
 
   const accessStore = useAccessStore();
+  const authStore = useAuthStore();
+
+  function isUnauthorizedError(error: unknown): boolean {
+    const status = (error as { response?: { status?: number } })?.response
+      ?.status;
+    return status === 401;
+  }
+
+  async function redirectToLoginIfUnauthorized(
+    error: unknown,
+  ): Promise<boolean> {
+    if (!isUnauthorizedError(error)) return false;
+    await authStore.terminateSession(true, { reason: 'unauthorized' });
+    return true;
+  }
 
   function ensureWelcomeMessage() {
     if (activeConversationId.value) return;
@@ -418,6 +435,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
 
   const pending = computed(() => {
     const msgId = streamingAssistantMessageId.value;
+    if (restoreLoading.value) return true;
     if (sendLoading.value) return true;
     if (msgId && isAssistantTurnBusy(msgId)) return true;
     return isThinking.value;
@@ -532,6 +550,16 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     });
 
     es.addEventListener('error', (e: Event) => {
+      const ee = e as { status?: number; target?: { status?: number } };
+      const status = ee.status ?? ee.target?.status ?? null;
+      if (status === 401) {
+        void authStore.terminateSession(true, { reason: 'unauthorized' });
+        streamingAssistantMessageId.value = null;
+        isThinking.value = false;
+        disconnectEventSource();
+        return;
+      }
+
       // 尝试从 e.data 中解析错误信息
       let errorMsg = 'SSE 连接异常';
       try {
@@ -625,8 +653,9 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
         time: s.updatedAt,
       }));
     } catch (error) {
+      if (await redirectToLoginIfUnauthorized(error)) return;
       console.error(error);
-      antdMessage.error('加载历史会话失败');
+      // antdMessage.error('加载历史会话失败');
       historyItems.value = [];
     } finally {
       historySessionsLoading.value = false;
@@ -671,6 +700,9 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     closeSse();
     activeConversationId.value = id;
     panelMode.value = 'chat';
+    restoreLoading.value = true;
+    assistantMetaById.value = {};
+    chatMessages.value = [];
     try {
       const res = await postChatRestoreApi(id);
       assistantMetaById.value = {};
@@ -718,8 +750,11 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
       if (chatMessages.value.length === 0) ensureWelcomeMessage();
       isThinking.value = false;
     } catch (error) {
+      if (await redirectToLoginIfUnauthorized(error)) return;
       console.error(error);
-      antdMessage.error('恢复会话失败');
+      // antdMessage.error('恢复会话失败');
+    } finally {
+      restoreLoading.value = false;
     }
   }
 
@@ -750,6 +785,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
       activeConversationId.value = data.sessionId;
       connectSse(data.sessionId);
     } catch (error) {
+      if (await redirectToLoginIfUnauthorized(error)) return;
       console.error(error);
       // /chat/send 失败：结束本轮状态，小助手不输出（移除空的 assistant 占位消息与 meta）
       streamingAssistantMessageId.value = null;
@@ -785,8 +821,9 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
 
       antdMessage.success('已删除会话');
     } catch (error) {
+      if (await redirectToLoginIfUnauthorized(error)) return;
       console.error(error);
-      antdMessage.error('删除会话失败');
+      // antdMessage.error('删除会话失败');
     }
   }
 
@@ -828,6 +865,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
         }
       }
     } catch (error) {
+      if (await redirectToLoginIfUnauthorized(error)) return;
       console.error(error);
     }
   }
@@ -844,6 +882,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     chatMessages,
     assistantMetaById,
     pending,
+    restoreLoading,
 
     // actions
     openPanel,
