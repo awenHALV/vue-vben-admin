@@ -1,3 +1,5 @@
+import type { Token } from 'markdown-it';
+
 import MarkdownIt from 'markdown-it';
 import multimdTable from 'markdown-it-multimd-table';
 
@@ -14,17 +16,17 @@ md.renderer.rules.table_open = () =>
 // 2. 表头：给第一列加固定宽度和居中样式
 md.renderer.rules.th_open = (tokens, idx) => {
   // 判断是否为第一列
-  const isFirstCol = tokens[idx].index === 0;
+  const isFirstCol = (tokens[idx] as Token | undefined)?.index === 0;
   if (isFirstCol) {
     // 给第一列加最小宽度 + 居中对齐
-    return '<th class="border px-4 py-3 bg-gray-100 font-semibold min-w-[80px] text-center align-middle">';
+    return '<th class="border border-border px-4 py-3 bg-gray-100 font-semibold min-w-[80px] text-center align-middle text-[rgba(0,0,0,0.88)] dark:bg-muted dark:text-foreground">';
   }
-  return '<th class="border px-4 py-3 bg-gray-100 font-semibold">';
+  return '<th class="border border-border px-4 py-3 bg-gray-100 font-semibold text-[rgba(0,0,0,0.88)] dark:bg-muted dark:text-foreground">';
 };
 
 // 3. 单元格：给第一列同步宽度和居中
 md.renderer.rules.td_open = (tokens, idx) => {
-  const isFirstCol = tokens[idx].index === 0;
+  const isFirstCol = (tokens[idx] as Token | undefined)?.index === 0;
   if (isFirstCol) {
     return '<td class="border px-4 py-3 min-w-[80px] text-center align-middle">';
   }

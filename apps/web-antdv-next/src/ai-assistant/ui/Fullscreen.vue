@@ -3,7 +3,7 @@ import type { AssistantMessageMeta } from '@/store/chat';
 
 import type { AiAssistantHistoryItem, AiChatMessage } from '../types';
 
-import { Button } from 'antdv-next';
+import { Button, Spin } from 'antdv-next';
 
 import { AI_ASSISTANT_ICON_URL } from '../ai-assets';
 import AiHistoryIcon from './components/AiHistoryIcon.vue';
@@ -26,13 +26,14 @@ const props = defineProps<{
   open: boolean;
   panelMode: 'chat' | 'history';
   pending?: boolean;
+  restoring?: boolean;
   title: string;
 }>();
 
 const emit = defineEmits<{
   close: [];
   deleteConversation: [id: string];
-  feedback: [payload: { messageId: string; type: 'dislike' | 'like' }];
+  feedback: [payload: { messageId: string; type: 'dislike' | 'like' | null }];
   goChat: [];
   newChat: [];
   openHistory: [];
@@ -115,16 +116,24 @@ const emit = defineEmits<{
           @select-conversation="emit('selectConversation', $event)"
         />
 
-        <div v-else class="mx-auto w-[800px] p-4">
-          <ChatPanel
-            variant="fullscreen"
-            :active-conversation-id="props.activeConversationId"
-            :assistant-meta-by-id="props.assistantMetaById"
-            :messages="props.messages"
-            @toggle-thinking="emit('toggleThinking', $event)"
-            @feedback="emit('feedback', $event)"
-          />
-        </div>
+        <Spin v-else :spinning="Boolean(props.restoring)" class="block w-full">
+          <div
+            v-if="props.restoring"
+            aria-hidden="true"
+            class="min-h-[min(360px,55vh)] w-full shrink-0"
+          ></div>
+
+          <div v-else class="mx-auto w-[800px] p-4">
+            <ChatPanel
+              variant="fullscreen"
+              :active-conversation-id="props.activeConversationId"
+              :assistant-meta-by-id="props.assistantMetaById"
+              :messages="props.messages"
+              @toggle-thinking="emit('toggleThinking', $event)"
+              @feedback="emit('feedback', $event)"
+            />
+          </div>
+        </Spin>
       </div>
       <div v-if="props.panelMode !== 'history'" class="mx-auto w-[800px] p-4">
         <ComposerFooter
