@@ -3,12 +3,18 @@ import type { VbenFormSchema } from '@vben/common-ui';
 import type { Recordable } from '@vben/types';
 
 import { computed, h, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { AuthenticationRegister, z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 
+import { message } from 'antdv-next';
+
+import { registerApi } from '#/api/core/auth';
+
 defineOptions({ name: 'Register' });
 
+const router = useRouter();
 const loading = ref(false);
 
 const formSchema = computed((): VbenFormSchema[] => {
@@ -19,8 +25,22 @@ const formSchema = computed((): VbenFormSchema[] => {
         placeholder: $t('authentication.usernameTip'),
       },
       fieldName: 'username',
-      label: $t('authentication.username'),
+      label: $t('authentication.userName'),
       rules: z.string().min(1, { message: $t('authentication.usernameTip') }),
+    },
+    {
+      component: 'VbenInput',
+      componentProps: {
+        placeholder: $t('authentication.mobileTip'),
+      },
+      fieldName: 'phoneNumber',
+      label: $t('authentication.mobile'),
+      rules: z
+        .string({ required_error: $t('authentication.mobileTip') })
+        .min(1, { message: $t('authentication.mobileTip') })
+        .refine((v) => /^\d{11}$/.test(v), {
+          message: $t('authentication.mobileErrortip'),
+        }),
     },
     {
       component: 'VbenInputPassword',
@@ -35,7 +55,16 @@ const formSchema = computed((): VbenFormSchema[] => {
           strengthText: () => $t('authentication.passwordStrength'),
         };
       },
-      rules: z.string().min(1, { message: $t('authentication.passwordTip') }),
+      rules: z
+        .string({ required_error: $t('authentication.passwordTip') })
+        .min(1, { message: $t('authentication.passwordTip') })
+        .refine(
+          (v) =>
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,20}$/.test(
+              v,
+            ),
+          { message: $t('authentication.passwordStrength') },
+        ),
     },
     {
       component: 'VbenInputPassword',
@@ -81,9 +110,21 @@ const formSchema = computed((): VbenFormSchema[] => {
   ];
 });
 
-function handleSubmit(value: Recordable<any>) {
-  // eslint-disable-next-line no-console
-  console.log('register submit:', value);
+async function handleSubmit(value: Recordable<any>) {
+  loading.value = true;
+  try {
+    await registerApi({
+      phoneNumber: value.phoneNumber,
+      password: value.password,
+      username: value.username,
+    });
+    message.success($t('authentication.registerSuccess') || '注册成功');
+    router.push('/auth/login');
+  } catch (error: any) {
+    message.error(error?.message || $t('authentication.registerFailed') || '注册失败');
+  } finally {
+    loading.value = false;
+  }
 }
 </script>
 
