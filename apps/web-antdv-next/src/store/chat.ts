@@ -136,15 +136,44 @@ function parseChartConfig(raw: unknown): AiChatAssistantChartConfig | null {
 }
 
 function parseChartData(raw: unknown): Record<string, unknown>[] {
+  // 支持对象格式，表示一个柱子，对象的键值对映射为多行数据
+  // { "field1": value1, "field2": value2 } → [{ xAxis: "field1", yAxis: value1 }, { xAxis: "field2", yAxis: value2 }]
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const obj = raw as Record<string, unknown>;
+    return Object.entries(obj).map(([key, value]) => ({
+      __objectKey__: key,
+      __objectValue__: value,
+    }));
+  }
   return Array.isArray(raw) ? (raw as Record<string, unknown>[]) : [];
+}
+
+function normalizeChartValue(value: unknown): unknown {
+  // 如果你希望 null 也显示成一个柱子，建议转成 0
+  // 否则 ECharts / 图表组件可能不会画出柱子
+  if (value === null || value === undefined || value === '') return 0;
+
+  // 字符串数字转 number，避免图表组件把它当字符串
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return 0;
+
+    const num = Number(trimmed);
+    return Number.isNaN(num) ? value : num;
+  }
+
+  return value;
 }
 
 function normalizeFieldValueRows(
   chartConfig: AiChatAssistantChartConfig,
   rows: Record<string, unknown>[],
 ): Record<string, unknown>[] {
-  // 兼容后端返回：[{ field, name, value }] —— 映射成 { [xAxis]: name|field, [yAxis]: value }
-  // 如果 rows 本身已包含 xAxis/yAxis 对应字段，则原样返回。
+  // 兼容后端返回：
+  // 1. [{ field, name, value }]
+  // 2. [{ key1: value1, key2: value2 }]
+  // 最终统一映射成：{ [xAxis]: name, [yAxis]: value }
+
   if (rows.length === 0) return rows;
 
   const hasAxisKeys = rows.some(
@@ -152,7 +181,13 @@ function normalizeFieldValueRows(
       Object.prototype.hasOwnProperty.call(r, chartConfig.xAxis) ||
       Object.prototype.hasOwnProperty.call(r, chartConfig.yAxis),
   );
+
+  // 如果本身已经是图表需要的数据结构，直接返回
   if (hasAxisKeys) return rows;
+
+  const allowFields = Array.isArray(chartConfig.fields)
+    ? new Set(chartConfig.fields)
+    : null;
 
   const isFieldValueShape = rows.every(
     (r) =>
@@ -160,25 +195,44 @@ function normalizeFieldValueRows(
       (Object.prototype.hasOwnProperty.call(r, 'name') ||
         Object.prototype.hasOwnProperty.call(r, 'field')),
   );
-  if (!isFieldValueShape) return rows;
 
-  const allowFields = Array.isArray(chartConfig.fields)
-    ? new Set(chartConfig.fields)
-    : null;
+  // 情况 1：[{ field, name, value }]
+  if (isFieldValueShape) {
+    return rows
+      .filter((r) => {
+        if (!allowFields) return true;
+        const f = r.field;
+        return typeof f === 'string' ? allowFields.has(f) : true;
+      })
+      .map((r) => {
+        const labelRaw = r.name ?? r.field ?? '';
+        return {
+          [chartConfig.xAxis]: String(labelRaw),
+          [chartConfig.yAxis]: normalizeChartValue(r.value),
+        };
+      });
+  }
 
-  return rows
-    .filter((r) => {
-      if (!allowFields) return true;
-      const f = r.field;
-      return typeof f === 'string' ? allowFields.has(f) : true;
-    })
-    .map((r) => {
-      const labelRaw = r.name ?? r.field ?? '';
-      return {
-        [chartConfig.xAxis]: String(labelRaw),
-        [chartConfig.yAxis]: r.value,
-      };
-    });
+  // 情况 2：[{ key1: value1, key2: value2 }]
+  // 例如：
+  // [{
+  //   proxyOperationRatedCapacity: null,
+  //   selfHoldingPower: '11366.00',
+  //   selfHoldingRatedCapacity: '23736.00',
+  //   proxyOperationPower: null,
+  // }]
+  return rows.flatMap((r) => {
+    const keys = allowFields
+      ? (chartConfig.fields?.filter((field) =>
+          Object.prototype.hasOwnProperty.call(r, field),
+        ) ?? [])
+      : Object.keys(r);
+
+    return keys.map((key) => ({
+      [chartConfig.xAxis]: key,
+      [chartConfig.yAxis]: normalizeChartValue(r[key]),
+    }));
+  });
 }
 
 function parseChartPayload(
