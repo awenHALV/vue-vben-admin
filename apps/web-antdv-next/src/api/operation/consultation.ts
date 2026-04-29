@@ -17,6 +17,8 @@ export interface ConsultationInfo {
   companyName: string;
   /** 需求描述 */
   requirementDescription: string;
+  /** 来源类型 */
+  sourceType?: string;
   /** 创建时间 */
   createTime?: string;
   /** 更新时间 */

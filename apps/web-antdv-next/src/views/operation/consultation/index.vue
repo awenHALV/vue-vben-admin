@@ -67,6 +67,11 @@ const [Grid, gridApi] = useVbenVxeGrid<ConsultationInfo>({
         className: 'requirement-description-cell',
       },
       {
+        field: 'sourceType',
+        title: $t('operation.consultation.sourceType'),
+        minWidth: 120,
+      },
+      {
         field: 'updateTime',
         title: $t('operation.consultation.createTime'),
         minWidth: 180,

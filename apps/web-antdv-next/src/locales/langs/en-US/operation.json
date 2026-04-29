@@ -5,6 +5,7 @@
     "phone": "Phone",
     "company": "Company",
     "description": "Description",
+    "sourceType": "Source Type",
     "createTime": "Create Time",
     "namePlaceholder": "Please enter name",
     "phonePlaceholder": "Please enter phone",
