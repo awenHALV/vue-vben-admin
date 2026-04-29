@@ -62,6 +62,7 @@ const [Form, formApi] = useVbenForm({
 const [VbenModal, modalApi] = useVbenModal({
   bordered: true,
   destroyOnClose: true,
+  confirmText: $t('system.common.ok'),
   onOpenChange: async (open) => {
     if (!open) return;
 

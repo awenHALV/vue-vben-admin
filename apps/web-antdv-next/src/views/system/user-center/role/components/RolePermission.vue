@@ -406,6 +406,7 @@ const [VbenModal, modalApi] = useVbenModal({
   title: $t('system.role.permissionConfig', '权限管理'),
   class: 'w-[55vw]',
   bordered: true,
+  confirmText: $t('system.common.ok'),
   onOpenChange: async (open) => {
     if (!open) {
       checkedKeysSet.value = new Set();
@@ -465,10 +466,7 @@ defineExpose({ open });
         <Spin :spinning="loading">
           <div
             class="permission-container flex h-[500px] overflow-hidden border border-border"
-            style="
-              border-top-left-radius: 6px;
-              border-top-right-radius: 6px;
-            "
+            style="border-top-left-radius: 6px; border-top-right-radius: 6px"
           >
             <!-- 左侧：功能菜单树 -->
             <div class="flex h-full w-2/5 flex-col">
