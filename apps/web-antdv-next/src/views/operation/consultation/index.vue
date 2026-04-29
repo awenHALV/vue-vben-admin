@@ -70,6 +70,7 @@ const [Grid, gridApi] = useVbenVxeGrid<ConsultationInfo>({
         field: 'sourceType',
         title: $t('operation.consultation.sourceType'),
         minWidth: 120,
+        slots: { default: 'sourceType' },
       },
       {
         field: 'updateTime',
@@ -225,6 +226,9 @@ function clearSearchCompany() {
 
     <!-- 表格 -->
     <Grid>
+      <template #sourceType="{ row }">
+        {{ !!row.sourceType ? row.sourceType : $t('operation.consultation.sourceTypeProject') }}
+      </template>
       <template #createTime="{ row }">
         {{ row.updateTime ? dayjs(row.updateTime).format('YYYY-MM-DD HH:mm:ss') : '-' }}
       </template>
