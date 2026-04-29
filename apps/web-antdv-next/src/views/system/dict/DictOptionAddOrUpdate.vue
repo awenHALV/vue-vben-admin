@@ -105,6 +105,7 @@ const [VbenModal, modalApi] = useVbenModal({
   showConfirmButton: true,
   confirmLoading: false,
   title: $t('dict.modal.add'),
+  confirmText: $t('system.common.ok'),
   class: 'w-[min(100%,480px)]',
   onOpenChange(open) {
     if (!open) {
