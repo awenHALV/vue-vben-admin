@@ -110,7 +110,9 @@ function parseChartConfig(raw: unknown): AiChatAssistantChartConfig | null {
   const chartConfigRaw = raw as Record<string, unknown>;
 
   const chartType =
-    chartConfigRaw.type === 'bar' || chartConfigRaw.type === 'line'
+    chartConfigRaw.type === 'bar' ||
+    chartConfigRaw.type === 'line' ||
+    chartConfigRaw.type === 'pie'
       ? chartConfigRaw.type
       : null;
   const xAxis =
@@ -137,6 +139,48 @@ function parseChartData(raw: unknown): Record<string, unknown>[] {
   return Array.isArray(raw) ? (raw as Record<string, unknown>[]) : [];
 }
 
+function normalizeFieldValueRows(
+  chartConfig: AiChatAssistantChartConfig,
+  rows: Record<string, unknown>[],
+): Record<string, unknown>[] {
+  // 兼容后端返回：[{ field, name, value }] —— 映射成 { [xAxis]: name|field, [yAxis]: value }
+  // 如果 rows 本身已包含 xAxis/yAxis 对应字段，则原样返回。
+  if (rows.length === 0) return rows;
+
+  const hasAxisKeys = rows.some(
+    (r) =>
+      Object.prototype.hasOwnProperty.call(r, chartConfig.xAxis) ||
+      Object.prototype.hasOwnProperty.call(r, chartConfig.yAxis),
+  );
+  if (hasAxisKeys) return rows;
+
+  const isFieldValueShape = rows.every(
+    (r) =>
+      Object.prototype.hasOwnProperty.call(r, 'value') &&
+      (Object.prototype.hasOwnProperty.call(r, 'name') ||
+        Object.prototype.hasOwnProperty.call(r, 'field')),
+  );
+  if (!isFieldValueShape) return rows;
+
+  const allowFields = Array.isArray(chartConfig.fields)
+    ? new Set(chartConfig.fields)
+    : null;
+
+  return rows
+    .filter((r) => {
+      if (!allowFields) return true;
+      const f = r.field;
+      return typeof f === 'string' ? allowFields.has(f) : true;
+    })
+    .map((r) => {
+      const labelRaw = r.name ?? r.field ?? '';
+      return {
+        [chartConfig.xAxis]: String(labelRaw),
+        [chartConfig.yAxis]: r.value,
+      };
+    });
+}
+
 function parseChartPayload(
   payload: Record<string, unknown>,
 ): AiChatAssistantMessagePartChart[] {
@@ -147,11 +191,12 @@ function parseChartPayload(
   if (!Array.isArray(configRaw)) {
     const config = parseChartConfig(configRaw);
     if (!config) return [];
+    const rows = normalizeFieldValueRows(config, parseChartData(dataRaw));
     return [
       {
         type: 'chart',
         chartConfig: config,
-        chartData: parseChartData(dataRaw),
+        chartData: rows,
       },
     ];
   }
@@ -175,7 +220,7 @@ function parseChartPayload(
   return configs.map((chartConfig, idx) => ({
     type: 'chart',
     chartConfig,
-    chartData: dataList[idx] ?? [],
+    chartData: normalizeFieldValueRows(chartConfig, dataList[idx] ?? []),
   }));
 }
 

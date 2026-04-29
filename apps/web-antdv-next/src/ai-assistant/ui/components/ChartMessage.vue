@@ -52,17 +52,53 @@ const option = computed(() => {
   const { chartConfig, chartData } = props;
 
   const titleText = chartConfig.title ?? '';
-  const xKey =
-    Array.isArray(chartConfig.fields) &&
-    typeof chartConfig.fields[0] === 'string'
-      ? chartConfig.fields[0]
-      : chartConfig.xAxis;
-  const yKey =
-    Array.isArray(chartConfig.fields) &&
-    typeof chartConfig.fields[1] === 'string'
-      ? chartConfig.fields[1]
-      : chartConfig.yAxis;
-  const yKeys = [yKey];
+  const xKey = chartConfig.xAxis;
+  const yKey = chartConfig.yAxis;
+
+  const toNumberOrNull = (v: unknown) => {
+    let n = Number.NaN;
+    if (typeof v === 'number') n = v;
+    else if (typeof v === 'string') n = Number.parseFloat(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  // 饼图：[{ [xAxis]: name, [yAxis]: value }]
+  if (chartConfig.type === 'pie') {
+    const data = chartData.map((row) => ({
+      name: String(row[xKey] ?? ''),
+      value: toNumberOrNull(row[yKey]),
+    }));
+
+    const opt = {
+      legend: {
+        top: titleText ? 28 : 0,
+      },
+      series: [
+        {
+          type: 'pie',
+          radius: ['35%', '70%'],
+          center: ['50%', titleText ? '58%' : '50%'],
+          data,
+        },
+      ],
+      title: titleText
+        ? {
+            left: 'center',
+            text: titleText,
+            textStyle: {
+              fontSize: 14,
+              fontWeight: 600,
+            },
+            top: 6,
+          }
+        : undefined,
+      tooltip: {
+        trigger: 'item',
+      },
+    };
+
+    return opt as RenderEchartsOptions;
+  }
 
   const categories = chartData.map((row) => String(row[xKey] ?? ''));
   const categoryCount = Math.max(categories.length, 1);
@@ -75,24 +111,13 @@ const option = computed(() => {
   );
   const useHorizontalLabels = maxLabelPx <= perCategoryPx * 0.92;
 
-  const series = yKeys.map((yKey) => {
-    const data = chartData.map((row) => {
-      const v = row[yKey];
-      let n = Number.NaN;
-      if (typeof v === 'number') {
-        n = v;
-      } else if (typeof v === 'string') {
-        n = Number.parseFloat(v);
-      }
-      return Number.isFinite(n) ? n : null;
-    });
-
-    return {
-      data,
+  const series = [
+    {
+      data: chartData.map((row) => toNumberOrNull(row[yKey])),
       name: yKey,
       type: chartConfig.type,
-    };
-  });
+    },
+  ];
 
   const opt = {
     grid: {
