@@ -31,7 +31,11 @@ const tokenTheme = computed(() => {
 </script>
 
 <template>
-  <ConfigProvider :locale="antdLocale" :theme="tokenTheme">
+  <ConfigProvider
+    :locale="antdLocale"
+    :theme="tokenTheme"
+    :button="{ autoInsertSpace: false }"
+  >
     <App>
       <RouterView />
     </App>
