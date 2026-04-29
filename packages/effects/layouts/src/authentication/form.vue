@@ -10,7 +10,7 @@ defineProps<{
 
 <template>
   <div
-    class="relative flex-col-center bg-background px-6 py-10 lg:flex-initial lg:px-8 dark:bg-background-deep"
+    class="relative flex-col-center bg-background px-8 py-12 lg:flex-initial dark:bg-background-deep"
   >
     <slot></slot>
     <!-- Router View with Transition and KeepAlive -->
@@ -20,7 +20,7 @@ defineProps<{
           <component
             :is="Component"
             :key="route.fullPath"
-            class="side-content mt-6 w-full sm:mx-auto md:max-w-md"
+            class="side-content w-full max-w-[420px]"
             :data-side="dataSide"
           />
         </KeepAlive>
@@ -30,7 +30,7 @@ defineProps<{
     <!-- Footer Copyright -->
 
     <div
-      class="absolute bottom-3 flex text-center text-xs text-muted-foreground"
+      class="absolute bottom-4 flex text-center text-xs text-muted-foreground"
     >
       <slot name="copyright"> </slot>
     </div>
