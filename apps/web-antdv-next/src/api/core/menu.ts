@@ -351,7 +351,7 @@ function mapMenuToRoute(
       featureName: item.featureName,
       featureNameEn: item.featureNameEn,
       featureIcon: item.featureIcon || undefined,
-      keepAlive: true,
+      // keepAlive: true,
       ...(isExternalRoute
         ? {
             link: absoluteRoutePath,
