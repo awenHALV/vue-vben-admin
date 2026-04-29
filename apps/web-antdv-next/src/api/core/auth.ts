@@ -35,9 +35,9 @@ export namespace AuthApi {
 
   /** 注册接口参数 */
   export interface RegisterParams {
-    phoneNumber: string;
-    password: string;
-    username: string;
+    name: string;
+    pwd: string;
+    phone: string;
   }
 
   /** 注册接口返回值 */

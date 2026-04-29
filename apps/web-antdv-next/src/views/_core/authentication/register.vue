@@ -11,6 +11,7 @@ import { $t } from '@vben/locales';
 import { message } from 'antdv-next';
 
 import { registerApi } from '#/api/core/auth';
+import { encryptByMd5 } from '#/utils/cipher';
 
 defineOptions({ name: 'Register' });
 
@@ -24,7 +25,7 @@ const formSchema = computed((): VbenFormSchema[] => {
       componentProps: {
         placeholder: $t('authentication.usernameTip'),
       },
-      fieldName: 'username',
+      fieldName: 'name',
       label: $t('authentication.userName'),
       rules: z.string().min(1, { message: $t('authentication.usernameTip') }),
     },
@@ -33,7 +34,7 @@ const formSchema = computed((): VbenFormSchema[] => {
       componentProps: {
         placeholder: $t('authentication.mobileTip'),
       },
-      fieldName: 'phoneNumber',
+      fieldName: 'phone',
       label: $t('authentication.mobile'),
       rules: z
         .string({ required_error: $t('authentication.mobileTip') })
@@ -48,7 +49,7 @@ const formSchema = computed((): VbenFormSchema[] => {
         passwordStrength: true,
         placeholder: $t('authentication.password'),
       },
-      fieldName: 'password',
+      fieldName: 'pwd',
       label: $t('authentication.password'),
       renderComponentContent() {
         return {
@@ -73,15 +74,15 @@ const formSchema = computed((): VbenFormSchema[] => {
       },
       dependencies: {
         rules(values) {
-          const { password } = values;
+          const { pwd } = values;
           return z
             .string({ required_error: $t('authentication.passwordTip') })
             .min(1, { message: $t('authentication.passwordTip') })
-            .refine((value) => value === password, {
+            .refine((value) => value === pwd, {
               message: $t('authentication.confirmPasswordTip'),
             });
         },
-        triggerFields: ['password'],
+        triggerFields: ['pwd'],
       },
       fieldName: 'confirmPassword',
       label: $t('authentication.confirmPassword'),
@@ -114,9 +115,9 @@ async function handleSubmit(value: Recordable<any>) {
   loading.value = true;
   try {
     await registerApi({
-      phoneNumber: value.phoneNumber,
-      password: value.password,
-      username: value.username,
+      name: value.name,
+      phone: value.phone,
+      pwd: encryptByMd5(value.pwd),
     });
     message.success($t('authentication.registerSuccess') || '注册成功');
     router.push('/auth/login');
