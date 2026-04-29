@@ -158,6 +158,7 @@ const [VbenModal, modalApi] = useVbenModal({
   // 点击不关闭弹窗
   closeOnClickModal: false,
   title: $t('system.org.addOrg'),
+  confirmText: $t('system.common.ok'),
   onOpenChange: async (open: boolean) => {
     if (!open) return;
 

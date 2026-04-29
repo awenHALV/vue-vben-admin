@@ -253,6 +253,7 @@ const [VbenModal, modalApi] = useVbenModal({
   showConfirmButton: true,
   confirmLoading: false,
   title: $t('tenant.modal.addTenant'),
+  confirmText: $t('system.common.ok'),
   onOpenChange: async (open) => {
     if (!open) {
       editTenantDetail.value = null;
