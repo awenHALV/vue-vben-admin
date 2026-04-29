@@ -17,7 +17,7 @@ const defaultPreferences: Preferences = {
     contentPaddingLeft: 0,
     contentPaddingRight: 0,
     contentPaddingTop: 0,
-    defaultAvatar: '/logo.webp',
+    defaultAvatar: '/energy-platform/logo.webp',
     defaultHomePath: '/system',
     dynamicTitle: true,
     enableCheckUpdates: true,
@@ -67,7 +67,7 @@ const defaultPreferences: Preferences = {
   logo: {
     enable: true,
     fit: 'contain',
-    source: '/logo.webp',
+    source: '/energy-platform/logo.webp',
   },
   navigation: {
     accordion: true,

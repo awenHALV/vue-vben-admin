@@ -52,6 +52,11 @@ const displayMessages = computed(
 function chartPartOf(msg: AiChatMessage) {
   if (msg.role !== 'assistant') return null;
   if (msg.kind !== 'rich') return null;
+  console.log(
+    msg.parts.filter(
+      (p): p is AiChatAssistantMessagePartChart => p.type === 'chart',
+    ),
+  );
   return msg.parts.filter(
     (p): p is AiChatAssistantMessagePartChart => p.type === 'chart',
   );
