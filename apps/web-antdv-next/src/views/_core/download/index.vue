@@ -177,6 +177,9 @@ onMounted(() => {
               {{ statusMap[record.status] || record.status }}
             </Tag>
           </template>
+          <template v-if="column.dataIndex === 'generateTime'">
+            {{ record.generateTime || '--' }}
+          </template>
           <template v-if="column.dataIndex === 'action'">
             <Button
               :disabled="record.status !== '1'"
