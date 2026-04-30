@@ -184,7 +184,8 @@ function toggleChartDetailFullscreen() {
           @select-conversation="emit('selectConversation', $event)"
         />
 
-        <Spin v-else :spinning="Boolean(props.restoring)" class="block w-full">
+        <Spin v-else :spinning="Boolean(props.restoring)"
+class="block w-full">
           <div
             v-if="props.restoring"
             aria-hidden="true"
