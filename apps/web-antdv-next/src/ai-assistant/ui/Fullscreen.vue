@@ -120,7 +120,7 @@ const emit = defineEmits<{
           <div
             v-if="props.restoring"
             aria-hidden="true"
-            class="min-h-[min(360px,55vh)] w-full shrink-0"
+            class="w-full shrink-0"
           ></div>
 
           <div v-else class="mx-auto w-[800px] p-4">
