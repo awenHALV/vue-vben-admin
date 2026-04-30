@@ -32,9 +32,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div
-    class="flex min-h-[min(360px,55vh)] w-full flex-1 flex-col items-stretch justify-center"
-  >
+  <div class="flex w-full flex-1 flex-col items-stretch justify-center">
     <Spin :spinning="props.historyLoading" class="block w-full">
       <div
         v-if="props.historyLoading"
@@ -55,7 +53,7 @@ const emit = defineEmits<{
 
       <div
         v-else
-        :class="props.variant === 'fullscreen' ? 'space-y-2' : 'space-y-3'"
+        :class="props.variant === 'fullscreen' ? 'space-y-2 p-2' : 'space-y-3'"
       >
         <HistoryListItem
           v-for="item in props.historyItems"
