@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { RefreshGlobal } from '../../../../apps/web-antdv-next/src/wujie-config/refresh';
+
 import { computed, useSlots } from 'vue';
 
 import { useRefresh } from '@vben/hooks';
@@ -123,6 +125,15 @@ const leftSlots = computed(() => {
 function clearPreferencesAndLogout() {
   emit('clearPreferencesAndLogout');
 }
+
+// 通知子应用重新加载页面
+function handleRefresh() {
+  void refresh().finally(() => {
+    (
+      globalThis as unknown as RefreshGlobal
+    ).__VBEN_NOTIFY_CHILD_APPS_REFRESH__?.();
+  });
+}
 </script>
 
 <template>
@@ -135,7 +146,7 @@ function clearPreferencesAndLogout() {
         <!-- prettier-ignore -->
         <VbenIconButton
           class="my-0 mr-1 rounded-md"
-          @click="refresh"
+          @click="handleRefresh"
         >
           <RotateCw class="size-4" />
         </VbenIconButton>

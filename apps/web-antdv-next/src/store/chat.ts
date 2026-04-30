@@ -169,12 +169,11 @@ function normalizeFieldValueRows(
   chartConfig: AiChatAssistantChartConfig,
   rows: Record<string, unknown>[],
 ): Record<string, unknown>[] {
-  // 兼容后端返回：
-  // 1. [{ field, name, value }]
-  // 2. [{ key1: value1, key2: value2 }]
-  // 最终统一映射成：{ [xAxis]: name, [yAxis]: value }
-
   if (rows.length === 0) return rows;
+
+  const fields = Array.isArray(chartConfig.fields)
+    ? chartConfig.fields.filter(Boolean)
+    : [];
 
   const hasAxisKeys = rows.some(
     (r) =>
@@ -182,12 +181,13 @@ function normalizeFieldValueRows(
       Object.prototype.hasOwnProperty.call(r, chartConfig.yAxis),
   );
 
-  // 如果本身已经是图表需要的数据结构，直接返回
-  if (hasAxisKeys) return rows;
-
-  const allowFields = Array.isArray(chartConfig.fields)
-    ? new Set(chartConfig.fields)
-    : null;
+  // 已经是图表需要的结构：{ 电站名称: 'xxx', 当前功率: 123 }
+  if (hasAxisKeys) {
+    return rows.map((r) => ({
+      ...r,
+      [chartConfig.yAxis]: normalizeChartValue(r[chartConfig.yAxis]),
+    }));
+  }
 
   const isFieldValueShape = rows.every(
     (r) =>
@@ -196,8 +196,14 @@ function normalizeFieldValueRows(
         Object.prototype.hasOwnProperty.call(r, 'field')),
   );
 
-  // 情况 1：[{ field, name, value }]
+  // 情况 1：
+  // [
+  //   { field: 'power', name: 'power', value: '11366.00' },
+  //   { field: 'ratedCapacity', name: 'ratedCapacity', value: '23736.00' }
+  // ]
   if (isFieldValueShape) {
+    const allowFields = fields.length > 0 ? new Set(fields) : null;
+
     return rows
       .filter((r) => {
         if (!allowFields) return true;
@@ -206,6 +212,7 @@ function normalizeFieldValueRows(
       })
       .map((r) => {
         const labelRaw = r.name ?? r.field ?? '';
+
         return {
           [chartConfig.xAxis]: String(labelRaw),
           [chartConfig.yAxis]: normalizeChartValue(r.value),
@@ -213,20 +220,66 @@ function normalizeFieldValueRows(
       });
   }
 
-  // 情况 2：[{ key1: value1, key2: value2 }]
-  // 例如：
-  // [{
-  //   proxyOperationRatedCapacity: null,
-  //   selfHoldingPower: '11366.00',
-  //   selfHoldingRatedCapacity: '23736.00',
-  //   proxyOperationPower: null,
-  // }]
+  // 情况 2：
+  // [
+  //   {
+  //     stationName: '滨州大有-锅炉房',
+  //     powerCurrent: '16.1470000000000000'
+  //   }
+  // ]
+  //
+  // fields: ['stationName', 'powerCurrent']
+  //
+  // 转成：
+  // [
+  //   {
+  //     电站名称: '滨州大有-锅炉房',
+  //     当前功率 (kW): 16.147
+  //   }
+  // ]
+  const [xField, yField] = fields;
+
+  const isRecordRows =
+    fields.length === 2 &&
+    typeof xField === 'string' &&
+    typeof yField === 'string' &&
+    rows.every(
+      (r) =>
+        Object.prototype.hasOwnProperty.call(r, xField) &&
+        Object.prototype.hasOwnProperty.call(r, yField),
+    );
+
+  if (isRecordRows) {
+    return rows.map((r) => ({
+      [chartConfig.xAxis]: String(r[xField] ?? ''),
+      [chartConfig.yAxis]: normalizeChartValue(r[yField]),
+    }));
+  }
+
+  // 情况 3：
+  // [
+  //   {
+  //     proxyOperationRatedCapacity: null,
+  //     selfHoldingPower: '11366.00',
+  //     selfHoldingRatedCapacity: '23736.00',
+  //     proxyOperationPower: null
+  //   }
+  // ]
+  //
+  // 转成多个柱子：
+  // [
+  //   { 方式: 'selfHoldingPower', 数值: 11366 },
+  //   { 方式: 'selfHoldingRatedCapacity', 数值: 23736 },
+  //   { 方式: 'proxyOperationPower', 数值: 0 },
+  //   { 方式: 'proxyOperationRatedCapacity', 数值: 0 }
+  // ]
   return rows.flatMap((r) => {
-    const keys = allowFields
-      ? (chartConfig.fields?.filter((field) =>
-          Object.prototype.hasOwnProperty.call(r, field),
-        ) ?? [])
-      : Object.keys(r);
+    const keys =
+      fields.length > 0
+        ? fields.filter((field) =>
+            Object.prototype.hasOwnProperty.call(r, field),
+          )
+        : Object.keys(r);
 
     return keys.map((key) => ({
       [chartConfig.xAxis]: key,

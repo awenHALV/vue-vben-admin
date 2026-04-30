@@ -25,7 +25,7 @@ const assistantIconSrc = AI_ASSISTANT_ICON_URL;
   >
     <div class="flex h-full flex-col items-center gap-2">
       <div
-        class="mt-2 flex-col-center flex cursor-pointer border-[rgba(0,0,0,0.06)] p-2 transition-[colors,box-shadow] hover:rounded-sm hover:bg-white hover:shadow-[0px_1px_2px_0px_rgba(0,0,0,0.03),0px_1px_6px_-1px_rgba(0,0,0,0.02),0px_2px_4px_0px_rgba(0,0,0,0.02)] dark:hover:bg-accent dark:hover:shadow-none"
+        class="mt-2 flex-col-center flex cursor-pointer border-[rgba(0,0,0,0.06)] p-1 transition-[colors,box-shadow] hover:rounded-sm hover:bg-white hover:shadow-[0px_1px_2px_0px_rgba(0,0,0,0.03),0px_1px_6px_-1px_rgba(0,0,0,0.02),0px_2px_4px_0px_rgba(0,0,0,0.02)] dark:hover:bg-accent dark:hover:shadow-none"
         type="text"
         aria-label="小曦助手"
         @click="emit('goChat')"
