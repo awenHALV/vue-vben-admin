@@ -130,43 +130,45 @@ const [Form, formApi] = useVbenForm({
       dependencies: {
         rules(values) {
           if (values.featureType === 'MENU') {
-            return z
-              // .string({
-              //   required_error: $t('menu.formRules.routePath'),
-              //   invalid_type_error: $t('menu.formRules.routePath'),
-              // })
-              // .min(1, { message: $t('menu.formRules.routePath') })
-              .string()
-              .optional()
-              .superRefine((v, ctx) => {
-                if (!v) {
-                  return;
-                }
+            return (
+              z
+                // .string({
+                //   required_error: $t('menu.formRules.routePath'),
+                //   invalid_type_error: $t('menu.formRules.routePath'),
+                // })
+                // .min(1, { message: $t('menu.formRules.routePath') })
+                .string()
+                .optional()
+                .superRefine((v, ctx) => {
+                  if (!v) {
+                    return;
+                  }
 
-                if (isHttpRoutePath(v)) {
-                  if (!isValidHttpRouteHost(v)) {
+                  if (isHttpRoutePath(v)) {
+                    if (!isValidHttpRouteHost(v)) {
+                      ctx.addIssue({
+                        code: 'custom',
+                        message: $t('menu.formRules.routePathHttpHost'),
+                      });
+                    }
+                    return;
+                  }
+
+                  if (!v.startsWith('/')) {
                     ctx.addIssue({
                       code: 'custom',
-                      message: $t('menu.formRules.routePathHttpHost'),
+                      message: $t('menu.formRules.routePathStartWithSlash'),
                     });
                   }
-                  return;
-                }
 
-                if (!v.startsWith('/')) {
-                  ctx.addIssue({
-                    code: 'custom',
-                    message: $t('menu.formRules.routePathStartWithSlash'),
-                  });
-                }
-
-                if (!ROUTE_PATH_REGEXP.test(v)) {
-                  ctx.addIssue({
-                    code: 'custom',
-                    message: $t('menu.formRules.routePathOnlyEnglish'),
-                  });
-                }
-              });
+                  if (!ROUTE_PATH_REGEXP.test(v)) {
+                    ctx.addIssue({
+                      code: 'custom',
+                      message: $t('menu.formRules.routePathOnlyEnglish'),
+                    });
+                  }
+                })
+            );
           }
         },
         triggerFields: ['featureType'],
@@ -215,6 +217,7 @@ const [VbenModal, modalApi] = useVbenModal({
   showConfirmButton: true,
   confirmLoading: false,
   title: $t('menu.action.add'),
+  confirmText: $t('system.common.ok'),
   onOpenChange: async (isOpen) => {
     if (isOpen) {
       await formApi.resetForm();

@@ -28,6 +28,7 @@ const {
   open,
   panelMode,
   pending,
+  restoreLoading,
   title,
   viewMode,
 } = storeToRefs(chatStore);
@@ -70,7 +71,7 @@ function handleToggleThinking(messageId: string) {
 
 function handleFeedback(payload: {
   messageId: string;
-  type: 'dislike' | 'like';
+  type: 'dislike' | 'like' | null;
 }) {
   void chatStore.submitFeedback(payload);
 }
@@ -133,6 +134,7 @@ async function handleDeleteConversation(id: string) {
     :history-loading="historySessionsLoading"
     :messages="chatMessages"
     :pending="pending"
+    :restoring="restoreLoading"
     @close="handleClose"
     @new-chat="handleNewChat"
     @toggle-view="handleToggleView"
@@ -155,6 +157,7 @@ async function handleDeleteConversation(id: string) {
     :history-loading="historySessionsLoading"
     :messages="chatMessages"
     :pending="pending"
+    :restoring="restoreLoading"
     @close="handleClose"
     @new-chat="handleNewChat"
     @toggle-view="handleToggleView"

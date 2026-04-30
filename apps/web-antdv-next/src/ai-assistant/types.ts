@@ -34,7 +34,7 @@ export type AiChatAssistantChartConfig = {
   /** 兼容后端/协议：允许前端无需硬编码字段 */
   fields?: string[];
   title?: string;
-  type: 'bar' | 'line';
+  type: 'bar' | 'line' | 'pie';
   xAxis: string;
   yAxis: string;
 };

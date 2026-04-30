@@ -14,21 +14,23 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'feedback', type: 'dislike' | 'like'): void;
+  (e: 'feedback', type: 'dislike' | 'like' | null): void;
 }>();
 
-const likeDisabled = computed(() => props.modelValue === 'like');
-const dislikeDisabled = computed(() => props.modelValue === 'dislike');
+const liked = computed(() => props.modelValue === 'like');
+const disliked = computed(() => props.modelValue === 'dislike');
 
-const likeTooltip = computed(() => (likeDisabled.value ? '已赞成' : '赞成'));
+const likeTooltip = computed(() => (liked.value ? '取消赞成' : '赞成'));
 const dislikeTooltip = computed(() =>
-  dislikeDisabled.value ? '已反馈不赞成' : '不赞成',
+  disliked.value ? '取消不赞成' : '不赞成',
 );
 
 function onPick(type: 'dislike' | 'like') {
-  if (type === 'like' && likeDisabled.value) return;
-  if (type === 'dislike' && dislikeDisabled.value) return;
-  emit('feedback', type);
+  if (type === 'like') {
+    emit('feedback', liked.value ? null : 'like');
+    return;
+  }
+  emit('feedback', disliked.value ? null : 'dislike');
 }
 </script>
 
@@ -39,17 +41,16 @@ function onPick(type: 'dislike' | 'like') {
     <Tooltip :title="likeTooltip">
       <span class="inline-flex">
         <button
-          class="flex-center size-7 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40"
-          :class="[
-            props.modelValue === 'like' ? 'text-foreground' : '',
-            likeDisabled ? '' : 'cursor-pointer',
-          ]"
-          :disabled="likeDisabled"
+          class="flex-center size-7 cursor-pointer rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+          :class="[props.modelValue === 'like' ? 'text-foreground' : '']"
           type="button"
           aria-label="赞成"
           @click="onPick('like')"
         >
-          <IconifyIcon class="size-4" icon="lucide:thumbs-up" />
+          <IconifyIcon
+            class="size-4"
+            :icon="liked ? 'mdi:thumb-up' : 'mdi:thumb-up-outline'"
+          />
         </button>
       </span>
     </Tooltip>
@@ -57,17 +58,16 @@ function onPick(type: 'dislike' | 'like') {
     <Tooltip :title="dislikeTooltip">
       <span class="inline-flex">
         <button
-          class="flex-center size-7 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40"
-          :class="[
-            props.modelValue === 'dislike' ? 'text-foreground' : '',
-            dislikeDisabled ? '' : 'cursor-pointer',
-          ]"
-          :disabled="dislikeDisabled"
+          class="flex-center size-7 cursor-pointer rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+          :class="[props.modelValue === 'dislike' ? 'text-foreground' : '']"
           type="button"
           aria-label="不赞成"
           @click="onPick('dislike')"
         >
-          <IconifyIcon class="size-4" icon="lucide:thumbs-down" />
+          <IconifyIcon
+            class="size-4"
+            :icon="disliked ? 'mdi:thumb-down' : 'mdi:thumb-down-outline'"
+          />
         </button>
       </span>
     </Tooltip>

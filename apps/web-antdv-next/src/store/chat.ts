@@ -23,6 +23,7 @@ import {
   postChatRestoreApi,
   postChatSendApi,
 } from '#/api/chat';
+import { useAuthStore } from '#/store';
 
 type PanelMode = 'chat' | 'history';
 type ViewMode = 'full' | 'right';
@@ -70,8 +71,8 @@ function safeUUID() {
     const buf = new Uint8Array(16);
     cryptoObj.getRandomValues(buf);
     // RFC4122 v4
-    buf[6] = ((buf[6] ?? 0) & 0x0F) | 0x40;
-    buf[8] = ((buf[8] ?? 0) & 0x3F) | 0x80;
+    buf[6] = ((buf[6] ?? 0) & 15) | 64;
+    buf[8] = ((buf[8] ?? 0) & 63) | 128;
     const hex = [...buf].map((b) => b.toString(16).padStart(2, '0')).join('');
     return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
   }
@@ -109,7 +110,9 @@ function parseChartConfig(raw: unknown): AiChatAssistantChartConfig | null {
   const chartConfigRaw = raw as Record<string, unknown>;
 
   const chartType =
-    chartConfigRaw.type === 'bar' || chartConfigRaw.type === 'line'
+    chartConfigRaw.type === 'bar' ||
+    chartConfigRaw.type === 'line' ||
+    chartConfigRaw.type === 'pie'
       ? chartConfigRaw.type
       : null;
   const xAxis =
@@ -133,7 +136,103 @@ function parseChartConfig(raw: unknown): AiChatAssistantChartConfig | null {
 }
 
 function parseChartData(raw: unknown): Record<string, unknown>[] {
+  // 支持对象格式，表示一个柱子，对象的键值对映射为多行数据
+  // { "field1": value1, "field2": value2 } → [{ xAxis: "field1", yAxis: value1 }, { xAxis: "field2", yAxis: value2 }]
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const obj = raw as Record<string, unknown>;
+    return Object.entries(obj).map(([key, value]) => ({
+      __objectKey__: key,
+      __objectValue__: value,
+    }));
+  }
   return Array.isArray(raw) ? (raw as Record<string, unknown>[]) : [];
+}
+
+function normalizeChartValue(value: unknown): unknown {
+  // 如果你希望 null 也显示成一个柱子，建议转成 0
+  // 否则 ECharts / 图表组件可能不会画出柱子
+  if (value === null || value === undefined || value === '') return 0;
+
+  // 字符串数字转 number，避免图表组件把它当字符串
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return 0;
+
+    const num = Number(trimmed);
+    return Number.isNaN(num) ? value : num;
+  }
+
+  return value;
+}
+
+function normalizeFieldValueRows(
+  chartConfig: AiChatAssistantChartConfig,
+  rows: Record<string, unknown>[],
+): Record<string, unknown>[] {
+  // 兼容后端返回：
+  // 1. [{ field, name, value }]
+  // 2. [{ key1: value1, key2: value2 }]
+  // 最终统一映射成：{ [xAxis]: name, [yAxis]: value }
+
+  if (rows.length === 0) return rows;
+
+  const hasAxisKeys = rows.some(
+    (r) =>
+      Object.prototype.hasOwnProperty.call(r, chartConfig.xAxis) ||
+      Object.prototype.hasOwnProperty.call(r, chartConfig.yAxis),
+  );
+
+  // 如果本身已经是图表需要的数据结构，直接返回
+  if (hasAxisKeys) return rows;
+
+  const allowFields = Array.isArray(chartConfig.fields)
+    ? new Set(chartConfig.fields)
+    : null;
+
+  const isFieldValueShape = rows.every(
+    (r) =>
+      Object.prototype.hasOwnProperty.call(r, 'value') &&
+      (Object.prototype.hasOwnProperty.call(r, 'name') ||
+        Object.prototype.hasOwnProperty.call(r, 'field')),
+  );
+
+  // 情况 1：[{ field, name, value }]
+  if (isFieldValueShape) {
+    return rows
+      .filter((r) => {
+        if (!allowFields) return true;
+        const f = r.field;
+        return typeof f === 'string' ? allowFields.has(f) : true;
+      })
+      .map((r) => {
+        const labelRaw = r.name ?? r.field ?? '';
+        return {
+          [chartConfig.xAxis]: String(labelRaw),
+          [chartConfig.yAxis]: normalizeChartValue(r.value),
+        };
+      });
+  }
+
+  // 情况 2：[{ key1: value1, key2: value2 }]
+  // 例如：
+  // [{
+  //   proxyOperationRatedCapacity: null,
+  //   selfHoldingPower: '11366.00',
+  //   selfHoldingRatedCapacity: '23736.00',
+  //   proxyOperationPower: null,
+  // }]
+  return rows.flatMap((r) => {
+    const keys = allowFields
+      ? (chartConfig.fields?.filter((field) =>
+          Object.prototype.hasOwnProperty.call(r, field),
+        ) ?? [])
+      : Object.keys(r);
+
+    return keys.map((key) => ({
+      [chartConfig.xAxis]: key,
+      [chartConfig.yAxis]: normalizeChartValue(r[key]),
+    }));
+  });
 }
 
 function parseChartPayload(
@@ -146,11 +245,12 @@ function parseChartPayload(
   if (!Array.isArray(configRaw)) {
     const config = parseChartConfig(configRaw);
     if (!config) return [];
+    const rows = normalizeFieldValueRows(config, parseChartData(dataRaw));
     return [
       {
         type: 'chart',
         chartConfig: config,
-        chartData: parseChartData(dataRaw),
+        chartData: rows,
       },
     ];
   }
@@ -158,7 +258,7 @@ function parseChartPayload(
   // 多图：配置数组 + 数据（可能是数组-数组、也可能复用同一份数组）
   const configs = configRaw
     .map((c) => parseChartConfig(c))
-    .filter((v): v is AiChatAssistantChartConfig => Boolean(v));
+    .filter((v): v is AiChatAssistantChartConfig => v !== null);
   if (configs.length === 0) return [];
 
   const dataList: Array<Record<string, unknown>[]> = (() => {
@@ -174,7 +274,7 @@ function parseChartPayload(
   return configs.map((chartConfig, idx) => ({
     type: 'chart',
     chartConfig,
-    chartData: dataList[idx] ?? [],
+    chartData: normalizeFieldValueRows(chartConfig, dataList[idx] ?? []),
   }));
 }
 
@@ -201,6 +301,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
 
   // pending / thinking
   const sendLoading = ref(false);
+  const restoreLoading = ref(false);
   const isThinking = ref(false);
   const streamingAssistantMessageId = ref<null | string>(null);
 
@@ -212,6 +313,21 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
   );
 
   const accessStore = useAccessStore();
+  const authStore = useAuthStore();
+
+  function isUnauthorizedError(error: unknown): boolean {
+    const status = (error as { response?: { status?: number } })?.response
+      ?.status;
+    return status === 401;
+  }
+
+  async function redirectToLoginIfUnauthorized(
+    error: unknown,
+  ): Promise<boolean> {
+    if (!isUnauthorizedError(error)) return false;
+    await authStore.terminateSession(true, { reason: 'unauthorized' });
+    return true;
+  }
 
   function ensureWelcomeMessage() {
     if (activeConversationId.value) return;
@@ -418,6 +534,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
 
   const pending = computed(() => {
     const msgId = streamingAssistantMessageId.value;
+    if (restoreLoading.value) return true;
     if (sendLoading.value) return true;
     if (msgId && isAssistantTurnBusy(msgId)) return true;
     return isThinking.value;
@@ -532,6 +649,16 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     });
 
     es.addEventListener('error', (e: Event) => {
+      const ee = e as { status?: number; target?: { status?: number } };
+      const status = ee.status ?? ee.target?.status ?? null;
+      if (status === 401) {
+        void authStore.terminateSession(true, { reason: 'unauthorized' });
+        streamingAssistantMessageId.value = null;
+        isThinking.value = false;
+        disconnectEventSource();
+        return;
+      }
+
       // 尝试从 e.data 中解析错误信息
       let errorMsg = 'SSE 连接异常';
       try {
@@ -625,8 +752,9 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
         time: s.updatedAt,
       }));
     } catch (error) {
+      if (await redirectToLoginIfUnauthorized(error)) return;
       console.error(error);
-      antdMessage.error('加载历史会话失败');
+      // antdMessage.error('加载历史会话失败');
       historyItems.value = [];
     } finally {
       historySessionsLoading.value = false;
@@ -671,6 +799,9 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     closeSse();
     activeConversationId.value = id;
     panelMode.value = 'chat';
+    restoreLoading.value = true;
+    assistantMetaById.value = {};
+    chatMessages.value = [];
     try {
       const res = await postChatRestoreApi(id);
       assistantMetaById.value = {};
@@ -718,8 +849,11 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
       if (chatMessages.value.length === 0) ensureWelcomeMessage();
       isThinking.value = false;
     } catch (error) {
+      if (await redirectToLoginIfUnauthorized(error)) return;
       console.error(error);
-      antdMessage.error('恢复会话失败');
+      // antdMessage.error('恢复会话失败');
+    } finally {
+      restoreLoading.value = false;
     }
   }
 
@@ -750,6 +884,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
       activeConversationId.value = data.sessionId;
       connectSse(data.sessionId);
     } catch (error) {
+      if (await redirectToLoginIfUnauthorized(error)) return;
       console.error(error);
       // /chat/send 失败：结束本轮状态，小助手不输出（移除空的 assistant 占位消息与 meta）
       streamingAssistantMessageId.value = null;
@@ -785,21 +920,34 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
 
       antdMessage.success('已删除会话');
     } catch (error) {
+      if (await redirectToLoginIfUnauthorized(error)) return;
       console.error(error);
-      antdMessage.error('删除会话失败');
+      // antdMessage.error('删除会话失败');
     }
   }
 
   async function submitFeedback(payload: {
     messageId?: string;
-    type: 'dislike' | 'like';
+    type: 'dislike' | 'like' | null;
   }) {
     const sessionId = activeConversationId.value;
-    if (!sessionId) {
-      antdMessage.warning('暂无会话，无法提交反馈');
-      return;
-    }
+    if (!sessionId) return;
     try {
+      // 取消反馈：仅本地更新，不触发 toast，也不请求后端
+      if (payload.type === null) {
+        if (payload.messageId) {
+          const mid = payload.messageId;
+          const meta = assistantMetaById.value[mid];
+          if (meta) {
+            assistantMetaById.value = {
+              ...assistantMetaById.value,
+              [mid]: { ...meta, feedbackStatus: null },
+            };
+          }
+        }
+        return;
+      }
+
       await postChatFeedbackApi({
         sessionId,
         messageId: payload.messageId,
@@ -815,10 +963,9 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
           };
         }
       }
-      antdMessage.success(payload.type === 'like' ? '已赞成' : '已反馈');
     } catch (error) {
+      if (await redirectToLoginIfUnauthorized(error)) return;
       console.error(error);
-      antdMessage.error('提交反馈失败');
     }
   }
 
@@ -834,6 +981,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     chatMessages,
     assistantMetaById,
     pending,
+    restoreLoading,
 
     // actions
     openPanel,

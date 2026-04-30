@@ -68,7 +68,10 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       const accessStore = useAccessStore();
 
       config.headers['DEFrame-Auth'] = formatToken(accessStore.accessToken);
-      config.headers['Accept-Language'] = preferences.app.locale;
+      config.headers['DEFrame-Language'] = preferences.app.locale.replace(
+        '-',
+        '_',
+      );
       return config;
     },
   });

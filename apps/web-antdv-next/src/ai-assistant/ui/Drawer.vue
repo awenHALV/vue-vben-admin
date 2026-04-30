@@ -7,6 +7,8 @@ import { computed, ref } from 'vue';
 
 import { IconifyIcon } from '@vben/icons';
 
+import { Spin } from 'antdv-next';
+
 import ChartMessage from './components/ChartMessage.vue';
 import ChatPanel from './components/ChatPanel.vue';
 import ComposerFooter from './components/ComposerFooter.vue';
@@ -28,13 +30,14 @@ const props = defineProps<{
   open: boolean;
   panelMode: 'chat' | 'history';
   pending?: boolean;
+  restoring?: boolean;
   title: string;
 }>();
 
 const emit = defineEmits<{
   close: [];
   deleteConversation: [id: string];
-  feedback: [payload: { messageId: string; type: 'dislike' | 'like' }];
+  feedback: [payload: { messageId: string; type: 'dislike' | 'like' | null }];
   goChat: [];
   newChat: [];
   openHistory: [];
@@ -181,16 +184,24 @@ function toggleChartDetailFullscreen() {
           @select-conversation="emit('selectConversation', $event)"
         />
 
-        <ChatPanel
-          v-else
-          variant="drawer"
-          :active-conversation-id="props.activeConversationId"
-          :assistant-meta-by-id="props.assistantMetaById"
-          :messages="props.messages"
-          @toggle-thinking="emit('toggleThinking', $event)"
-          @feedback="emit('feedback', $event)"
-          @open-detail="openDetail"
-        />
+        <Spin v-else :spinning="Boolean(props.restoring)" class="block w-full">
+          <div
+            v-if="props.restoring"
+            aria-hidden="true"
+            class="min-h-[min(360px,55vh)] w-full shrink-0"
+          ></div>
+
+          <ChatPanel
+            v-else
+            variant="drawer"
+            :active-conversation-id="props.activeConversationId"
+            :assistant-meta-by-id="props.assistantMetaById"
+            :messages="props.messages"
+            @toggle-thinking="emit('toggleThinking', $event)"
+            @feedback="emit('feedback', $event)"
+            @open-detail="openDetail"
+          />
+        </Spin>
       </div>
 
       <!-- 底部输入区域：一体胶囊框 44px，发送按钮内嵌在右侧 -->

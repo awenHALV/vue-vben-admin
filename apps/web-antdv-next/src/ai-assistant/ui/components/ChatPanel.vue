@@ -41,7 +41,7 @@ const emit = defineEmits<{
   (e: 'openDetail', messageId: string): void;
   (
     e: 'feedback',
-    payload: { messageId: string; type: 'dislike' | 'like' },
+    payload: { messageId: string; type: 'dislike' | 'like' | null },
   ): void;
 }>();
 
@@ -52,6 +52,11 @@ const displayMessages = computed(
 function chartPartOf(msg: AiChatMessage) {
   if (msg.role !== 'assistant') return null;
   if (msg.kind !== 'rich') return null;
+  console.log(
+    msg.parts.filter(
+      (p): p is AiChatAssistantMessagePartChart => p.type === 'chart',
+    ),
+  );
   return msg.parts.filter(
     (p): p is AiChatAssistantMessagePartChart => p.type === 'chart',
   );
@@ -60,17 +65,15 @@ function chartPartOf(msg: AiChatMessage) {
 function markdownOf(msg: AiChatMessage): string {
   if (msg.role !== 'assistant') return '';
   if (msg.kind === 'text') return msg.text ?? '';
-  console.log(msg.kind);
   if (msg.kind === 'rich') {
     const part = msg.parts.find((p) => p.type === 'markdown');
-    console.log(part);
     return part?.type === 'markdown' ? (part.content ?? '') : '';
   }
   return '';
 }
 
 const autoCollapsedThinking = ref<Record<string, true>>({});
-const feedbackByMessageId = ref<Record<string, 'dislike' | 'like'>>({});
+const feedbackByMessageId = ref<Record<string, 'dislike' | 'like' | null>>({});
 const streamEndRef = ref<HTMLElement | null>(null);
 
 /** 当前轮助手是否仍在输出（思考 / token / 未 type=done），用于生成过程中保持视口跟到底部 */
@@ -111,7 +114,7 @@ watch(
   },
 );
 
-function handleFeedback(messageId: string, type: 'dislike' | 'like') {
+function handleFeedback(messageId: string, type: 'dislike' | 'like' | null) {
   feedbackByMessageId.value = {
     ...feedbackByMessageId.value,
     [messageId]: type,
@@ -175,8 +178,8 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
         <div
           :class="
             props.variant === 'fullscreen'
-              ? 'max-w-[min(100%,600px)] rounded-lg bg-muted px-3 py-2 text-sm/6'
-              : 'max-w-[216px] rounded-lg bg-[rgba(0,0,0,0.06)] px-4 py-3 text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:bg-muted dark:text-foreground'
+              ? 'max-w-[min(100%,600px)] rounded-lg bg-muted px-3 py-2 text-sm/6 break-all'
+              : 'max-w-[216px] rounded-lg bg-[rgba(0,0,0,0.06)] px-4 py-3 text-sm leading-[22px] break-all text-[rgba(0,0,0,0.88)] dark:bg-muted dark:text-foreground'
           "
         >
           {{ msg.text }}

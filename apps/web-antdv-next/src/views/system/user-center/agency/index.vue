@@ -42,7 +42,7 @@ async function handleFetchDeptTree() {
   deptTreeLoading.value = true;
   try {
     const data = await getDeptTreeApi({
-      deptType: 'OPERATION'
+      deptType: 'OPERATION',
     });
     deptTreeData.value = data || [];
   } catch (error) {
@@ -139,16 +139,16 @@ async function handleConfirmInvite() {
 
     <!--搜索结果区域-->
     <div
-      class="min-h-0 flex-1 rounded-lg border border-border bg-background p-5 flex flex-col"
+      class="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-background p-5"
     >
       <div class="mb-4 text-base font-medium">
         {{ $t('system.agency.searchTitle') }}
       </div>
 
-      <div class="flex-1 min-h-0 flex flex-col">
-        <Spin :spinning="loading" class="flex-1 h-full">
+      <div class="flex min-h-0 flex-1 flex-col">
+        <Spin :spinning="loading" class="h-full flex-1">
           <!-- DEFAULT (Before Search) -->
-          <div v-if="!hasSearched" class="flex flex-col items-center justify-center h-full">
+          <div v-if="!hasSearched" class="flex-col-center h-full">
             <img :src="defaultPng" alt="default"
 class="mb-4 w-48" />
             <div class="text-base leading-[22px] font-medium text-foreground">
@@ -159,11 +159,11 @@ class="mb-4 w-48" />
             </div>
           </div>
 
-          <div v-else class="search-content flex flex-col h-full">
+          <div v-else class="search-content flex h-full flex-col">
             <!-- NOT_FOUND -->
             <div
               v-if="result?.status === 'NOT_FOUND' || !result"
-              class="flex flex-col items-center justify-center h-full"
+              class="flex-col-center h-full"
             >
               <img :src="emptyPng" alt="empty"
 class="mb-4 w-48" />
@@ -227,6 +227,7 @@ class="size-6" />
       centered
       :footer="null"
       :width="600"
+      :ok-text="$t('system.common.ok')"
       @cancel="confirmModalVisible = false"
     >
       <template #title>
@@ -250,8 +251,6 @@ class="size-6" />
             })
           }}
         </div>
-
-
 
         <div class="org-wrap">
           <div class="mb-2 flex items-center justify-between">
