@@ -3,12 +3,19 @@ import type { VbenFormSchema } from '@vben/common-ui';
 import type { Recordable } from '@vben/types';
 
 import { computed, h, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { AuthenticationRegister, z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 
+import { message } from 'antdv-next';
+
+import { registerApi } from '#/api/core/auth';
+import { encryptByMd5 } from '#/utils/cipher';
+
 defineOptions({ name: 'Register' });
 
+const router = useRouter();
 const loading = ref(false);
 
 const formSchema = computed((): VbenFormSchema[] => {
@@ -18,9 +25,23 @@ const formSchema = computed((): VbenFormSchema[] => {
       componentProps: {
         placeholder: $t('authentication.usernameTip'),
       },
-      fieldName: 'username',
-      label: $t('authentication.username'),
+      fieldName: 'name',
+      label: $t('authentication.userName'),
       rules: z.string().min(1, { message: $t('authentication.usernameTip') }),
+    },
+    {
+      component: 'VbenInput',
+      componentProps: {
+        placeholder: $t('authentication.mobileTip'),
+      },
+      fieldName: 'phone',
+      label: $t('authentication.mobile'),
+      rules: z
+        .string({ required_error: $t('authentication.mobileTip') })
+        .min(1, { message: $t('authentication.mobileTip') })
+        .refine((v) => /^\d{11}$/.test(v), {
+          message: $t('authentication.mobileErrortip'),
+        }),
     },
     {
       component: 'VbenInputPassword',
@@ -28,14 +49,23 @@ const formSchema = computed((): VbenFormSchema[] => {
         passwordStrength: true,
         placeholder: $t('authentication.password'),
       },
-      fieldName: 'password',
+      fieldName: 'pwd',
       label: $t('authentication.password'),
       renderComponentContent() {
         return {
           strengthText: () => $t('authentication.passwordStrength'),
         };
       },
-      rules: z.string().min(1, { message: $t('authentication.passwordTip') }),
+      rules: z
+        .string({ required_error: $t('authentication.passwordTip') })
+        .min(1, { message: $t('authentication.passwordTip') })
+        .refine(
+          (v) =>
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,20}$/.test(
+              v,
+            ),
+          { message: $t('authentication.passwordStrength') },
+        ),
     },
     {
       component: 'VbenInputPassword',
@@ -44,15 +74,15 @@ const formSchema = computed((): VbenFormSchema[] => {
       },
       dependencies: {
         rules(values) {
-          const { password } = values;
+          const { pwd } = values;
           return z
             .string({ required_error: $t('authentication.passwordTip') })
             .min(1, { message: $t('authentication.passwordTip') })
-            .refine((value) => value === password, {
+            .refine((value) => value === pwd, {
               message: $t('authentication.confirmPasswordTip'),
             });
         },
-        triggerFields: ['password'],
+        triggerFields: ['pwd'],
       },
       fieldName: 'confirmPassword',
       label: $t('authentication.confirmPassword'),
@@ -81,9 +111,21 @@ const formSchema = computed((): VbenFormSchema[] => {
   ];
 });
 
-function handleSubmit(value: Recordable<any>) {
-  // eslint-disable-next-line no-console
-  console.log('register submit:', value);
+async function handleSubmit(value: Recordable<any>) {
+  loading.value = true;
+  try {
+    await registerApi({
+      name: value.name,
+      phone: value.phone,
+      pwd: encryptByMd5(value.pwd),
+    });
+    message.success($t('authentication.registerSuccess') || '注册成功');
+    router.push('/auth/login');
+  } catch (error: any) {
+    message.error(error?.message || $t('authentication.registerFailed') || '注册失败');
+  } finally {
+    loading.value = false;
+  }
 }
 </script>
 
