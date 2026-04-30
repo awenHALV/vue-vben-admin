@@ -36,6 +36,7 @@ const optionFormRef = ref<InstanceType<typeof DictOptionAddOrUpdate> | null>(
 const [Grid, gridApi] = useVbenVxeGrid<DictOptionItem>({
   showSearchForm: false,
   separator: false,
+  gridClass: 'p-0',
   gridOptions: {
     height: 360,
     rowConfig: { isHover: true },
@@ -96,7 +97,7 @@ const [Grid, gridApi] = useVbenVxeGrid<DictOptionItem>({
       },
       {
         title: $t('dict.list.action'),
-        width: 140,
+        width: 100,
         fixed: 'right',
         align: 'center',
         showOverflow: false,
@@ -239,8 +240,7 @@ function handleBatchDelete() {
 
 const [VbenModal, modalApi] = useVbenModal({
   destroyOnClose: true,
-  showCancelButton: false,
-  showConfirmButton: false,
+  footer: false,
   cancelText: $t('common.cancel'),
   confirmText: $t('common.confirm'),
   title: $t('dict.config.title'),
@@ -327,7 +327,7 @@ defineExpose({ open });
       </div>
     </div>
 
-    <Grid>
+    <Grid class="p-0">
       <template #toolbar-actions>
         <div class="flex w-full items-center justify-end gap-2">
           <!-- prettier-ignore -->

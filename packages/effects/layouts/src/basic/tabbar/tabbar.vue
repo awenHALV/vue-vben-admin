@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { RefreshGlobal } from '../../../../apps/web-antdv-next/src/wujie-config/refresh';
+
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 
@@ -50,6 +52,15 @@ const menus = computed(() => {
 if (!preferences.tabbar.persist) {
   tabbarStore.closeOtherTabs(route);
 }
+
+// 通知子应用重新加载页面
+function handleRefreshTab() {
+  void refreshTab().finally(() => {
+    (
+      globalThis as unknown as RefreshGlobal
+    ).__VBEN_NOTIFY_CHILD_APPS_REFRESH__?.();
+  });
+}
 </script>
 
 <template>
@@ -72,7 +83,7 @@ if (!preferences.tabbar.persist) {
     <TabsToolMore v-if="preferences.tabbar.showMore" :menus="menus" />
     <TabsToolRefresh
       v-if="preferences.tabbar.showRefresh"
-      @refresh="refreshTab"
+      @refresh="handleRefreshTab"
     />
     <TabsToolScreen
       v-if="preferences.tabbar.showMaximize"
