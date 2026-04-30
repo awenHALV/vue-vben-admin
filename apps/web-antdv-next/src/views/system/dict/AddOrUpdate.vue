@@ -69,7 +69,7 @@ function buildFormSchema() {
 
 const [Form, formApi] = useVbenForm({
   commonConfig: {
-    labelWidth: 100,
+    labelWidth: 70,
   },
   schema: buildFormSchema(),
   showDefaultActions: false,
