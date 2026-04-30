@@ -79,16 +79,9 @@ class PreferenceManager {
     // 合并初始偏好设置 (overrides > defaults)
     this.initialPreferences = merge({}, overrides, defaultPreferences);
 
-    // 加载缓存的偏好设置并与初始配置合并
-    // 注意：defu 是 left-wins（左侧优先），cachedPreferences 通常优先级最高
-    // 但 overrides 是开发者明确指定的配置，必须覆盖缓存，因此最后再合并一次 overrides
+    // 同一命名空间下优先恢复用户已保存的偏好设置，overrides 仅作为默认值补全。
     const cachedPreferences = this.loadFromCache() || {};
-    const mergedPreference = merge(
-      {},
-      overrides, // 开发者配置 overrides 优先级最高，覆盖缓存中的旧值
-      cachedPreferences,
-      this.initialPreferences,
-    );
+    const mergedPreference = merge({}, cachedPreferences, this.initialPreferences);
 
     // 更新偏好设置
     this.updatePreferences(mergedPreference);
