@@ -37,6 +37,8 @@ export interface ConsultationPageParams {
   contactPhone?: string;
   /** 公司名称 */
   companyName?: string;
+  /** 来源类型 */
+  sourceType?: string;
 }
 
 /** 供表格使用的统一分页结果（与 dict 等页面对齐） */

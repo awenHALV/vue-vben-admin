@@ -7,7 +7,7 @@ import { Page, VbenButton, VbenInput } from '@vben/common-ui';
 import { CircleX } from '@vben/icons';
 import { $t } from '#/locales';
 
-import { Space } from 'antdv-next';
+import { Select, Space } from 'antdv-next';
 import dayjs from 'dayjs';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -15,10 +15,18 @@ import { getConsultationPageApi } from '#/api/operation/consultation';
 
 defineOptions({ name: 'ConsultationManagement' });
 
+/** 来源类型选项 */
+const sourceTypeOptions = [
+  { label: $t('operation.consultation.sourceTypeAll'), value: '' },
+  { label: $t('operation.consultation.sourceTypeAI'), value: 'AI_Business' },
+  { label: $t('operation.consultation.sourceTypeProject'), value: 'Project_Opportunit' },
+];
+
 /** 搜索条件 */
 const searchName = ref('');
 const searchPhone = ref('');
 const searchCompany = ref('');
+const searchSourceType = ref('');
 
 const [Grid, gridApi] = useVbenVxeGrid<ConsultationInfo>({
   showSearchForm: false,
@@ -70,7 +78,6 @@ const [Grid, gridApi] = useVbenVxeGrid<ConsultationInfo>({
         field: 'sourceType',
         title: $t('operation.consultation.sourceType'),
         minWidth: 120,
-        slots: { default: 'sourceType' },
       },
       {
         field: 'updateTime',
@@ -86,6 +93,7 @@ function getSearchPayload(): Partial<ConsultationPageParams> {
   const contactName = searchName.value.trim();
   const contactPhone = searchPhone.value.trim();
   const companyName = searchCompany.value.trim();
+  const sourceType = searchSourceType.value;
   const payload: Partial<ConsultationPageParams> = {};
   if (contactName) {
     payload.contactName = contactName;
@@ -95,6 +103,9 @@ function getSearchPayload(): Partial<ConsultationPageParams> {
   }
   if (companyName) {
     payload.companyName = companyName;
+  }
+  if (sourceType) {
+    payload.sourceType = sourceType;
   }
   return payload;
 }
@@ -111,6 +122,7 @@ function handleReset() {
   searchName.value = '';
   searchPhone.value = '';
   searchCompany.value = '';
+  searchSourceType.value = '';
   void reloadGrid();
 }
 
@@ -202,6 +214,19 @@ function clearSearchCompany() {
             </template>
           </VbenInput>
         </div>
+        <!-- 来源类型 -->
+        <div class="flex items-center gap-2">
+          <span class="shrink-0 text-sm text-muted-foreground">
+            {{ $t('operation.consultation.sourceType') }}
+          </span>
+          <Select
+            v-model:value="searchSourceType"
+            class="w-56"
+            :options="sourceTypeOptions"
+            :placeholder="$t('operation.consultation.sourceTypePlaceholder')"
+            @change="handleSearch"
+          />
+        </div>
       </div>
       <div class="ml-auto flex shrink-0 items-center justify-end">
         <Space>
@@ -226,9 +251,6 @@ function clearSearchCompany() {
 
     <!-- 表格 -->
     <Grid>
-      <template #sourceType="{ row }">
-        {{ !!row.sourceType ? row.sourceType : $t('operation.consultation.sourceTypeProject') }}
-      </template>
       <template #createTime="{ row }">
         {{ row.updateTime ? dayjs(row.updateTime).format('YYYY-MM-DD HH:mm:ss') : '-' }}
       </template>

@@ -6,10 +6,13 @@
     "company": "Company",
     "description": "Description",
     "sourceType": "Source Type",
+    "sourceTypeAll": "All",
+    "sourceTypeAI": "AI Business",
     "sourceTypeProject": "Project Opportunity",
     "createTime": "Create Time",
     "namePlaceholder": "Please enter name",
     "phonePlaceholder": "Please enter phone",
-    "companyPlaceholder": "Please enter company"
+    "companyPlaceholder": "Please enter company",
+    "sourceTypePlaceholder": "Please select source type"
   }
 }
