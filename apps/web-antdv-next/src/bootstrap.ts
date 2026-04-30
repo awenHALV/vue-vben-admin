@@ -18,6 +18,7 @@ import { initSetupVbenForm } from './adapter/form';
 import App from './app.vue';
 import { router } from './router';
 import { setupWujieHostBridge } from './wujie-config/hostBridge';
+import { setupGlobalRefreshBridge } from './wujie-config/refresh';
 import setupWujieApp from './wujie-config/setupApp';
 
 async function bootstrap(namespace: string) {
@@ -55,6 +56,7 @@ async function bootstrap(namespace: string) {
 
   // 无界：子应用通过 bus 拉取 token / 明暗 / 内置主题，并在变更时推送
   setupWujieHostBridge();
+  setupGlobalRefreshBridge();
 
   // 安装权限指令
   registerAccessDirective(app);

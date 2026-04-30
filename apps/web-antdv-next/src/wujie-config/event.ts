@@ -128,3 +128,6 @@ export const DISPOSECOMPOMENTS = 'disposeComponents';
 // 监听子应用打开巡检方案弹框
 export const OPEN_INSPECT_SCHEME_DIALOG_SEND = `noticeInspectOpenSend`;
 export const OPEN_INSPECT_SCHEME_DIALOG_RECEIVE = `noticeInspectOpenReceive`;
+
+// 通知子应用刷新页面
+export const HOST_BRIDGE_REFRESH = 'hostBridge:refresh';
