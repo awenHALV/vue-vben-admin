@@ -9,17 +9,21 @@ import website from '#/wujie-config/website';
 const BasicLayout = () => import('#/layouts/basic.vue');
 const AuthPageLayout = () => import('#/layouts/auth.vue');
 
-/** 与 wujie website.projectCodes 一致：这些前缀下的未知路径走 Root+BasicLayout 内 404，而非全屏兜底 */
+/**
+ * 与 wujie `website.projectCodes` 一致：这些前缀下「菜单未注册」的路径（含详情动态段）
+ * 仍走 `micro/index` 容器，由容器内 `buildMicroUrl` 拼子应用 URL，避免基座 404。
+ * 路由在菜单合并后追加到 Root.children 末尾（见 `router/access.ts`）。
+ */
 const microPrefixNotFoundRoutes: RouteRecordRaw[] = website.projectCodes.map(
   (code) => ({
     name: `MicroNotFound_${code}`,
-    path: `${code}/:pathMatch(.*)*`,
-    component: () => import('#/views/_core/fallback/not-found.vue'),
+    path: `/${code}/:pathMatch(.*)*`,
+    component: () => import('#/views/micro/index.vue'),
     meta: {
-      hideInBreadcrumb: true,
+      hideInBreadcrumb: false,
       hideInMenu: true,
-      hideInTab: true,
-      title: '404',
+      microName: code,
+      title: code,
     },
   }),
 );
