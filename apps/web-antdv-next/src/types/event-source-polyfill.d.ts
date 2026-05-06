@@ -1,9 +1,10 @@
 declare module 'event-source-polyfill' {
+  export interface EventSourcePolyfillInit extends EventSourceInit {
+    headers?: Record<string, string>;
+    heartbeatTimeout?: number;
+  }
+
   export class EventSourcePolyfill extends EventSource {
-    constructor(
-      url: string,
-      eventSourceInitDict?: EventSourceInit & { headers?: Record<string, string> },
-    );
+    constructor(url: string, eventSourceInitDict?: EventSourcePolyfillInit);
   }
 }
-

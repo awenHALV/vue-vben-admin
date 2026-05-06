@@ -1,13 +1,15 @@
+import type { TabDefinition } from '@vben/types';
+
 import type {
   HostBridgeLanguageChangePayload,
   HostBridgeState,
   HostBridgeThemeChangePayload,
 } from './event';
 
-import { watch } from 'vue';
+import { nextTick, watch } from 'vue';
 
 import { preferences } from '@vben/preferences';
-import { useAccessStore } from '@vben/stores';
+import { getTabKey, useAccessStore, useTabbarStore } from '@vben/stores';
 
 import WujieVue from 'wujie-vue3';
 
@@ -49,6 +51,44 @@ function getResolvedColorMode(): 'dark' | 'light' {
   return 'light';
 }
 
+/**
+ * 路由 push 完成后，tabbar 对 `route.fullPath` 的 watch 可能尚未把 tab 写入 store。
+ * 通过对 `tabs` 的 watch 在下一帧响应即可，避免 20×16ms 定时轮询带来的卡顿与主线程占用。
+ */
+function waitTabByKey(
+  tabbarStore: ReturnType<typeof useTabbarStore>,
+  key: string,
+  timeoutMs: number,
+): Promise<TabDefinition | undefined> {
+  const existing = tabbarStore.getTabByKey(key);
+  if (existing) {
+    return Promise.resolve(existing);
+  }
+
+  return new Promise((resolve) => {
+    const finish = (tab?: TabDefinition) => {
+      stop();
+      window.clearTimeout(timer);
+      resolve(tab);
+    };
+
+    const stop = watch(
+      () => tabbarStore.tabs,
+      () => {
+        const tab = tabbarStore.getTabByKey(key);
+        if (tab) {
+          finish(tab);
+        }
+      },
+      { deep: true, flush: 'post' },
+    );
+
+    const timer = window.setTimeout(() => {
+      finish(undefined);
+    }, timeoutMs);
+  });
+}
+
 function buildHostState(
   accessStore: ReturnType<typeof useAccessStore>,
 ): HostBridgeState {
@@ -66,6 +106,7 @@ function buildHostState(
  */
 export function setupWujieHostBridge() {
   const accessStore = useAccessStore();
+  const tabbarStore = useTabbarStore();
 
   /** 获取子应用关联的扁平化权限码列表 */
   function getProjectAccessCodes(projectCode: string) {
@@ -120,21 +161,44 @@ export function setupWujieHostBridge() {
   });
 
   // 监听 VPP 子应用菜单请求
-  bus.$on(BUTTON_PERMISSION_LIST('vpp'), (callback) => {
-    if (typeof callback === 'function') {
-      callback(getProjectAccessCodes('vpp'));
-    }
-  });
+  bus.$on(
+    BUTTON_PERMISSION_LIST('vpp'),
+    (callback?: (codes: string[]) => void) => {
+      if (typeof callback === 'function') {
+        callback(getProjectAccessCodes('vpp'));
+      }
+    },
+  );
 
   function emitHostStatePush() {
     bus.$emit(HOST_BRIDGE_HOST_STATE_PUSH, buildHostState(accessStore));
   }
 
-  // 监听子路由跳转
+  // 监听子路由跳转：基座地址栏以本次 push 的 path 为准，须与子应用实际页面一致（含 /detail/:id 等动态段）
   bus.$on(
     JUMPROUTE_EVENT,
-    (payload: { path: string; query?: Record<string, string> }) => {
-      router.push(payload);
+    (payload: { path: string; query?: Record<string, string | undefined> }) => {
+      const title = payload.query?.title;
+      const { title: _ignored, ...query } = payload.query ?? {};
+      router
+        .push({
+          path: payload.path,
+          query,
+        })
+        .then(async () => {
+          if (!title) {
+            return;
+          }
+
+          // 路由已完成，但 tab 可能尚未由 tabbar 的 route.fullPath watch 写入 store。
+          const key = getTabKey(router.currentRoute.value);
+          await nextTick();
+          const tab = await waitTabByKey(tabbarStore, key, 500);
+          if (tab) {
+            await tabbarStore.setTabTitle(tab, title);
+            tabbarStore.setUpdateTime();
+          }
+        });
     },
   );
 

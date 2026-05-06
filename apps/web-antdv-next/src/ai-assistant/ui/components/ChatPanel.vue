@@ -7,7 +7,14 @@ import type {
 
 import type { AssistantMessageMeta } from '#/store/chat';
 
-import { computed, nextTick, ref, watch, watchEffect } from 'vue';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  ref,
+  watch,
+  watchEffect,
+} from 'vue';
 
 import { IconifyIcon } from '@vben/icons';
 
@@ -52,11 +59,6 @@ const displayMessages = computed(
 function chartPartOf(msg: AiChatMessage) {
   if (msg.role !== 'assistant') return null;
   if (msg.kind !== 'rich') return null;
-  console.log(
-    msg.parts.filter(
-      (p): p is AiChatAssistantMessagePartChart => p.type === 'chart',
-    ),
-  );
   return msg.parts.filter(
     (p): p is AiChatAssistantMessagePartChart => p.type === 'chart',
   );
@@ -74,7 +76,11 @@ function markdownOf(msg: AiChatMessage): string {
 
 const autoCollapsedThinking = ref<Record<string, true>>({});
 const feedbackByMessageId = ref<Record<string, 'dislike' | 'like' | null>>({});
+const singleLineWelcomeByMessageId = ref<Record<string, true>>({});
 const streamEndRef = ref<HTMLElement | null>(null);
+const welcomeContentEls = new Map<string, HTMLElement>();
+const welcomeContentIdByEl = new WeakMap<HTMLElement, string>();
+let welcomeResizeObserver: null | ResizeObserver = null;
 
 /** 当前轮助手是否仍在输出（思考 / token / 未 type=done），用于生成过程中保持视口跟到底部 */
 const assistantGenerationInProgress = computed((): boolean => {
@@ -154,6 +160,76 @@ function assistantMeta(messageId: string): AssistantMessageMeta | null {
   return props.assistantMetaById?.[messageId] ?? null;
 }
 
+function isWelcomeMessage(msg: AiChatMessage): boolean {
+  return (
+    msg.role === 'assistant' && msg.kind === 'rich' && msg.isWelcome === true
+  );
+}
+
+function isSingleLineWelcome(messageId: string): boolean {
+  return singleLineWelcomeByMessageId.value[messageId] === true;
+}
+
+function setWelcomeSingleLine(messageId: string, isSingleLine: boolean) {
+  const current = singleLineWelcomeByMessageId.value[messageId] === true;
+  if (current === isSingleLine) return;
+
+  const next = { ...singleLineWelcomeByMessageId.value };
+  if (isSingleLine) {
+    next[messageId] = true;
+  } else {
+    delete next[messageId];
+  }
+  singleLineWelcomeByMessageId.value = next;
+}
+
+function updateWelcomeSingleLine(messageId: string, el: HTMLElement) {
+  const measureEl =
+    el.firstElementChild instanceof HTMLElement ? el.firstElementChild : el;
+  const style = window.getComputedStyle(measureEl);
+  const lineHeight = Number.parseFloat(style.lineHeight);
+  if (!Number.isFinite(lineHeight) || lineHeight <= 0) return;
+  setWelcomeSingleLine(messageId, measureEl.scrollHeight <= lineHeight * 1.5);
+}
+
+function ensureWelcomeResizeObserver() {
+  if (welcomeResizeObserver) return welcomeResizeObserver;
+  welcomeResizeObserver = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      const el = entry.target as HTMLElement;
+      const messageId = welcomeContentIdByEl.get(el);
+      if (messageId) updateWelcomeSingleLine(messageId, el);
+    }
+  });
+  return welcomeResizeObserver;
+}
+
+function setWelcomeContentRef(msg: AiChatMessage, el: Element | null) {
+  if (!isWelcomeMessage(msg)) return;
+
+  const previousEl = welcomeContentEls.get(msg.id);
+  if (previousEl) {
+    welcomeResizeObserver?.unobserve(previousEl);
+    welcomeContentEls.delete(msg.id);
+  }
+
+  if (!(el instanceof HTMLElement)) {
+    setWelcomeSingleLine(msg.id, false);
+    return;
+  }
+
+  welcomeContentEls.set(msg.id, el);
+  welcomeContentIdByEl.set(el, msg.id);
+  ensureWelcomeResizeObserver().observe(el);
+  void nextTick().then(() => updateWelcomeSingleLine(msg.id, el));
+}
+
+onBeforeUnmount(() => {
+  welcomeResizeObserver?.disconnect();
+  welcomeResizeObserver = null;
+  welcomeContentEls.clear();
+});
+
 /** 本会话内点击优先；否则用 store restore / submitFeedback 写入的 feedbackStatus */
 function feedbackModelFor(messageId: string): 'dislike' | 'like' | null {
   const local = feedbackByMessageId.value[messageId];
@@ -189,167 +265,179 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
       <!-- 助手：文本/复合消息（每条均带头像） -->
       <div
         v-else-if="msg.kind === 'text' || msg.kind === 'rich'"
-        class="flex gap-3"
+        class="group flex flex-col gap-2"
       >
-        <Avatar />
         <div
-          class="group flex flex-col gap-2"
-          :class="[
-            props.variant === 'fullscreen' ? 'w-full' : 'w-full max-w-[324px]',
-          ]"
+          class="flex gap-3"
+          :class="isSingleLineWelcome(msg.id) ? 'items-center' : 'items-start'"
         >
-          <!-- 深度思考（时间轴） -->
-          <div v-if="assistantMeta(msg.id)" class="flex flex-col gap-2">
-            <div
-              class="flex-start flex cursor-pointer items-center gap-1"
-              @click="emit('toggleThinking', msg.id)"
-            >
-              <div
-                :class="
-                  props.variant === 'fullscreen'
-                    ? 'text-xs text-muted-foreground'
-                    : 'text-xs text-[rgba(0,0,0,0.45)] dark:text-muted-foreground'
-                "
-              >
-                {{ thinkingTitle(assistantMeta(msg.id)!) }}
-              </div>
-              <button
-                class="text-muted-foreground hover:text-foreground"
-                type="button"
-              >
-                <IconifyIcon
-                  :icon="
-                    assistantMeta(msg.id)!.thinking.collapsed
-                      ? 'lucide:chevron-right'
-                      : 'lucide:chevron-down'
-                  "
-                  class="size-4"
-                />
-              </button>
-            </div>
-
-            <div
-              v-if="!assistantMeta(msg.id)!.thinking.collapsed"
-              class="flex flex-col gap-2"
-            >
-              <div
-                v-for="(step, idx) in assistantMeta(msg.id)!.thinking.steps"
-                :key="`${msg.id}-${step.step}-${idx}`"
-                class="flex gap-3"
-              >
-                <div class="flex w-4 flex-col items-center">
-                  <div
-                    :class="
-                      assistantMeta(msg.id)!.thinkingFinished
-                        ? 'flex-center size-4 rounded-full bg-muted text-[10px] text-muted-foreground'
-                        : 'size-2 rounded-full bg-muted-foreground/60'
-                    "
-                  >
-                    <span v-if="assistantMeta(msg.id)!.thinkingFinished">
-                      ✓
-                    </span>
-                  </div>
-                  <div
-                    v-if="
-                      idx !== assistantMeta(msg.id)!.thinking.steps.length - 1
-                    "
-                    class="mt-1 w-px flex-1 bg-muted-foreground/30"
-                  ></div>
-                </div>
-
-                <div class="flex flex-1 flex-col gap-1">
-                  <div
-                    class="text-xs text-[rgba(0,0,0,0.45)] dark:text-muted-foreground"
-                  >
-                    {{ step.step }}
-                  </div>
-                  <div
-                    class="text-xs text-[rgba(0,0,0,0.45)] dark:text-muted-foreground"
-                    v-html="renderMarkdown(step.content)"
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 思考完成到输出结果之间的过渡动画 -->
+          <Avatar :class="isSingleLineWelcome(msg.id) ? 'mt-0!' : undefined" />
           <div
-            v-if="
-              assistantMeta(msg.id)?.thinkingFinished &&
-              assistantMeta(msg.id)?.thinking.status !== 'error' &&
-              markdownOf(msg).trim().length === 0
-            "
-            class="flex items-center"
+            class="group flex flex-col gap-2"
+            :class="[
+              props.variant === 'fullscreen'
+                ? 'w-full'
+                : 'w-full max-w-[324px]',
+            ]"
           >
-            <span class="chat-panel-generating-text text-sm font-medium">
-              正在生成回答...
-            </span>
-          </div>
-
-          <!-- 图表片段（若存在，优先展示） -->
-          <div v-if="chartPartOf(msg)?.length" class="w-full">
-            <div
-              v-if="props.variant === 'fullscreen'"
-              class="w-full rounded-lg border bg-card p-3"
-            >
-              <div class="flex flex-col gap-3">
-                <ChartMessage
-                  v-for="(chart, idx) in chartPartOf(msg)!"
-                  :key="`${msg.id}-${idx}`"
-                  :chart-config="chart.chartConfig"
-                  :chart-data="chart.chartData"
-                />
-              </div>
-            </div>
-            <div v-else class="group flex w-full flex-col gap-2">
+            <!-- 深度思考（时间轴） -->
+            <div v-if="assistantMeta(msg.id)" class="flex flex-col gap-2">
               <div
-                v-for="(chart, idx) in chartPartOf(msg)!"
-                :key="`${msg.id}-${idx}`"
-                class="flex cursor-pointer items-center gap-3 rounded-lg border border-[#F0F0F0] bg-white px-3 py-2 transition-colors hover:bg-[rgba(0,0,0,0.02)] dark:border-border dark:bg-card dark:hover:bg-accent"
-                role="button"
-                tabindex="0"
-                @click="emit('openDetail', msg.id)"
-                @keydown.enter.prevent="emit('openDetail', msg.id)"
+                class="flex-start flex cursor-pointer items-center gap-1"
+                @click="emit('toggleThinking', msg.id)"
               >
                 <div
-                  class="flex-center size-10 shrink-0 rounded-md bg-[rgba(0,0,0,0.04)] text-[rgba(0,0,0,0.65)] dark:bg-muted dark:text-muted-foreground"
+                  :class="
+                    props.variant === 'fullscreen'
+                      ? 'text-xs text-muted-foreground'
+                      : 'text-xs text-[rgba(0,0,0,0.45)] dark:text-muted-foreground'
+                  "
                 >
-                  <IconifyIcon class="size-5" icon="lucide:bar-chart-3" />
+                  {{ thinkingTitle(assistantMeta(msg.id)!) }}
                 </div>
-                <div class="min-w-0 flex-1">
-                  <div
-                    class="truncate text-sm font-medium text-[rgba(0,0,0,0.88)] dark:text-foreground"
-                  >
-                    {{ chart.chartConfig.title ?? '图表' }}
+                <button
+                  class="text-muted-foreground hover:text-foreground"
+                  type="button"
+                >
+                  <IconifyIcon
+                    :icon="
+                      assistantMeta(msg.id)!.thinking.collapsed
+                        ? 'lucide:chevron-right'
+                        : 'lucide:chevron-down'
+                    "
+                    class="size-4"
+                  />
+                </button>
+              </div>
+
+              <div
+                v-if="!assistantMeta(msg.id)!.thinking.collapsed"
+                class="flex flex-col gap-2"
+              >
+                <div
+                  v-for="(step, idx) in assistantMeta(msg.id)!.thinking.steps"
+                  :key="`${msg.id}-${step.step}-${idx}`"
+                  class="flex gap-3"
+                >
+                  <div class="flex w-4 flex-col items-center">
+                    <div
+                      :class="
+                        assistantMeta(msg.id)!.thinkingFinished
+                          ? 'flex-center size-4 rounded-full bg-muted text-[10px] text-muted-foreground'
+                          : 'size-2 rounded-full bg-muted-foreground/60'
+                      "
+                    >
+                      <span v-if="assistantMeta(msg.id)!.thinkingFinished">
+                        ✓
+                      </span>
+                    </div>
+                    <div
+                      v-if="
+                        idx !== assistantMeta(msg.id)!.thinking.steps.length - 1
+                      "
+                      class="mt-1 w-px flex-1 bg-muted-foreground/30"
+                    ></div>
                   </div>
-                  <div
-                    class="mt-0.5 text-xs text-[rgba(0,0,0,0.45)] dark:text-muted-foreground"
-                  >
-                    点击查看详细数据分析
+
+                  <div class="flex flex-1 flex-col gap-1">
+                    <div
+                      class="text-xs text-[rgba(0,0,0,0.45)] dark:text-muted-foreground"
+                    >
+                      {{ step.step }}
+                    </div>
+                    <div
+                      class="text-xs text-[rgba(0,0,0,0.45)] dark:text-muted-foreground"
+                      v-html="renderMarkdown(step.content)"
+                    ></div>
                   </div>
                 </div>
               </div>
             </div>
+
+            <!-- 思考完成到输出结果之间的过渡动画 -->
+            <div
+              v-if="
+                assistantMeta(msg.id)?.thinkingFinished &&
+                assistantMeta(msg.id)?.thinking.status !== 'error' &&
+                markdownOf(msg).trim().length === 0
+              "
+              class="flex items-center"
+            >
+              <span class="chat-panel-generating-text text-sm font-medium">
+                正在生成回答...
+              </span>
+            </div>
+
+            <!-- 图表片段（若存在，优先展示） -->
+            <div v-if="chartPartOf(msg)?.length" class="w-full">
+              <div
+                v-if="props.variant === 'fullscreen'"
+                class="w-full rounded-lg border bg-card p-3"
+              >
+                <div class="flex flex-col gap-3">
+                  <ChartMessage
+                    v-for="(chart, idx) in chartPartOf(msg)!"
+                    :key="`${msg.id}-${idx}`"
+                    :chart-config="chart.chartConfig"
+                    :chart-data="chart.chartData"
+                  />
+                </div>
+              </div>
+              <div v-else class="group flex w-full flex-col gap-2">
+                <div
+                  v-for="(chart, idx) in chartPartOf(msg)!"
+                  :key="`${msg.id}-${idx}`"
+                  class="flex cursor-pointer items-center gap-3 rounded-lg border border-[#F0F0F0] bg-white px-3 py-2 transition-colors hover:bg-[rgba(0,0,0,0.02)] dark:border-border dark:bg-card dark:hover:bg-accent"
+                  role="button"
+                  tabindex="0"
+                  @click="emit('openDetail', msg.id)"
+                  @keydown.enter.prevent="emit('openDetail', msg.id)"
+                >
+                  <div
+                    class="flex-center size-10 shrink-0 rounded-md bg-[rgba(0,0,0,0.04)] text-[rgba(0,0,0,0.65)] dark:bg-muted dark:text-muted-foreground"
+                  >
+                    <IconifyIcon class="size-5" icon="lucide:bar-chart-3" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div
+                      class="truncate text-sm font-medium text-[rgba(0,0,0,0.88)] dark:text-foreground"
+                    >
+                      {{ chart.chartConfig.title ?? '图表' }}
+                    </div>
+                    <div
+                      class="mt-0.5 text-xs text-[rgba(0,0,0,0.45)] dark:text-muted-foreground"
+                    >
+                      点击查看详细数据分析
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 结果（token 拼接 / markdown 文本） -->
+            <div
+              v-if="markdownOf(msg).trim().length > 0"
+              :ref="(el) => setWelcomeContentRef(msg, el)"
+              class="markdown-body"
+              :class="[
+                props.variant === 'fullscreen'
+                  ? 'text-sm/6 text-foreground'
+                  : 'text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-foreground',
+                isSingleLineWelcome(msg.id)
+                  ? 'chat-panel-welcome-message-single-line'
+                  : '',
+              ]"
+              v-html="renderMarkdown(markdownOf(msg))"
+            ></div>
           </div>
-
-          <!-- 结果（token 拼接 / markdown 文本） -->
-          <div
-            v-if="markdownOf(msg).trim().length > 0"
-            class="markdown-body"
-            :class="
-              props.variant === 'fullscreen'
-                ? 'text-sm/6 text-foreground'
-                : 'text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-foreground'
-            "
-            v-html="renderMarkdown(markdownOf(msg))"
-          ></div>
-
-          <ChatMessageFeedbackBar
-            v-if="canShowFeedbackBar(msg.id)"
-            :model-value="feedbackModelFor(msg.id)"
-            @feedback="(type) => handleFeedback(msg.id, type)"
-          />
         </div>
+
+        <ChatMessageFeedbackBar
+          v-if="canShowFeedbackBar(msg.id)"
+          class="ml-11"
+          :model-value="feedbackModelFor(msg.id)"
+          @feedback="(type) => handleFeedback(msg.id, type)"
+        />
       </div>
 
       <!-- 助手：卡片（每条均带头像） -->
@@ -451,6 +539,10 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
     rgb(163 163 163 / 0.4) 64%,
     rgb(163 163 163 / 0.4) 100%
   );
+}
+
+.chat-panel-welcome-message-single-line :deep(p) {
+  margin: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

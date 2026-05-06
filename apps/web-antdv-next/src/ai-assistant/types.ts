@@ -56,6 +56,7 @@ export type AiChatAssistantMessagePart =
 
 export type AiChatAssistantRichMessage = {
   id: string;
+  isWelcome?: boolean;
   kind: 'rich';
   parts: AiChatAssistantMessagePart[];
   role: 'assistant';

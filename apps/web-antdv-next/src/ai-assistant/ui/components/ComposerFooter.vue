@@ -22,7 +22,7 @@ const props = withDefaults(
     disabled: false,
     pending: false,
     modelValue: '',
-    placeholder: '请输入指令或咨询能源问题…',
+    placeholder: '有什么可以帮助您的',
     showDisclaimer: true,
   },
 );
