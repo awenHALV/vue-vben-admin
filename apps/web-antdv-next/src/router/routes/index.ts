@@ -29,6 +29,9 @@ const routes: RouteRecordRaw[] = [
   fallbackNotFoundRoute,
 ];
 
+/** 基本路由列表，这些路由不需要进入权限拦截 */
+const coreRouteNames = traverseTreeValues(coreRoutes, (route) => route.name);
+
 // 🌟 核心逻辑：递归遍历所有路由，强制注入 keepAlive: true
 function forceEnableKeepAlive(routeList: RouteRecordRaw[]) {
   routeList.forEach((route) => {
@@ -44,7 +47,7 @@ function forceEnableKeepAlive(routeList: RouteRecordRaw[]) {
     // 确保 meta 对象存在，并强制设置 keepAlive 属性
     route.meta = {
       ...route.meta,
-      keepAlive: true,
+      // keepAlive: true,
     };
 
     // 如果存在子路由，继续向下层递归查找并设置
@@ -57,10 +60,7 @@ function forceEnableKeepAlive(routeList: RouteRecordRaw[]) {
 /** 有权限校验的路由列表，包含动态路由和静态路由 */
 const accessRoutes = [...dynamicRoutes, ...staticRoutes];
 
-forceEnableKeepAlive(routes);
-forceEnableKeepAlive(accessRoutes);
-
-/** 基本路由列表，这些路由不需要进入权限拦截 */
-const coreRouteNames = traverseTreeValues(coreRoutes, (route) => route.name);
+// forceEnableKeepAlive(routes);
+// forceEnableKeepAlive(accessRoutes);
 
 export { accessRoutes, coreRouteNames, routes };

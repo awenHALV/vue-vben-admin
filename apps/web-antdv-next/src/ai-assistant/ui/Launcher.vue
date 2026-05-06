@@ -21,6 +21,7 @@ const { modal } = App.useApp();
 const chatStore = useAiAssistantChatStore();
 const {
   activeConversationId,
+  activeConversationFromHistory,
   assistantMetaById,
   chatMessages,
   historyItems,
@@ -129,6 +130,7 @@ async function handleDeleteConversation(id: string) {
     :title="title"
     :panel-mode="panelMode"
     :active-conversation-id="activeConversationId"
+    :active-conversation-from-history="activeConversationFromHistory"
     :assistant-meta-by-id="assistantMetaById"
     :history-items="historyItems"
     :history-loading="historySessionsLoading"
@@ -152,6 +154,7 @@ async function handleDeleteConversation(id: string) {
     :title="title"
     :panel-mode="panelMode"
     :active-conversation-id="activeConversationId"
+    :active-conversation-from-history="activeConversationFromHistory"
     :assistant-meta-by-id="assistantMetaById"
     :history-items="historyItems"
     :history-loading="historySessionsLoading"

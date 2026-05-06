@@ -21,6 +21,7 @@ defineOptions({
 });
 
 const props = defineProps<{
+  activeConversationFromHistory?: boolean;
   activeConversationId: null | string;
   assistantMetaById?: Record<string, AssistantMessageMeta>;
   historyItems: AiAssistantHistoryItem[];
@@ -51,6 +52,10 @@ const chartDetailOpen = ref(false);
 const chartDetailMessageId = ref<null | string>(null);
 /** 图表详情全屏：与 Fullscreen 视图相同的 inset-6 视口区域 */
 const chartDetailFullscreen = ref(false);
+const isViewingHistoryConversation = computed(
+  () =>
+    props.panelMode === 'chat' && Boolean(props.activeConversationFromHistory),
+);
 
 const detailCharts = computed(() => {
   const id = chartDetailMessageId.value;
@@ -145,7 +150,22 @@ function toggleChartDetailFullscreen() {
       <div
         class="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4"
       >
-        <div class="truncate text-base font-semibold text-foreground">
+        <button
+          v-if="isViewingHistoryConversation"
+          class="flex min-w-0 items-center gap-1 rounded-md p-0 text-base font-semibold text-foreground hover:text-foreground/80"
+          type="button"
+          aria-label="返回历史记录列表"
+          @click="
+            () => {
+              closeChartDetail();
+              emit('openHistory');
+            }
+          "
+        >
+          <IconifyIcon class="size-5 shrink-0" icon="lucide:chevron-left" />
+          <span class="truncate">历史对话</span>
+        </button>
+        <div v-else class="truncate text-base font-semibold text-foreground">
           {{ props.title }}
         </div>
 
@@ -184,8 +204,8 @@ function toggleChartDetailFullscreen() {
           @select-conversation="emit('selectConversation', $event)"
         />
 
-        <Spin v-else :spinning="Boolean(props.restoring)"
-class="block w-full">
+        <!-- eslint-disable-next-line vue/max-attributes-per-line -->
+        <Spin v-else :spinning="Boolean(props.restoring)" class="block w-full">
           <div
             v-if="props.restoring"
             aria-hidden="true"
