@@ -96,8 +96,19 @@ export const LOGOUT_EVENT = 'logoutEvent';
 export const NOTICECHILDAPPTOKEN_EVENT = 'noticeChildAppTokenEvent';
 // 监听子应用token更新-》同步到基座
 // export const NOTICEBASEAPPTOKEN_EVENT = 'noticeBaseAppTokenEvent';
-// 监听来自子应用的路由跳转
+/**
+ * 子应用通知基座执行 `router.push` 的事件名。
+ * 载荷见 {@link HostBridgeJumpRoutePayload}：`path` 须为基座完整路径（含 projectCode 首段），
+ * 例如 `/vpp/customer-management/customer/detail/12345`，否则无法命中通配容器、也不会新开 Tab。
+ */
 export const JUMPROUTE_EVENT = 'jumpRouteEvent';
+
+/** 子应用 → 基座：请求基座导航（新开 Tab 由基座 tabbar 处理） */
+export interface HostBridgeJumpRoutePayload {
+  path: string;
+  /** 可选查询参数；`title` 会被基座用于更新当前 Tab 标题（见 hostBridge） */
+  query?: Record<string, string | undefined>;
+}
 
 // export const LOGOUT_CHILD_EVENT = 'logoutChildEvent';
 // 通知子应用路由跳转

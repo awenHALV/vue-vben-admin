@@ -13,6 +13,11 @@ import { useAccessStore, useTabbarStore } from '@vben/stores';
 
 import WujieVue from 'wujie-vue3';
 
+import {
+  buildMicroUrl,
+  getMicroProjectCodeFromRoutePath,
+} from '#/wujie-config/micro-route';
+
 defineOptions({ name: 'WujieWrapper' });
 
 const { destroyApp } = WujieVue;
@@ -28,9 +33,37 @@ const tabbarStore = useTabbarStore();
 // ==========================================
 const myPath = route.fullPath;
 const baseName = (route.meta.microName as string) || 'default-app';
-const myUniqueName = `${baseName}-${myPath}`;
+// 用于无界实例隔离：将 fullPath 纳入唯一标识，避免 alive=true 时复用旧实例/旧 url
+const myUniqueName = computed(() => `${baseName}-${route.fullPath}`);
 
-const microUrl = route.meta.microUrl as string | undefined;
+const microUrl = computed(() => {
+  /**
+   * 菜单路由由后端下发时，会在 `meta.microUrl` 写入完整子应用 URL（域名 + 子路径）。
+   * 但「详情页 / 动态路由」往往不在菜单内，主应用只会命中 `/vpp/:pathMatch(.*)*` 这类通配容器路由，
+   * 此时没有 `meta.microUrl`，需要根据当前地址栏的 `route.fullPath` 动态推导。
+   */
+  const url = route.meta.microUrl as string | undefined;
+  if (url) {
+    return url;
+  }
+
+  /**
+   * 优先使用通配容器路由写入的 `meta.microName`（projectCode，如 vpp/zz/store）。
+   * 若缺失，再从当前路径首段推断 projectCode，保证深链/刷新也能正确落到子应用。
+   */
+  const microName = (route.meta.microName as string | undefined) ?? '';
+  const projectCode =
+    microName || getMicroProjectCodeFromRoutePath(route.fullPath) || '';
+  if (!projectCode) {
+    return undefined;
+  }
+  /**
+   * 按「基座路径 → 子应用 URL」规则拼接：
+   * - hostRoutePath: /vpp/customer/detail/123
+   * - microUrl:      {VITE_APP_VPP}/customer/detail/123
+   */
+  return buildMicroUrl(projectCode, route.fullPath);
+});
 const microProps = computed(() => ({ token: accessStore.accessToken ?? '' }));
 
 // ==========================================
@@ -45,17 +78,17 @@ const safeMount = () => {
 };
 
 onMounted(() => {
-  console.log(`🟢 [挂载沙箱] ${myUniqueName}`);
+  console.log(`🟢 [挂载沙箱] ${myUniqueName.value}`);
   safeMount();
 });
 
 onActivated(() => {
-  console.log(`🌞 [唤醒沙箱] ${myUniqueName}`);
+  console.log(`🌞 [唤醒沙箱] ${myUniqueName.value}`);
   safeMount();
 });
 
 onDeactivated(() => {
-  console.log(`🌙 [沙箱休眠] ${myUniqueName}`);
+  console.log(`🌙 [沙箱休眠] ${myUniqueName.value}`);
   // 视图切换时主动卸载 DOM，规避 Vue 路由切换动画可能导致的白屏或渲染残留
   renderWujie.value = false;
 });
@@ -73,15 +106,13 @@ onBeforeUnmount(() => {
       (tab: any) => tab.fullPath === myPath || tab.path === myPath,
     );
 
-    if (stillExists) {
-      // 若仍在页签列表中，说明仅是 Vue 路由正常切换导致的组件卸载
-      // 保留无界实例，等待下次 keep-alive 唤醒
-      console.log(`�️ [保护沙箱] 壳子被卸载，但页签仍在: ${myUniqueName}`);
-    } else {
+    if (!stillExists) {
       // 若不在页签列表中，说明用户主动关闭了该标签页 (Tag)
       // 此时执行彻底销毁，清空无界缓存，释放内存
-      console.log(`� [彻底销毁] 页签已关闭，清空无界内存: ${myUniqueName}`);
-      destroyApp(myUniqueName);
+      console.log(
+        `� [彻底销毁] 页签已关闭，清空无界内存: ${myUniqueName.value}`,
+      );
+      destroyApp(myUniqueName.value);
     }
   }, 150);
 });
