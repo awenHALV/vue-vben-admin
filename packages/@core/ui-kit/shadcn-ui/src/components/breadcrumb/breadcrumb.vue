@@ -62,7 +62,7 @@ function handleClick(path?: string) {
               </DropdownMenu>
             </div>
             <BreadcrumbLink
-              v-else-if="index !== breadcrumbs.length - 1"
+              v-else-if="index !== breadcrumbs.length - 1 && item.path"
               href="javascript:void 0"
               @click.stop="handleClick(item.path)"
             >

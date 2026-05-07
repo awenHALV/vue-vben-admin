@@ -3,6 +3,10 @@ import type { AssistantMessageMeta } from '@/store/chat';
 
 import type { AiAssistantHistoryItem, AiChatMessage } from '../types';
 
+import { computed } from 'vue';
+
+import { IconifyIcon } from '@vben/icons';
+
 import { Button, Spin } from 'antdv-next';
 
 import { AI_ASSISTANT_ICON_URL } from '../ai-assets';
@@ -18,6 +22,7 @@ defineOptions({
 });
 
 const props = defineProps<{
+  activeConversationFromHistory?: boolean;
   activeConversationId: null | string;
   assistantMetaById?: Record<string, AssistantMessageMeta>;
   historyItems: AiAssistantHistoryItem[];
@@ -42,6 +47,11 @@ const emit = defineEmits<{
   toggleThinking: [messageId: string];
   toggleView: [];
 }>();
+
+const isViewingHistoryConversation = computed(
+  () =>
+    props.panelMode === 'chat' && Boolean(props.activeConversationFromHistory),
+);
 </script>
 
 <template>
@@ -92,7 +102,17 @@ const emit = defineEmits<{
       <div
         class="flex h-12 items-center justify-between border-b border-border px-4"
       >
-        <div class="truncate text-sm font-medium text-foreground">
+        <button
+          v-if="isViewingHistoryConversation"
+          class="flex min-w-0 items-center gap-1 rounded-md p-0 text-sm font-medium text-foreground hover:text-foreground/80"
+          type="button"
+          aria-label="返回历史记录列表"
+          @click="emit('openHistory')"
+        >
+          <IconifyIcon class="size-4 shrink-0" icon="lucide:chevron-left" />
+          <span class="truncate">历史对话</span>
+        </button>
+        <div v-else class="truncate text-sm font-medium text-foreground">
           {{ props.title }}
         </div>
 
@@ -116,6 +136,7 @@ const emit = defineEmits<{
           @select-conversation="emit('selectConversation', $event)"
         />
 
+        <!-- eslint-disable-next-line vue/max-attributes-per-line -->
         <Spin v-else :spinning="Boolean(props.restoring)" class="block w-full">
           <div
             v-if="props.restoring"

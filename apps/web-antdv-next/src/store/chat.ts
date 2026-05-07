@@ -347,6 +347,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
 
   // Chat state
   const activeConversationId = ref<null | string>(null);
+  const activeConversationFromHistory = ref(false);
   const historyItems = ref<AiAssistantHistoryItem[]>([]);
   const historySessionsLoading = ref(false);
   const chatMessages = ref<AiChatMessage[]>([]);
@@ -362,7 +363,9 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
   const currentEventSource = ref<EventSource | null>(null);
 
   const title = computed(() =>
-    panelMode.value === 'history' ? '历史对话' : '小曦助手',
+    panelMode.value === 'history' || activeConversationFromHistory.value
+      ? '历史对话'
+      : '小曦助手',
   );
 
   const accessStore = useAccessStore();
@@ -388,6 +391,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     chatMessages.value = [
       {
         id: newMessageId(),
+        isWelcome: true,
         kind: 'rich',
         role: 'assistant',
         parts: [{ type: 'markdown', content: WELCOME_TEXT }],
@@ -642,6 +646,8 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
       headers: {
         'DeFrame-Auth': `Bearer ${accessStore.accessToken}`,
       },
+      // 默认大概是 45 秒，这里改成 2 分钟
+      heartbeatTimeout: 2 * 60 * 1000,
     });
     currentEventSource.value = es;
 
@@ -829,6 +835,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
 
   function newChat() {
     activeConversationId.value = null;
+    activeConversationFromHistory.value = false;
     chatMessages.value = [];
     panelMode.value = 'chat';
     closeSse();
@@ -845,12 +852,13 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
   }
 
   function goChat() {
-    panelMode.value = 'chat';
+    newChat();
   }
 
   async function selectConversation(id: string) {
     closeSse();
     activeConversationId.value = id;
+    activeConversationFromHistory.value = true;
     panelMode.value = 'chat';
     restoreLoading.value = true;
     assistantMetaById.value = {};
@@ -954,7 +962,10 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
 
   function deleteConversationLocalOnly(id: string) {
     historyItems.value = historyItems.value.filter((i) => i.id !== id);
-    if (activeConversationId.value === id) activeConversationId.value = null;
+    if (activeConversationId.value === id) {
+      activeConversationId.value = null;
+      activeConversationFromHistory.value = false;
+    }
   }
 
   async function deleteConversation(id: string) {
@@ -1029,6 +1040,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     panelMode,
     title,
     activeConversationId,
+    activeConversationFromHistory,
     historyItems,
     historySessionsLoading,
     chatMessages,
