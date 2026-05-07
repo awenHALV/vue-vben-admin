@@ -239,6 +239,7 @@ function handleTenantCancel() {
       v-model:login-type="loginType"
       :form-schema="formSchema"
       :loading="authStore.loginLoading"
+      :show-register="true"
       @submit="handleSubmit"
     />
 

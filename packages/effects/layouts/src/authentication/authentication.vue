@@ -64,7 +64,7 @@ const logoSrc = computed(() => {
     <!-- 左侧认证面板 -->
     <AuthenticationFormView
       v-if="authPanelLeft"
-      class="min-h-full w-2/5 flex-1"
+      class="min-h-full w-[480px]"
       data-side="left"
     >
       <template v-if="copyright" #copyright>
@@ -131,7 +131,7 @@ const logoSrc = computed(() => {
     <!-- 右侧认证面板 -->
     <AuthenticationFormView
       v-if="authPanelRight"
-      class="min-h-full w-2/5 flex-1"
+      class="min-h-full w-[640px]"
       data-side="right"
     >
       <template v-if="copyright" #copyright>

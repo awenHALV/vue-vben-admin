@@ -1,12 +1,9 @@
 <template>
-  <div class="mb-7 text-center sm:mx-auto sm:w-full sm:max-w-md">
-    <h2
-      class="mb-3 text-2xl/8 font-bold tracking-tight text-foreground lg:text-4xl"
-    >
+  <div class="mb-6">
+    <h2 class="text-3xl font-semibold tracking-tight text-foreground">
       <slot></slot>
     </h2>
-
-    <p class="lg:text-md text-base/6 text-muted-foreground">
+    <p class="mt-2 text-sm text-muted-foreground">
       <slot name="desc"></slot>
     </p>
   </div>

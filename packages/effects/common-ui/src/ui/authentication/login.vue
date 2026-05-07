@@ -106,28 +106,26 @@ defineExpose({
 </script>
 
 <template>
-  <div @keydown.enter.prevent="handleSubmit">
+  <div class="w-full" @keydown.enter.prevent="handleSubmit">
     <slot name="title">
       <Title>
         <slot name="title">
-          {{ title || `${$t('authentication.welcomeBack')} 👋🏻` }}
+          {{ title || $t('authentication.welcomeBack') }}
         </slot>
         <template #desc>
-          <span class="text-muted-foreground">
-            <slot name="subTitle">
-              {{ subTitle || $t('authentication.loginSubtitle') }}
-            </slot>
-          </span>
+          <slot name="subTitle">
+            {{ subTitle || $t('authentication.loginSubtitle') }}
+          </slot>
         </template>
       </Title>
     </slot>
 
-    <div class="mb-4 flex flex-row justify-center gap-10">
+    <div class="mb-6 flex gap-2 rounded-lg bg-muted/50 p-1">
       <div
-        class="cursor-pointer pb-2 text-sm font-medium transition-all"
+        class="flex-1 cursor-pointer rounded-md px-4 py-2 text-center text-sm font-medium transition-all"
         :class="
           loginType === 'account'
-            ? 'border-b-2 border-primary text-primary'
+            ? 'bg-background text-foreground shadow-sm'
             : 'text-muted-foreground hover:text-foreground'
         "
         @click="handleTabChange('account')"
@@ -136,10 +134,10 @@ defineExpose({
       </div>
       <div
         v-if="showCodeLogin"
-        class="cursor-pointer pb-2 text-sm font-medium transition-all"
+        class="flex-1 cursor-pointer rounded-md px-4 py-2 text-center text-sm font-medium transition-all"
         :class="
           loginType === 'mobile'
-            ? 'border-b-2 border-primary text-primary'
+            ? 'bg-background text-foreground shadow-sm'
             : 'text-muted-foreground hover:text-foreground'
         "
         @click="handleTabChange('mobile')"
@@ -148,11 +146,11 @@ defineExpose({
       </div>
     </div>
 
-    <Form :key="loginType" />
+    <Form :key="loginType" class="mb-4" />
 
     <div
       v-if="showRememberMe || showForgetPassword"
-      class="mb-6 flex justify-between"
+      class="mb-4 flex justify-between"
     >
       <div class="flex-center">
         <VbenCheckbox
@@ -172,6 +170,7 @@ defineExpose({
         {{ $t('authentication.forgetPassword') }}
       </span>
     </div>
+
     <VbenButton
       :class="{
         'cursor-pointer': !loading,
@@ -179,7 +178,7 @@ defineExpose({
       }"
       :loading="loading"
       aria-label="login"
-      class="w-full"
+      class="h-10 w-full"
       @click="handleSubmit"
     >
       {{ submitButtonText || $t('common.login') }}
@@ -190,16 +189,16 @@ defineExpose({
       <ThirdPartyLogin v-if="showThirdPartyLogin" />
     </slot> -->
 
-    <!-- <slot name="to-register">
-      <div v-if="showRegister" class="mt-3 text-center text-sm">
-        {{ $t('authentication.accountTip') }}
+    <slot name="to-register">
+      <div v-if="showRegister" class="mt-6 flex items-center justify-center gap-1 text-sm">
+        <span class="text-muted-foreground">{{ $t('authentication.accountTip') }}</span>
         <span
-          class="vben-link text-sm font-normal"
+          class="vben-link font-medium"
           @click="handleGo(registerPath)"
         >
           {{ $t('authentication.createAccount') }}
         </span>
       </div>
-    </slot> -->
+    </slot>
   </div>
 </template>

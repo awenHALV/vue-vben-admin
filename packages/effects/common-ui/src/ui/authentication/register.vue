@@ -85,10 +85,10 @@ defineExpose({
 </script>
 
 <template>
-  <div>
+  <div class="w-full">
     <Title>
       <slot name="title">
-        {{ title || $t('authentication.createAnAccount') }} 🚀
+        {{ title || $t('authentication.createAnAccount') }}
       </slot>
       <template #desc>
         <slot name="subTitle">
@@ -96,7 +96,8 @@ defineExpose({
         </slot>
       </template>
     </Title>
-    <Form />
+
+    <Form class="mb-4" />
 
     <VbenButton
       :class="{
@@ -104,16 +105,17 @@ defineExpose({
       }"
       :loading="loading"
       aria-label="register"
-      class="mt-2 w-full"
+      class="h-10 w-full"
       @click="handleSubmit"
     >
       <slot name="submitButtonText">
         {{ submitButtonText || $t('authentication.signUp') }}
       </slot>
     </VbenButton>
-    <div class="mt-4 text-center text-sm">
-      {{ $t('authentication.alreadyHaveAccount') }}
-      <span class="vben-link text-sm font-normal" @click="goToLogin()">
+
+    <div class="mt-6 flex items-center justify-center gap-1 text-sm">
+      <span class="text-muted-foreground">{{ $t('authentication.alreadyHaveAccount') }}</span>
+      <span class="vben-link font-medium" @click="goToLogin()">
         {{ $t('authentication.goToLogin') }}
       </span>
     </div>

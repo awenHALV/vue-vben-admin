@@ -32,6 +32,19 @@ export namespace AuthApi {
     tenantId: string;
     tenantName: string;
   }
+
+  /** 注册接口参数 */
+  export interface RegisterParams {
+    name: string;
+    pwd: string;
+    phone: string;
+  }
+
+  /** 注册接口返回值 */
+  export interface RegisterResult {
+    success: boolean;
+    message?: string;
+  }
 }
 
 /**
@@ -102,4 +115,15 @@ export async function logoutApi() {
  */
 export async function getAccessCodesApi() {
   return requestClient.get<string[]>('/auth/codes');
+}
+
+/**
+ * 注册
+ */
+export async function registerApi(data: AuthApi.RegisterParams) {
+  return requestClient.post<AuthApi.RegisterResult>(
+    '/de-base-system/external/public/auth/register',
+    data,
+    { skipReAuthenticate: true },
+  );
 }

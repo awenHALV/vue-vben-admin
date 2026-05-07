@@ -272,3 +272,12 @@ export function setupWujieHostBridge() {
     { deep: true, immediate: true },
   );
 }
+
+export function emitChangeThemeToChildWithTab() {
+  const payload: HostBridgeThemeChangePayload = {
+    builtinType: preferences.theme.builtinType,
+    colorMode: getResolvedColorMode(),
+    themeMode: preferences.theme.mode,
+  };
+  bus.$emit(CHANGETHEME_EVENT, payload);
+}
