@@ -34,9 +34,9 @@ const tabbarStore = useTabbarStore();
 const myPath = route.fullPath;
 const baseName = (route.meta.microName as string) || 'default-app';
 // 用于无界实例隔离：将 fullPath 纳入唯一标识，避免 alive=true 时复用旧实例/旧 url
-const myUniqueName = computed(() => `${baseName}-${route.fullPath}`);
+const myUniqueName = `${baseName}-${myPath}`;
 
-const microUrl = computed(() => {
+function resolveMicroUrl() {
   /**
    * 菜单路由由后端下发时，会在 `meta.microUrl` 写入完整子应用 URL（域名 + 子路径）。
    * 但「详情页 / 动态路由」往往不在菜单内，主应用只会命中 `/vpp/:pathMatch(.*)*` 这类通配容器路由，
@@ -53,7 +53,7 @@ const microUrl = computed(() => {
    */
   const microName = (route.meta.microName as string | undefined) ?? '';
   const projectCode =
-    microName || getMicroProjectCodeFromRoutePath(route.fullPath) || '';
+    microName || getMicroProjectCodeFromRoutePath(myPath) || '';
   if (!projectCode) {
     return undefined;
   }
@@ -62,8 +62,10 @@ const microUrl = computed(() => {
    * - hostRoutePath: /vpp/customer/detail/123
    * - microUrl:      {VITE_APP_VPP}/customer/detail/123
    */
-  return buildMicroUrl(projectCode, route.fullPath);
-});
+  return buildMicroUrl(projectCode, myPath);
+}
+
+const microUrl = resolveMicroUrl();
 const microProps = computed(() => ({ token: accessStore.accessToken ?? '' }));
 
 // ==========================================
@@ -78,17 +80,14 @@ const safeMount = () => {
 };
 
 onMounted(() => {
-  console.log(`🟢 [挂载沙箱] ${myUniqueName.value}`);
   safeMount();
 });
 
 onActivated(() => {
-  console.log(`🌞 [唤醒沙箱] ${myUniqueName.value}`);
   safeMount();
 });
 
 onDeactivated(() => {
-  console.log(`🌙 [沙箱休眠] ${myUniqueName.value}`);
   // 视图切换时主动卸载 DOM，规避 Vue 路由切换动画可能导致的白屏或渲染残留
   renderWujie.value = false;
 });
@@ -109,10 +108,7 @@ onBeforeUnmount(() => {
     if (!stillExists) {
       // 若不在页签列表中，说明用户主动关闭了该标签页 (Tag)
       // 此时执行彻底销毁，清空无界缓存，释放内存
-      console.log(
-        `� [彻底销毁] 页签已关闭，清空无界内存: ${myUniqueName.value}`,
-      );
-      destroyApp(myUniqueName.value);
+      destroyApp(myUniqueName);
     }
   }, 150);
 });

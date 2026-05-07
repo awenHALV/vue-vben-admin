@@ -15,7 +15,7 @@ import {
   useUserStore,
 } from '@vben/stores';
 
-import { App, Button, message, Modal, Space } from 'antdv-next';
+import { App, Button, message, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteFeatureApi, getRawMenusApi } from '#/api/core/menu';
@@ -454,28 +454,50 @@ async function closeTabsForDeletedMenus(
 async function refreshMenuCacheIfNeeded(options?: { force?: boolean }) {
   if (!options?.force && !accessStore.isAccessChecked) return;
 
-  // 获取用户角色并生成可访问的菜单和路由
-  const userRoles = userStore.userInfo?.roles ?? [];
-  const { accessibleMenus, accessibleRoutes } = await generateAccess({
-    roles: userRoles,
-    router,
-    routes: accessRoutes,
-  });
-  // 更新权限存储
-  accessStore.setAccessMenus(accessibleMenus);
-  accessStore.setAccessRoutes(accessibleRoutes);
+  const shouldRestoreRouteView = tabbarStore.renderRouteView !== false;
+  tabbarStore.renderRouteView = false;
 
-  // 异步刷新完成后，如果当前路由已不可访问，自动回退到首个可访问菜单
-  const currentPath = router.currentRoute.value.path;
-  const inMenus = hasMenuPath(accessibleMenus as AccessMenuItem[], currentPath);
-  if (!inMenus) {
-    const firstMenuPath = getFirstMenuPath(accessibleMenus as AccessMenuItem[]);
-    const fallbackPath =
-      firstMenuPath ||
-      preferences.app.defaultHomePath ||
-      userStore.userInfo?.homePath;
-    if (fallbackPath && fallbackPath !== currentPath) {
-      await router.replace(fallbackPath);
+  try {
+    await nextTick();
+
+    // 获取用户角色并生成可访问的菜单和路由
+    const userRoles = userStore.userInfo?.roles ?? [];
+    const { accessibleMenus, accessibleRoutes } = await generateAccess({
+      roles: userRoles,
+      router,
+      routes: accessRoutes,
+    });
+    // 更新权限存储
+    accessStore.setAccessMenus(accessibleMenus);
+    accessStore.setAccessRoutes(accessibleRoutes);
+
+    // 动态路由已重建，刷新页签缓存 include 列表，避免旧路由组件缓存继续参与 deactivate。
+    await tabbarStore.updateCacheTabs();
+
+    // 异步刷新完成后，如果当前路由已不可访问，自动回退到首个可访问菜单
+    const currentPath = router.currentRoute.value.path;
+    const inMenus = hasMenuPath(
+      accessibleMenus as AccessMenuItem[],
+      currentPath,
+    );
+    if (inMenus) {
+      await router.replace(router.currentRoute.value.fullPath);
+    } else {
+      const firstMenuPath = getFirstMenuPath(
+        accessibleMenus as AccessMenuItem[],
+      );
+      const fallbackPath =
+        firstMenuPath ||
+        preferences.app.defaultHomePath ||
+        userStore.userInfo?.homePath;
+      if (fallbackPath && fallbackPath !== currentPath) {
+        await router.replace(fallbackPath);
+      }
+    }
+  } finally {
+    if (shouldRestoreRouteView) {
+      await nextTick();
+      tabbarStore.renderRouteView = true;
     }
   }
 }
@@ -646,11 +668,7 @@ onMounted(() => {
           {{ $t('menu.action.reset') }}
         </VbenButton>
         <!-- eslint-disable-next-line -->
-        <VbenButton
-          class="w-[60px]"
-          size="sm"
-          @click="handleSearch"
-        >
+        <VbenButton class="w-[60px]" size="sm" @click="handleSearch">
           {{ $t('menu.action.search') }}
         </VbenButton>
       </Space>
