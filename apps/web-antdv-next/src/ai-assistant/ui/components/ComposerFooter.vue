@@ -22,7 +22,7 @@ const props = withDefaults(
     disabled: false,
     pending: false,
     modelValue: '',
-    placeholder: '有什么可以帮助您的',
+    placeholder: '有什么可以帮助你的',
     showDisclaimer: true,
   },
 );
