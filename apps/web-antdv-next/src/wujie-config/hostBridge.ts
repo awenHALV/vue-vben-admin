@@ -1,6 +1,7 @@
 import type { TabDefinition } from '@vben/types';
 
 import type {
+  HostBridgeCloseTabPayload,
   HostBridgeLanguageChangePayload,
   HostBridgeState,
   HostBridgeTabChangePayload,
@@ -23,6 +24,7 @@ import {
   BUTTON_PERMISSION_LIST_CHANGE,
   CHANGELANUAGE_EVENT,
   CHANGETHEME_EVENT,
+  CLOSE_TAB_EVENT,
   HOST_BRIDGE_HOST_STATE_PUSH,
   HOST_BRIDGE_REQUEST_BUILTIN_THEME,
   HOST_BRIDGE_REQUEST_COLOR_MODE,
@@ -36,6 +38,34 @@ import {
 import website from './website';
 
 const { bus } = WujieVue;
+
+function safeDecodeURIComponent(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function ensureLeadingSlash(path: string): string {
+  return path.startsWith('/') ? path : `/${path}`;
+}
+
+function getPathname(path: string): string {
+  return path.split(/[?#]/)[0] ?? '';
+}
+
+function toHostMicroPath(projectCode: string, path: string): string {
+  const normalized = ensureLeadingSlash(String(path ?? '').trim());
+  const projectPrefix = `/${projectCode}`;
+  if (
+    normalized === projectPrefix ||
+    normalized.startsWith(`${projectPrefix}/`)
+  ) {
+    return normalized;
+  }
+  return `${projectPrefix}${normalized}`;
+}
 
 /** 与基座 UI 一致的明暗解析（含 theme.mode === 'auto'） */
 function getResolvedColorMode(): 'dark' | 'light' {
@@ -142,6 +172,57 @@ export function setupWujieHostBridge() {
     return [...codes];
   }
 
+  function findTabByHostPath(hostPath: string): TabDefinition | undefined {
+    const decodedHostPath = safeDecodeURIComponent(hostPath);
+    const hostPathname = getPathname(decodedHostPath);
+    const shouldMatchFullPath = /[?#]/.test(decodedHostPath);
+
+    return tabbarStore.getTabs.find((tab) => {
+      const candidates = [tab.key, tab.fullPath, tab.path]
+        .filter((v): v is string => typeof v === 'string' && v.length > 0)
+        .map(safeDecodeURIComponent);
+
+      return candidates.some((candidate) => {
+        if (candidate === decodedHostPath) {
+          return true;
+        }
+        if (shouldMatchFullPath) {
+          return false;
+        }
+        return getPathname(candidate) === hostPathname;
+      });
+    });
+  }
+
+  async function handleCloseMicroTab(
+    projectCode: string,
+    payload: HostBridgeCloseTabPayload,
+  ) {
+    if (!payload?.currentPath) {
+      return;
+    }
+
+    const currentHostPath = toHostMicroPath(projectCode, payload.currentPath);
+    const tab = findTabByHostPath(currentHostPath);
+    if (!tab) {
+      return;
+    }
+
+    const tabKey = tab.key ?? tab.fullPath ?? tab.path;
+    if (!tabKey) {
+      return;
+    }
+
+    if (payload.toPath) {
+      const toHostPath = toHostMicroPath(projectCode, payload.toPath);
+      if (router.currentRoute.value.fullPath !== toHostPath) {
+        await router.replace(toHostPath);
+      }
+    }
+
+    await tabbarStore.closeTabByKey(tabKey, router);
+  }
+
   bus.$on(HOST_BRIDGE_REQUEST_TOKEN, (callback?: (token: string) => void) => {
     if (typeof callback === 'function') {
       callback(accessStore.accessToken ?? '');
@@ -190,6 +271,15 @@ export function setupWujieHostBridge() {
       }
     },
   );
+
+  website.projectCodes.forEach((projectCode) => {
+    bus.$on(
+      CLOSE_TAB_EVENT(projectCode),
+      (payload: HostBridgeCloseTabPayload) => {
+        void handleCloseMicroTab(projectCode, payload);
+      },
+    );
+  });
 
   function emitHostStatePush() {
     bus.$emit(HOST_BRIDGE_HOST_STATE_PUSH, buildHostState(accessStore));

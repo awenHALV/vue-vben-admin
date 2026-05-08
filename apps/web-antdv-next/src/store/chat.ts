@@ -28,7 +28,7 @@ import { useAuthStore } from '#/store';
 type PanelMode = 'chat' | 'history';
 type ViewMode = 'full' | 'right';
 
-const WELCOME_TEXT = '你好！我是小曦助手。我将为你提供专业的能源互联网支持。';
+const WELCOME_TEXT = '你好！我是小羲助手。我将为你提供专业的能源互联网支持。';
 
 type ThinkingStepStatus = 'done' | 'error' | 'thinking';
 
@@ -365,7 +365,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
   const title = computed(() =>
     panelMode.value === 'history' || activeConversationFromHistory.value
       ? '历史对话'
-      : '小曦助手',
+      : '小羲助手',
   );
 
   const accessStore = useAccessStore();

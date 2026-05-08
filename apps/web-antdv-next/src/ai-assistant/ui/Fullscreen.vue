@@ -79,13 +79,13 @@ const isViewingHistoryConversation = computed(
             frame-class="size-6"
             img-class="size-4"
           />
-          <span class="text-sm text-foreground">小曦助手</span>
+          <span class="text-sm text-foreground">小羲助手</span>
         </Button>
       </div>
 
       <div class="mt-auto p-2">
         <div
-          class="flex w-full cursor-pointer items-center justify-center! gap-2 rounded-lg border border-border bg-background px-3 py-2 text-left transition-colors hover:bg-accent"
+          class="mb-12 flex w-full cursor-pointer items-center justify-center! gap-2 rounded-lg border border-border bg-background px-3 py-2 text-left transition-colors hover:bg-accent"
           role="button"
           tabindex="0"
           aria-label="历史记录"

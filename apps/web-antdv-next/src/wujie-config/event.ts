@@ -126,6 +126,18 @@ export const BUTTON_PERMISSION_LIST = (projectCode: string) =>
 // 子应用离开时触发
 export const DEACTIVATEDAPP = (projectCode: string) =>
   `${projectCode}:deactivatedApp`;
+// 子应用请求基座关闭指定 tab
+export const CLOSE_TAB_EVENT = (projectCode: string) => {
+  return `${projectCode}:closeTab`;
+};
+
+export interface HostBridgeCloseTabPayload {
+  /** 子应用内当前 fullPath，如 /dispatch/detail/1?a=1；也兼容基座完整路径 /vpp/dispatch/detail/1 */
+  currentPath: string;
+  /** 关闭后跳转的子应用内路径，如 /dispatch/scheduling-plan；也兼容基座完整路径 */
+  toPath?: string;
+}
+
 // 切换租户
 export const SWITCHTENANT_EVENT = 'switchTenantEvent';
 // editior
