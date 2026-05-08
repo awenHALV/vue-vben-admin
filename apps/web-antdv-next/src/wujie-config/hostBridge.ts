@@ -3,6 +3,7 @@ import type { TabDefinition } from '@vben/types';
 import type {
   HostBridgeLanguageChangePayload,
   HostBridgeState,
+  HostBridgeTabChangePayload,
   HostBridgeThemeChangePayload,
 } from './event';
 
@@ -15,6 +16,7 @@ import WujieVue from 'wujie-vue3';
 
 import { router } from '#/router';
 import { useAuthStore } from '#/store';
+import { getMicroProjectCodeFromRoutePath } from '#/wujie-config/micro-route';
 
 import {
   BUTTON_PERMISSION_LIST,
@@ -26,6 +28,7 @@ import {
   HOST_BRIDGE_REQUEST_COLOR_MODE,
   HOST_BRIDGE_REQUEST_HOST_STATE,
   HOST_BRIDGE_REQUEST_TOKEN,
+  HOST_BRIDGE_TAB_CHANGE,
   JUMPROUTE_EVENT,
   LOGOUT_EVENT,
   NOTICECHILDAPPTOKEN_EVENT,
@@ -97,6 +100,24 @@ function buildHostState(
     colorMode: getResolvedColorMode(),
     builtinType: preferences.theme.builtinType,
     locale: preferences.app.locale,
+  };
+}
+
+function buildMicroTabChangePayload(): HostBridgeTabChangePayload | null {
+  const route = router.currentRoute.value;
+  const projectCode =
+    (route.meta.microName as string | undefined) ??
+    getMicroProjectCodeFromRoutePath(route.fullPath);
+  if (!projectCode) {
+    return null;
+  }
+
+  return {
+    projectCode,
+    fullPath: route.fullPath,
+    path: route.path,
+    name: route.name ? String(route.name) : undefined,
+    tabKey: getTabKey(route),
   };
 }
 
@@ -224,6 +245,14 @@ export function setupWujieHostBridge() {
     });
   }
 
+  function emitMicroTabChange() {
+    const payload = buildMicroTabChangePayload();
+    if (!payload) {
+      return;
+    }
+    bus.$emit(HOST_BRIDGE_TAB_CHANGE, payload);
+  }
+
   watch(
     () => ({
       token: accessStore.accessToken,
@@ -254,6 +283,12 @@ export function setupWujieHostBridge() {
     () => accessStore.accessToken,
     () => emitNoticeChildToken(),
     { immediate: true },
+  );
+
+  watch(
+    () => router.currentRoute.value.fullPath,
+    () => emitMicroTabChange(),
+    { flush: 'post' },
   );
 
   // 监听菜单变化并自动派发权限码给子应用

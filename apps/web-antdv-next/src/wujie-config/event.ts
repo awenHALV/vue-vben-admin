@@ -142,3 +142,19 @@ export const OPEN_INSPECT_SCHEME_DIALOG_RECEIVE = `noticeInspectOpenReceive`;
 
 // 通知子应用刷新页面
 export const HOST_BRIDGE_REFRESH = 'hostBridge:refresh';
+
+// 通知子应用切换到某个微应用 tab（仅当基座当前路由属于微应用时触发）
+export const HOST_BRIDGE_TAB_CHANGE = 'hostBridge:tabChange';
+
+export interface HostBridgeTabChangePayload {
+  /** 当前微应用 projectCode，如 vpp */
+  projectCode: string;
+  /** 当前基座完整路径，含 query/hash */
+  fullPath: string;
+  /** 当前基座 pathname */
+  path: string;
+  /** 当前路由 name */
+  name?: string;
+  /** 当前 tab key，与基座 tabbar key 一致 */
+  tabKey: string;
+}
