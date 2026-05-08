@@ -44,7 +44,9 @@ function buildEmptyGroupMenuRoutePath(
   item: BackendMenuItem,
   nested = false,
 ): string {
-  const routeKey = encodeURIComponent(String(item.featureCode || item.id || 'group'));
+  const routeKey = encodeURIComponent(
+    String(item.featureCode || item.id || 'group'),
+  );
   return nested ? `__group__/${routeKey}` : `/__group__/${routeKey}`;
 }
 
@@ -303,7 +305,7 @@ function mapMenuToRoute(
       ? nested && parentAbsoluteRoutePath
         ? toNestedRoutePath(absoluteRoutePath, parentAbsoluteRoutePath)
         : buildEmptyGroupMenuRoutePath(item, nested)
-    : toNestedRoutePath(absoluteRoutePath, parentAbsoluteRoutePath);
+      : toNestedRoutePath(absoluteRoutePath, parentAbsoluteRoutePath);
 
   /**
    * 微前端：用拼接后的完整基座路径判断首段是否为 projectCode（如 vpp）；
@@ -329,7 +331,9 @@ function mapMenuToRoute(
         ? 'micro/index'
         : `${absoluteRoutePath.replace(/^\//, '')}/index`;
     if (!microCode && !isExternalRoute) {
-      console.debug(`[Route Mapping] ${item.featureCode} -> 使用路径解析 (Fallback)`);
+      console.debug(
+        `[Route Mapping] ${item.featureCode} -> 使用路径解析 (Fallback)`,
+      );
     }
   } else {
     inferredComponent = '/';
@@ -351,7 +355,7 @@ function mapMenuToRoute(
       featureName: item.featureName,
       featureNameEn: item.featureNameEn,
       featureIcon: item.featureIcon || undefined,
-      // keepAlive: true,
+      keepAlive: !microCode,
       ...(isExternalRoute
         ? {
             link: absoluteRoutePath,
