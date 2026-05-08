@@ -6,7 +6,7 @@ export const AI_ASSISTANT_DEMO_MESSAGES: AiChatMessage[] = [
     id: 'm_welcome',
     kind: 'text',
     role: 'assistant',
-    text: '你好！我是小曦助手。我将为你提供专业的能源互联网支持。',
+    text: '你好！我是小羲助手。我将为你提供专业的能源互联网支持。',
   },
   {
     id: 'm_user_1',
