@@ -36,6 +36,7 @@
     "routePath": "Please enter route path",
     "resourceCode": "Please select resource pool",
     "routePathStartWithSlash": "Route path must start with /",
+    "routePathHttpHost": "When starting with http:// or https://, enter a valid IP address or domain name",
     "routePathOnlyEnglish": "Route path can only contain English letters, numbers, /, -, _",
     "sort": "Please enter sort order",
     "parentId": "Please select parent feature"

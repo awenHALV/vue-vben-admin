@@ -1,5 +1,7 @@
 import type { RouteRecordStringComponent } from '@vben/types';
 
+import { isHttpUrl } from '@vben/utils';
+
 import { requestClient } from '#/api/request';
 import { mappedFeatureCodes } from '#/router/component-map';
 import {
@@ -22,6 +24,32 @@ export interface BackendMenuItem {
   resourceCode?: string;
 }
 
+function isExternalMenuRoutePath(routePath: string | undefined): boolean {
+  return isHttpUrl(String(routePath ?? '').trim());
+}
+
+function buildExternalMenuRoutePath(
+  item: BackendMenuItem,
+  parentAbsoluteRoutePath?: string,
+): string {
+  const routeKey = encodeURIComponent(
+    String(item.featureCode || item.id || 'external'),
+  );
+  return parentAbsoluteRoutePath
+    ? `__external__/${routeKey}`
+    : `/__external__/${routeKey}`;
+}
+
+function buildEmptyGroupMenuRoutePath(
+  item: BackendMenuItem,
+  nested = false,
+): string {
+  const routeKey = encodeURIComponent(
+    String(item.featureCode || item.id || 'group'),
+  );
+  return nested ? `__group__/${routeKey}` : `/__group__/${routeKey}`;
+}
+
 function isMenuFeatureType(featureType: string | undefined): boolean {
   return (
     String(featureType ?? '')
@@ -38,6 +66,17 @@ function isButtonFeatureType(featureType: string | undefined): boolean {
   );
 }
 
+function hasMenuRoutePath(routePath: string | undefined): boolean {
+  return !!String(routePath ?? '').trim();
+}
+
+function resolveChildParentAbsoluteRoutePath(
+  routePath: string | undefined,
+  absoluteRoutePath: string,
+): string | undefined {
+  return hasMenuRoutePath(routePath) ? absoluteRoutePath : undefined;
+}
+
 /**
  * 与页面权限 map 的 key、当前路由 path 比对时统一使用
  */
@@ -45,6 +84,9 @@ export function normalizeMenuPermissionPath(routePath: string): string {
   const t = String(routePath ?? '').trim();
   if (!t) {
     return '';
+  }
+  if (isExternalMenuRoutePath(t)) {
+    return t;
   }
   const withSlash = t.startsWith('/') ? t : `/${t}`;
   const noTrail = withSlash.replace(/\/+$/, '');
@@ -87,6 +129,10 @@ export function collectMenuButtonPermissionsFromRaw(
       menu.routePath,
       parentAbsoluteRoutePath,
     );
+    const childParentAbsoluteRoutePath = resolveChildParentAbsoluteRoutePath(
+      menu.routePath,
+      absoluteRoutePath,
+    );
     const pathKey = normalizeMenuPermissionPath(absoluteRoutePath);
     const children = menu.children ?? [];
     for (const child of children) {
@@ -105,7 +151,7 @@ export function collectMenuButtonPermissionsFromRaw(
           set.add(code);
         }
       } else if (isMenuFeatureType(child.featureType)) {
-        visitMenuNode(child, absoluteRoutePath);
+        visitMenuNode(child, childParentAbsoluteRoutePath);
       }
     }
   }
@@ -136,7 +182,13 @@ function toNestedRoutePath(
   absolutePath: string,
   parentAbsolutePath?: string,
 ): string {
+  if (isExternalMenuRoutePath(absolutePath)) {
+    return absolutePath;
+  }
   const full = absolutePath.startsWith('/') ? absolutePath : `/${absolutePath}`;
+  if (isExternalMenuRoutePath(parentAbsolutePath)) {
+    return full;
+  }
   if (!parentAbsolutePath) {
     return full;
   }
@@ -182,10 +234,18 @@ function resolveMenuAbsoluteRoutePath(
     return parentAbsoluteRoutePath ?? '';
   }
 
+  if (isExternalMenuRoutePath(trimmed)) {
+    return trimmed;
+  }
+
   const raw = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
   const rawSegments = raw.split('/').filter(Boolean);
 
   if (!parentAbsoluteRoutePath) {
+    return raw;
+  }
+
+  if (isExternalMenuRoutePath(parentAbsoluteRoutePath)) {
     return raw;
   }
 
@@ -220,6 +280,7 @@ function resolveMenuAbsoluteRoutePath(
 function mapMenuToRoute(
   item: BackendMenuItem,
   parentAbsoluteRoutePath?: string,
+  nested = false,
 ): RouteRecordStringComponent {
   const menuChildren = (item.children ?? []).filter((child) =>
     isMenuFeatureType(child.featureType),
@@ -230,11 +291,21 @@ function mapMenuToRoute(
     item.routePath,
     parentAbsoluteRoutePath,
   );
-
-  const pathForRouter = toNestedRoutePath(
+  const childParentAbsoluteRoutePath = resolveChildParentAbsoluteRoutePath(
+    item.routePath,
     absoluteRoutePath,
-    parentAbsoluteRoutePath,
   );
+
+  const isExternalRoute = isExternalMenuRoutePath(absoluteRoutePath);
+  const hasOwnRoutePath = hasMenuRoutePath(item.routePath);
+
+  const pathForRouter = isExternalRoute
+    ? buildExternalMenuRoutePath(item, parentAbsoluteRoutePath)
+    : !hasOwnRoutePath && hasChildren
+      ? nested && parentAbsoluteRoutePath
+        ? toNestedRoutePath(absoluteRoutePath, parentAbsoluteRoutePath)
+        : buildEmptyGroupMenuRoutePath(item, nested)
+      : toNestedRoutePath(absoluteRoutePath, parentAbsoluteRoutePath);
 
   /**
    * 微前端：用拼接后的完整基座路径判断首段是否为 projectCode（如 vpp）；
@@ -242,7 +313,7 @@ function mapMenuToRoute(
    * 外链 http/https 不走微前端。
    */
   const microCode =
-    absoluteRoutePath && !absoluteRoutePath.toLowerCase().startsWith('http')
+    absoluteRoutePath && !isExternalRoute
       ? getMicroProjectCodeFromRoutePath(absoluteRoutePath)
       : undefined;
 
@@ -251,16 +322,18 @@ function mapMenuToRoute(
   if (mappedFeatureCodes.includes(item.featureCode)) {
     inferredComponent = item.featureCode;
     console.debug(`[Route Mapping] ${item.featureCode} -> 使用映射解析`);
-  } else if (hasChildren && !microCode) {
-    inferredComponent = parentAbsoluteRoutePath
-      ? 'ParentLayout'
-      : 'BasicLayout';
+  } else if (hasChildren) {
+    inferredComponent = nested ? 'ParentLayout' : 'BasicLayout';
   } else if (absoluteRoutePath) {
-    inferredComponent = microCode
-      ? 'micro/index'
-      : `${absoluteRoutePath.replace(/^\//, '')}/index`;
-    if (!microCode) {
-      console.debug(`[Route Mapping] ${item.featureCode} -> 使用路径解析 (Fallback)`);
+    inferredComponent = isExternalRoute
+      ? 'IFrameView'
+      : microCode
+        ? 'micro/index'
+        : `${absoluteRoutePath.replace(/^\//, '')}/index`;
+    if (!microCode && !isExternalRoute) {
+      console.debug(
+        `[Route Mapping] ${item.featureCode} -> 使用路径解析 (Fallback)`,
+      );
     }
   } else {
     inferredComponent = '/';
@@ -282,6 +355,12 @@ function mapMenuToRoute(
       featureName: item.featureName,
       featureNameEn: item.featureNameEn,
       featureIcon: item.featureIcon || undefined,
+      keepAlive: !microCode,
+      ...(isExternalRoute
+        ? {
+            link: absoluteRoutePath,
+          }
+        : {}),
       ...(microCode
         ? {
             microName: microCode,
@@ -290,7 +369,9 @@ function mapMenuToRoute(
         : {}),
     },
     children: hasChildren
-      ? menuChildren.map((child) => mapMenuToRoute(child, absoluteRoutePath))
+      ? menuChildren.map((child) =>
+          mapMenuToRoute(child, childParentAbsoluteRoutePath, true),
+        )
       : [],
   } as RouteRecordStringComponent;
 }

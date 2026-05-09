@@ -22,6 +22,7 @@ describe('preferences', () => {
     })),
   );
   beforeEach(() => {
+    localStorage.clear();
     preferenceManager = new PreferenceManager();
   });
 
@@ -53,6 +54,34 @@ describe('preferences', () => {
     };
 
     expect(preferenceManager.getPreferences()).toEqual(expected);
+  });
+
+  it('restores cached theme mode before override defaults on refresh', async () => {
+    const namespace = 'theme-cache-test';
+
+    localStorage.setItem(
+      `${namespace}-preferences`,
+      JSON.stringify({
+        value: {
+          ...defaultPreferences,
+          theme: {
+            ...defaultPreferences.theme,
+            mode: 'auto',
+          },
+        },
+      }),
+    );
+
+    await preferenceManager.initPreferences({
+      namespace,
+      overrides: {
+        theme: {
+          mode: 'light',
+        },
+      },
+    });
+
+    expect(preferenceManager.getPreferences().theme.mode).toBe('auto');
   });
 
   it('updates theme mode correctly', () => {

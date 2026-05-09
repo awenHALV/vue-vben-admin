@@ -113,6 +113,7 @@ catalog:
   eslint-plugin-unused-imports: ^4.4.1
   eslint-plugin-vue: ^10.8.0
   eslint-plugin-yml: ^3.3.1
+  event-source-polyfill: ^1.0.31
   execa: ^9.6.1
   find-up: ^8.0.0
   get-port: ^7.1.0
@@ -127,6 +128,8 @@ catalog:
   lefthook: ^2.1.2
   lodash.clonedeep: ^4.5.0
   lucide-vue-next: ^0.577.0
+  markdown-it: ^14.1.1
+  markdown-it-multimd-table: ^4.2.3
   medium-zoom: ^1.1.0
   naive-ui: ^2.43.2
   nitropack: ^2.13.1

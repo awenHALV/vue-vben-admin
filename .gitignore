@@ -63,3 +63,8 @@ vite.config.ts.*
 .github
 openspec
 skills-lock.json
+
+.opencode/
+openspec
+.github/prompts/
+.gitignore

@@ -41,6 +41,7 @@
     "routePath": "请输入路由地址",
     "resourceCode": "请选择资源池",
     "routePathStartWithSlash": "路由地址必须以 / 开头",
+    "routePathHttpHost": "以 http:// 或 https:// 开头时，请输入有效的 IP 地址或域名",
     "routePathOnlyEnglish": "路由地址只能包含英文、数字、/、-、_",
     "sort": "请输入排序号",
     "parentId": "请选择父级菜单"

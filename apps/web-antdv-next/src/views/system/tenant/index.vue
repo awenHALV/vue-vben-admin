@@ -29,7 +29,7 @@ import { TENANT_PAGE_BUTTON_CODES } from './button-permissions';
 import TenantDetail from './TenantDetail.vue';
 import TenantMenuConfig from './TenantMenuConfig.vue';
 
-defineOptions({ name: 'SystemTenant' });
+defineOptions({ name: 'TenantManagement' });
 
 const {modal} = App.useApp();
 const router = useRouter();

@@ -35,7 +35,36 @@ const featureTypeOptions = [
   { label: $t('menu.type.menu'), value: 'MENU' },
   { label: $t('menu.type.button'), value: 'BUTTON' },
 ];
+const HTTP_ROUTE_PATH_REGEXP = /^https?:\/\//i;
 const ROUTE_PATH_REGEXP = /^\/[\w/-]*$/;
+const IPV4_SEGMENT_REGEXP = String.raw`(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)`;
+const IPV4_HOST_REGEXP = new RegExp(
+  String.raw`^${IPV4_SEGMENT_REGEXP}(?:\.${IPV4_SEGMENT_REGEXP}){3}$`,
+);
+const DOMAIN_LABEL_REGEXP = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i;
+
+function isHttpRoutePath(value: string) {
+  return HTTP_ROUTE_PATH_REGEXP.test(value);
+}
+
+function isValidHttpRouteHost(value: string) {
+  try {
+    const { hostname, protocol } = new URL(value);
+    if (!hostname || !['http:', 'https:'].includes(protocol)) {
+      return false;
+    }
+
+    if (/^[\d.]+$/.test(hostname)) {
+      return IPV4_HOST_REGEXP.test(hostname);
+    }
+
+    return hostname
+      .split('.')
+      .every((segment) => DOMAIN_LABEL_REGEXP.test(segment));
+  } catch {
+    return false;
+  }
+}
 
 const [Form, formApi] = useVbenForm({
   commonConfig: {
@@ -101,18 +130,45 @@ const [Form, formApi] = useVbenForm({
       dependencies: {
         rules(values) {
           if (values.featureType === 'MENU') {
-            return z
-              .string({
-                required_error: $t('menu.formRules.routePath'),
-                invalid_type_error: $t('menu.formRules.routePath'),
-              })
-              .min(1, { message: $t('menu.formRules.routePath') })
-              .refine((v) => v.startsWith('/'), {
-                message: $t('menu.formRules.routePathStartWithSlash'),
-              })
-              .refine((v) => ROUTE_PATH_REGEXP.test(v), {
-                message: $t('menu.formRules.routePathOnlyEnglish'),
-              });
+            return (
+              z
+                // .string({
+                //   required_error: $t('menu.formRules.routePath'),
+                //   invalid_type_error: $t('menu.formRules.routePath'),
+                // })
+                // .min(1, { message: $t('menu.formRules.routePath') })
+                .string()
+                .optional()
+                .superRefine((v, ctx) => {
+                  if (!v) {
+                    return;
+                  }
+
+                  if (isHttpRoutePath(v)) {
+                    if (!isValidHttpRouteHost(v)) {
+                      ctx.addIssue({
+                        code: 'custom',
+                        message: $t('menu.formRules.routePathHttpHost'),
+                      });
+                    }
+                    return;
+                  }
+
+                  if (!v.startsWith('/')) {
+                    ctx.addIssue({
+                      code: 'custom',
+                      message: $t('menu.formRules.routePathStartWithSlash'),
+                    });
+                  }
+
+                  if (!ROUTE_PATH_REGEXP.test(v)) {
+                    ctx.addIssue({
+                      code: 'custom',
+                      message: $t('menu.formRules.routePathOnlyEnglish'),
+                    });
+                  }
+                })
+            );
           }
         },
         triggerFields: ['featureType'],
@@ -161,6 +217,7 @@ const [VbenModal, modalApi] = useVbenModal({
   showConfirmButton: true,
   confirmLoading: false,
   title: $t('menu.action.add'),
+  confirmText: $t('system.common.ok'),
   onOpenChange: async (isOpen) => {
     if (isOpen) {
       await formApi.resetForm();

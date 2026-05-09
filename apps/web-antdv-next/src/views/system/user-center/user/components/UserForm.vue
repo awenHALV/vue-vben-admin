@@ -318,6 +318,7 @@ const [VbenModal, modalApi] = useVbenModal({
   showConfirmButton: true,
   confirmLoading: false,
   title: $t('system.user.addUser'),
+  confirmText: $t('system.common.ok'),
   onOpenChange: async (open: boolean) => {
     if (!open) return;
 

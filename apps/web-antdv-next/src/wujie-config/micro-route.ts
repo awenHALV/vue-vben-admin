@@ -1,35 +1,67 @@
 import domins from './app.config';
 import website from './website';
 
-/**
- * 从基座 routePath 取首段：/vpp/park/child → vpp
- */
-export function getRoutePathFirstSegment(
-  routePath: string,
-): string | undefined {
-  const trimmed = routePath.trim();
-  if (!trimmed) {
-    return undefined;
+function getRoutePathCandidates(
+  routePath: string | undefined,
+  fallbackRoutePaths: Array<string | undefined> = [],
+): string[] {
+  const candidates: string[] = [];
+
+  for (const candidate of [routePath, ...fallbackRoutePaths]) {
+    const trimmed = String(candidate ?? '').trim();
+    if (trimmed) {
+      candidates.push(trimmed);
+    }
   }
-  const normalized = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed;
-  const seg = normalized.split('/').find(Boolean);
-  return seg || undefined;
+
+  return candidates;
 }
 
 /**
- * 是否微前端：仅看 routePath 首段是否在 website.projectCodes 中（与菜单 featureCode 无关）
+ * 从基座 routePath 取首段：/vpp/park/child → vpp。
+ * 当前 routePath 为空时，按 fallbackRoutePaths 顺序回退。
+ */
+export function getRoutePathFirstSegment(
+  routePath: string | undefined,
+  fallbackRoutePaths: Array<string | undefined> = [],
+): string | undefined {
+  for (const candidate of getRoutePathCandidates(routePath, fallbackRoutePaths)) {
+    const normalized = candidate.startsWith('/')
+      ? candidate.slice(1)
+      : candidate;
+    const seg = normalized.split('/').find(Boolean);
+    if (seg) {
+      return seg;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * 是否微前端：优先看当前 routePath 首段；当前为空时，再按 fallbackRoutePaths 回退。
  * 返回 website 里配置的 canonical projectCode（大小写与 env / domins 一致）
  */
 export function getMicroProjectCodeFromRoutePath(
-  routePath: string,
+  routePath: string | undefined,
+  fallbackRoutePaths: Array<string | undefined> = [],
 ): string | undefined {
-  const first = getRoutePathFirstSegment(routePath);
-  if (!first) {
-    return undefined;
+  for (const candidate of getRoutePathCandidates(routePath, fallbackRoutePaths)) {
+    const first = getRoutePathFirstSegment(candidate);
+    if (!first) {
+      continue;
+    }
+
+    const matchedProjectCode = website.projectCodes.find(
+      (code) => code.toLowerCase() === first.toLowerCase(),
+    );
+
+    if (matchedProjectCode) {
+      return matchedProjectCode;
+    }
   }
-  return website.projectCodes.find(
-    (code) => code.toLowerCase() === first.toLowerCase(),
-  );
+
+  return undefined;
 }
 
 /**

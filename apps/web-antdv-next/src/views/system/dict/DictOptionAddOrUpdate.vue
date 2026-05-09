@@ -95,7 +95,7 @@ function buildFormSchema() {
 }
 
 const [Form, formApi] = useVbenForm({
-  commonConfig: { labelWidth: 140 },
+  commonConfig: { labelWidth: 100 },
   schema: buildFormSchema(),
   showDefaultActions: false,
 });
@@ -105,6 +105,7 @@ const [VbenModal, modalApi] = useVbenModal({
   showConfirmButton: true,
   confirmLoading: false,
   title: $t('dict.modal.add'),
+  confirmText: $t('system.common.ok'),
   class: 'w-[min(100%,480px)]',
   onOpenChange(open) {
     if (!open) {
