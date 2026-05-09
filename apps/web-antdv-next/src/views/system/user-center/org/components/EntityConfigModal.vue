@@ -79,6 +79,16 @@ async function loadDeptAssets() {
   }
 }
 
+function filterSelectedAssetsByEntityList() {
+  const existingEntityIds = new Set(
+    entityList.value.map((entity) => String(entity.id)),
+  );
+
+  selectedAssets.value = selectedAssets.value.filter((asset) =>
+    existingEntityIds.has(String(asset.assetId)),
+  );
+}
+
 const debouncedSearch = useDebounceFn(loadEntityList, 500);
 
 watch(searchKeyword, () => {
@@ -167,6 +177,7 @@ const [VbenModal, modalApi] = useVbenModal({
       loadEntityList(),
       loadDeptAssets(),
     ]);
+    filterSelectedAssetsByEntityList();
   },
   async onConfirm() {
     await handleEntitySaved(selectedAssets.value);

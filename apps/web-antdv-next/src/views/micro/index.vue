@@ -98,13 +98,13 @@ const safeMount = async () => {
     // 成功挂载后，重置重试次数
     retryCount.value = 0;
   } catch (error) {
-    console.error(`🔴 [沙箱挂载/通信异常] ${myUniqueName.value}:`, error);
+    console.error(`🔴 [沙箱挂载/通信异常] ${myUniqueName}:`, error);
 
     // 兜底策略：强制重新加载
     if (retryCount.value < MAX_RETRY) {
       retryCount.value++;
       console.warn(
-        `🔄 [触发兜底策略] 准备进行第 ${retryCount.value} 次重加载: ${myUniqueName.value}`,
+        `🔄 [触发兜底策略] 准备进行第 ${retryCount.value} 次重加载: ${myUniqueName}`,
       );
 
       // 先重置视图状态
@@ -119,7 +119,7 @@ const safeMount = async () => {
       await safeMount();
     } else {
       console.error(
-        `❌ [致命错误] 已达到最大重试次数 (${MAX_RETRY})，放弃加载沙箱: ${myUniqueName.value}`,
+        `❌ [致命错误] 已达到最大重试次数 (${MAX_RETRY})，放弃加载沙箱: ${myUniqueName}`,
       );
       showLoading.value = false;
     }
@@ -136,7 +136,7 @@ onActivated(() => {
 
 onDeactivated(() => {
   // 视图切换时主动卸载 DOM，规避 Vue 路由切换动画可能导致的白屏或渲染残留
-  // renderWujie.value = false;
+  renderWujie.value = false;
 });
 
 // 内存管理：【按需销毁与无界实例释放】
@@ -153,7 +153,7 @@ onBeforeUnmount(() => {
     if (stillExists) {
       // 若仍在页签列表中，说明仅是 Vue 路由正常切换导致的组件卸载
       // 保留无界实例，等待下次 keep-alive 唤醒
-      console.log(` [保护沙箱] 壳子被卸载，但页签仍在: ${myUniqueName.value}`);
+      console.log(` [保护沙箱] 壳子被卸载，但页签仍在: ${myUniqueName}`);
     } else {
       // 若不在页签列表中，说明用户主动关闭了该标签页 (Tag)
       // 此时执行彻底销毁，清空无界缓存，释放内存
