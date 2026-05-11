@@ -111,13 +111,23 @@ const option = computed(() => {
   );
   const useHorizontalLabels = maxLabelPx <= perCategoryPx * 0.92;
 
-  const series = [
-    {
-      data: chartData.map((row) => toNumberOrNull(row[yKey])),
-      name: yKey,
-      type: chartConfig.type,
-    },
-  ];
+  const fieldSeriesKeys =
+    chartConfig.type === 'line' || chartConfig.type === 'bar'
+      ? (chartConfig.fields
+          ?.filter((field) => field !== xKey)
+          .filter((field) =>
+            chartData.some((row) =>
+              Object.prototype.hasOwnProperty.call(row, field),
+            ),
+          ) ?? [])
+      : [];
+  const seriesKeys = fieldSeriesKeys.length > 0 ? fieldSeriesKeys : [yKey];
+
+  const series = seriesKeys.map((key) => ({
+    data: chartData.map((row) => toNumberOrNull(row[key])),
+    name: key,
+    type: chartConfig.type,
+  }));
 
   const opt = {
     grid: {
@@ -167,6 +177,7 @@ const option = computed(() => {
     yAxis: [
       {
         axisTick: { show: false },
+        name: yKey,
         splitArea: { show: true },
         type: 'value',
       },
