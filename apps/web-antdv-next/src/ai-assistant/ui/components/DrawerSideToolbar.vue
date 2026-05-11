@@ -52,7 +52,7 @@ const assistantIconSrc = AI_ASSISTANT_ICON_URL;
         />
       </Button> -->
       <div
-        class="mt-auto mb-10 flex-center size-10 cursor-pointer rounded-lg border border-[rgba(0,0,0,0.06)] bg-white p-1.5 transition-colors hover:bg-[rgba(0,0,0,0.04)] dark:border-border dark:bg-[rgba(0,0,0,0.04)] dark:hover:bg-accent"
+        class="mt-auto mb-9 flex-center size-10 cursor-pointer rounded-lg border border-[rgba(0,0,0,0.06)] bg-white p-1.5 transition-colors hover:bg-[rgba(0,0,0,0.04)] dark:border-border dark:bg-[rgba(0,0,0,0.04)] dark:hover:bg-accent"
         role="button"
         tabindex="0"
         aria-label="历史记录"
