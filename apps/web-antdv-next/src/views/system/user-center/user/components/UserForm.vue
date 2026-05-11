@@ -99,10 +99,12 @@ function normalizeRoleFieldValue(roleId: UserInfo['roleId']): string[] {
 const passwordComplexityRule = z
   .string()
   .min(1, $t('system.user.passwordRequired'))
-  .regex(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,20}$/,
-    $t('system.user.passwordFormat'),
-  );
+  .min(8, $t('system.user.passwordFormat'))
+  .max(20, $t('system.user.passwordFormat'))
+  .regex(/[a-z]/, $t('system.user.passwordFormat'))
+  .regex(/[A-Z]/, $t('system.user.passwordFormat'))
+  .regex(/\d/, $t('system.user.passwordFormat'))
+  .regex(/[^A-Za-z0-9]/, $t('system.user.passwordFormat'));
 
 function schemaAccountField(accountDisabled: boolean) {
   return {
@@ -317,6 +319,8 @@ const [VbenModal, modalApi] = useVbenModal({
   destroyOnClose: true,
   showConfirmButton: true,
   confirmLoading: false,
+  // 点击不关闭弹窗
+  closeOnClickModal: false,
   title: $t('system.user.addUser'),
   confirmText: $t('system.common.ok'),
   onOpenChange: async (open: boolean) => {
