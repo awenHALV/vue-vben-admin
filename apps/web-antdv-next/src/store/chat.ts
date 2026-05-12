@@ -175,6 +175,40 @@ function normalizeFieldValueRows(
     ? chartConfig.fields.filter(Boolean)
     : [];
 
+  const fieldXKey = fields.includes(chartConfig.xAxis)
+    ? chartConfig.xAxis
+    : fields[0];
+  const fieldSeriesKeys = fields.filter((field) => field !== fieldXKey);
+  const isMultiSeriesChart =
+    chartConfig.type === 'line' || chartConfig.type === 'bar';
+  const isMultiSeriesRows =
+    isMultiSeriesChart &&
+    typeof fieldXKey === 'string' &&
+    fieldSeriesKeys.length > 1 &&
+    rows.every(
+      (r) =>
+        Object.prototype.hasOwnProperty.call(r, fieldXKey) &&
+        fieldSeriesKeys.some((field) =>
+          Object.prototype.hasOwnProperty.call(r, field),
+        ),
+    );
+
+  // 多系列折线/柱状图：fields 中横坐标字段之外的字段都是独立 series。
+  // 例：fields: ['time', 'chargedEnergy', 'dischargedEnergy']
+  if (isMultiSeriesRows) {
+    return rows.map((r) => {
+      const normalizedRow: Record<string, unknown> = {
+        [chartConfig.xAxis]: String(r[fieldXKey] ?? ''),
+      };
+
+      fieldSeriesKeys.forEach((field) => {
+        normalizedRow[field] = normalizeChartValue(r[field]);
+      });
+
+      return normalizedRow;
+    });
+  }
+
   const hasAxisKeys = rows.some(
     (r) =>
       Object.prototype.hasOwnProperty.call(r, chartConfig.xAxis) ||
