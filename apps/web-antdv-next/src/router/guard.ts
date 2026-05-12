@@ -8,6 +8,10 @@ import { startProgress, stopProgress } from '@vben/utils';
 import { accessRoutes, coreRouteNames } from '#/router/routes';
 import { useAuthStore } from '#/store';
 
+import {
+  persistAccessSnapshot,
+  restoreAccessSnapshot,
+} from './access-snapshot';
 import { generateAccess } from './access';
 
 // 无后端菜单权限时的落地页
@@ -44,6 +48,60 @@ function normalizeQueryParam(value: unknown): string | undefined {
     return value;
   }
   return undefined;
+}
+
+let pendingBackgroundAccessSync: null | Promise<void> = null;
+
+async function syncAccessState(
+  router: Router,
+  accessStore: ReturnType<typeof useAccessStore>,
+  userStore: ReturnType<typeof useUserStore>,
+  authStore: ReturnType<typeof useAuthStore>,
+) {
+  const userInfo = userStore.userInfo || (await authStore.fetchUserInfo());
+  const userRoles = userInfo.roles ?? [];
+
+  const { accessibleMenus, accessibleRoutes } = await generateAccess({
+    roles: userRoles,
+    router,
+    routes: accessRoutes,
+  });
+
+  accessStore.setAccessMenus(accessibleMenus);
+  accessStore.setAccessRoutes(accessibleRoutes);
+  accessStore.setIsAccessChecked(true);
+  persistAccessSnapshot({
+    accessCodes: accessStore.accessCodes,
+    accessMenus: accessibleMenus,
+    accessToken: accessStore.accessToken,
+    menuPathToDirectButtonCodes: accessStore.menuPathToDirectButtonCodes,
+  });
+
+  return { accessibleMenus, userInfo };
+}
+
+function syncAccessStateInBackground(
+  router: Router,
+  accessStore: ReturnType<typeof useAccessStore>,
+  userStore: ReturnType<typeof useUserStore>,
+  authStore: ReturnType<typeof useAuthStore>,
+) {
+  if (!accessStore.accessToken || accessStore.isAccessChecked) {
+    return;
+  }
+
+  if (!pendingBackgroundAccessSync) {
+    pendingBackgroundAccessSync = syncAccessState(
+      router,
+      accessStore,
+      userStore,
+      authStore,
+    )
+      .catch(() => undefined)
+      .finally(() => {
+        pendingBackgroundAccessSync = null;
+      });
+  }
 }
 
 /**
@@ -85,9 +143,13 @@ function setupAccessGuard(router: Router) {
     const accessStore = useAccessStore();
     const userStore = useUserStore();
     const authStore = useAuthStore();
+    const isCoreMicroDetailRoute = Boolean(to.meta.microName);
 
     // 个人中心/下载中心挂在 core 下，但仍需登录（避免与「基本路由免 token」冲突）
-    if ((to.name === 'Profile' || to.name === 'DownloadCenter') && !accessStore.accessToken) {
+    if (
+      (to.name === 'Profile' || to.name === 'DownloadCenter') &&
+      !accessStore.accessToken
+    ) {
       if (to.fullPath !== LOGIN_PATH) {
         return {
           path: LOGIN_PATH,
@@ -110,19 +172,29 @@ function setupAccessGuard(router: Router) {
             preferences.app.defaultHomePath,
         );
       }
-        // 挂在 coreRoutes 下的微前端隐藏详情页仍需走登录校验与菜单初始化，
-        // 否则刷新深链时会提前放行，导致 accessMenus 为空、侧栏不渲染。
-        const isCoreMicroDetailRoute = Boolean(to.meta.microName);
+
+      // 微前端详情深链优先恢复最近一次菜单快照，再后台补齐动态路由和最新权限。
+      if (
+        isCoreMicroDetailRoute &&
+        accessStore.accessToken &&
+        !accessStore.isAccessChecked &&
+        restoreAccessSnapshot(accessStore)
+      ) {
+        syncAccessStateInBackground(router, accessStore, userStore, authStore);
+        return true;
+      }
+
       // 个人中心/下载中心 / 无权限落地页挂在 BasicLayout 下，侧栏依赖 generateAccess 写入的菜单；
       // 刷新直达时若尚未生成权限，不可在此提前 return，否则 accessMenus 未初始化。
       const coreRouteNeedsAccessGeneration =
         accessStore.accessToken &&
         !accessStore.isAccessChecked &&
-          (to.name === 'Profile' ||
-            to.name === 'DownloadCenter' ||
-            to.name === 'NoMenuPermission' ||
-            isCoreMicroDetailRoute);
-        if (!coreRouteNeedsAccessGeneration && !isCoreMicroDetailRoute) {
+        (to.name === 'Profile' ||
+          to.name === 'DownloadCenter' ||
+          to.name === 'NoMenuPermission' ||
+          isCoreMicroDetailRoute);
+
+      if (!coreRouteNeedsAccessGeneration && !isCoreMicroDetailRoute) {
         return true;
       }
     }
@@ -178,23 +250,12 @@ function setupAccessGuard(router: Router) {
       return true;
     }
 
-    // 生成路由表
-    // 当前登录用户拥有的角色标识列表
-    const userInfo = userStore.userInfo || (await authStore.fetchUserInfo());
-    const userRoles = userInfo.roles ?? [];
-
-    // 生成菜单和路由
-    const { accessibleMenus, accessibleRoutes } = await generateAccess({
-      roles: userRoles,
+    const { accessibleMenus, userInfo } = await syncAccessState(
       router,
-      // 则会在菜单中显示，但是访问会被重定向到403
-      routes: accessRoutes,
-    });
-
-    // 保存菜单信息和路由信息
-    accessStore.setAccessMenus(accessibleMenus);
-    accessStore.setAccessRoutes(accessibleRoutes);
-    accessStore.setIsAccessChecked(true);
+      accessStore,
+      userStore,
+      authStore,
+    );
 
     const firstMenuPath = getFirstMenuPath(accessibleMenus as AccessMenuItem[]);
     const requestedDefaultHome =
