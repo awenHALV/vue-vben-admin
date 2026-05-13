@@ -39,6 +39,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const baseName = (route.meta.microName as string) || 'default-app';
 // 用于无界实例隔离：将 fullPath 纳入唯一标识，避免 alive=true 时复用旧实例/旧 url
 const myUniqueName = `${baseName}-${myPath}`;
+const LOADING_WATCHDOG_MS = 3000;
 
 function resolveMicroUrl() {
   /**
@@ -77,26 +78,50 @@ const renderWujie = ref(false);
 const showLoading = ref(true); // 控制遮罩层是否显示（顶层）
 const retryCount = ref(0); // 记录当前重试次数
 const MAX_RETRY = 2; // 最大重试次数，防止无限死循环
+let loadingWatchdog: null | ReturnType<typeof setTimeout> = null;
+
+function clearLoadingWatchdog() {
+  if (loadingWatchdog !== null) {
+    clearTimeout(loadingWatchdog);
+    loadingWatchdog = null;
+  }
+}
+
+function startLoadingWatchdog() {
+  clearLoadingWatchdog();
+  loadingWatchdog = setTimeout(() => {
+    if (showLoading.value) {
+      console.warn(`⏳ [沙箱挂载仍在进行] ${myUniqueName}`);
+    }
+  }, LOADING_WATCHDOG_MS);
+}
+
+function beginLoadingState() {
+  showLoading.value = true;
+  startLoadingWatchdog();
+}
+
+function finishLoadingState() {
+  clearLoadingWatchdog();
+  emitChangeThemeToChildWithTab();
+  showLoading.value = false;
+  retryCount.value = 0;
+}
 
 const safeMount = async () => {
-  showLoading.value = true;
-  try {
-    // 避免过度频繁的 DOM 抖动
-    await sleep(100);
+  console.log('safeMount');
+  if (!microUrl) {
+    clearLoadingWatchdog();
+    renderWujie.value = false;
+    showLoading.value = false;
+    return;
+  }
 
+  beginLoadingState();
+  try {
     // 挂载无界组件
     renderWujie.value = true;
     await nextTick();
-
-    // 因为部分页面存在信息丢失的情况，所以主动通知子应用主题和语言信息
-    emitChangeThemeToChildWithTab();
-
-    // 延迟关闭 Loading 遮罩
-    await sleep(150);
-    showLoading.value = false;
-
-    // 成功挂载后，重置重试次数
-    retryCount.value = 0;
   } catch (error) {
     console.error(`🔴 [沙箱挂载/通信异常] ${myUniqueName}:`, error);
 
@@ -110,6 +135,7 @@ const safeMount = async () => {
       // 先重置视图状态
       showLoading.value = true;
       renderWujie.value = false;
+      clearLoadingWatchdog();
 
       // 彻底销毁当前可能已损坏的无界实例
       destroyApp(myUniqueName);
@@ -121,6 +147,7 @@ const safeMount = async () => {
       console.error(
         `❌ [致命错误] 已达到最大重试次数 (${MAX_RETRY})，放弃加载沙箱: ${myUniqueName}`,
       );
+      clearLoadingWatchdog();
       showLoading.value = false;
     }
   }
@@ -135,12 +162,14 @@ onActivated(() => {
 });
 
 onDeactivated(() => {
+  clearLoadingWatchdog();
   // 视图切换时主动卸载 DOM，规避 Vue 路由切换动画可能导致的白屏或渲染残留
   renderWujie.value = false;
 });
 
 // 内存管理：【按需销毁与无界实例释放】
 onBeforeUnmount(() => {
+  clearLoadingWatchdog();
   // 延迟 150ms，确保 Vben 框架的 tabbarStore 状态已完成异步更新
   setTimeout(() => {
     const tabs = tabbarStore.getTabs || [];
@@ -164,11 +193,13 @@ onBeforeUnmount(() => {
 
 const handleWujieError = (url: string, e: Error) => {
   console.error(`🔴 [无界内部加载/执行失败] ${url}`, e);
+  clearLoadingWatchdog();
   // 抛出异常，进入 safeMount 或被其他重试机制捕获
   // 或者直接在这里触发重试逻辑
   if (retryCount.value < MAX_RETRY) {
     retryCount.value++;
     destroyApp(myUniqueName);
+    showLoading.value = true;
     renderWujie.value = false;
     setTimeout(safeMount, 300);
   } else {
@@ -188,9 +219,17 @@ const handleWujieError = (url: string, e: Error) => {
       :props="microProps"
       :sync="false"
       :alive="true"
+      :after-mount="finishLoadingState"
+      :activated="finishLoadingState"
       :load-error="handleWujieError"
       :exec-error="handleWujieError"
     />
+    <div
+      v-else-if="!microUrl"
+      class="absolute inset-0 z-40 flex-center bg-background text-sm text-muted-foreground"
+    >
+      子应用配置缺失，无法加载当前页面
+    </div>
     <transition name="fade">
       <div
         v-if="showLoading"
