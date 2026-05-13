@@ -2,9 +2,64 @@ import { defineConfig } from '@vben/vite-config';
 
 import { loadEnv } from 'vite';
 
+function createManualChunks(id: string) {
+  if (!id.includes('node_modules')) {
+    return undefined;
+  }
+
+  const normalizedId = id.replaceAll('\\', '/');
+
+  if (normalizedId.includes('/wujie') || normalizedId.includes('/wujie-vue3')) {
+    return 'vendor-wujie';
+  }
+
+  if (normalizedId.includes('/vxe-') || normalizedId.includes('/xe-utils/')) {
+    return 'vendor-vxe';
+  }
+
+  if (normalizedId.includes('/@visactor/')) {
+    return 'vendor-visactor';
+  }
+
+  if (normalizedId.includes('/@antv/') || normalizedId.includes('/dagre/')) {
+    return 'vendor-antv';
+  }
+
+  if (
+    normalizedId.includes('/three/') ||
+    normalizedId.includes('/leaflet') ||
+    normalizedId.includes('/proj4/')
+  ) {
+    return 'vendor-geo-3d';
+  }
+
+  if (normalizedId.includes('/@iconify/')) {
+    return 'vendor-iconify';
+  }
+
+  if (
+    normalizedId.includes('/ant-design-vue/') ||
+    normalizedId.includes('/@ant-design/')
+  ) {
+    return 'vendor-antdv';
+  }
+
+  if (
+    normalizedId.includes('/vue/') ||
+    normalizedId.includes('/@vue/') ||
+    normalizedId.includes('/vue-router/') ||
+    normalizedId.includes('/pinia/')
+  ) {
+    return 'vendor-vue';
+  }
+
+  return undefined;
+}
+
 export default defineConfig(async (config) => {
+  const mode = config?.mode ?? 'development';
   // 第三个参数为空表示读取 env的所有环境变量，不使用前缀做过滤
-  const env = loadEnv(config.mode, process.cwd(), '');
+  const env = loadEnv(mode, process.cwd(), '');
   const proxyTarget = env.VITE_DEV_PROXY_TARGET;
   const proxyTargetEnergy = env.VITE_DEV_PROXY_TARGET_ENERGY;
   const proxyTargetAiAssistant = env.VITE_DEV_PROXY_TARGET_AI_ASSISTANT;
@@ -14,6 +69,13 @@ export default defineConfig(async (config) => {
       injectAppLoading: false,
     },
     vite: {
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: createManualChunks,
+          },
+        },
+      },
       server: {
         proxy: {
           '/ai-assistant': {

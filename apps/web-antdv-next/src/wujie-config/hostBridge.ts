@@ -262,15 +262,17 @@ export function setupWujieHostBridge() {
     void authStore.terminateSession(true, { reason: 'session_expired' });
   });
 
-  // 监听 VPP 子应用菜单请求
-  bus.$on(
-    BUTTON_PERMISSION_LIST('vpp'),
-    (callback?: (codes: string[]) => void) => {
-      if (typeof callback === 'function') {
-        callback(getProjectAccessCodes('vpp'));
-      }
-    },
-  );
+  // 监听子应用权限码请求
+  website.projectCodes.forEach((projectCode) => {
+    bus.$on(
+      BUTTON_PERMISSION_LIST(projectCode),
+      (callback?: (codes: string[]) => void) => {
+        if (typeof callback === 'function') {
+          callback(getProjectAccessCodes(projectCode));
+        }
+      },
+    );
+  });
 
   website.projectCodes.forEach((projectCode) => {
     bus.$on(
