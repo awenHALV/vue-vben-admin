@@ -16,6 +16,7 @@ import { defineStore } from 'pinia';
 import { getUserInfoApi, logoutApi } from '#/api';
 import { getTenantListApi, loginApi } from '#/api/core/auth';
 import { $t } from '#/locales';
+import { clearAccessSnapshot } from '#/router/access-snapshot';
 import { encryptByMd5 } from '#/utils/cipher';
 import { notifyChildAppsLogout } from '#/wujie-config/event';
 
@@ -139,6 +140,7 @@ export const useAuthStore = defineStore('auth', () => {
     notifyChildAppsLogout({
       reason: options?.reason ?? 'session_expired',
     });
+    clearAccessSnapshot();
     syncMultiTenantFlag(false);
     resetAllStores();
     removeCookie(TOKEN_KEY);
@@ -198,6 +200,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function clearToken() {
+    clearAccessSnapshot();
     syncMultiTenantFlag(false);
     accessStore.setAccessToken(null);
     removeCookie(TOKEN_KEY);

@@ -21,6 +21,7 @@ import {
 } from '#/api/core/tenant';
 import { usePageButtonAccess } from '#/composables/use-page-button-access';
 import { generateAccess } from '#/router/access';
+import { persistAccessSnapshot } from '#/router/access-snapshot';
 import { accessRoutes } from '#/router/routes';
 import { useAuthStore } from '#/store';
 
@@ -255,6 +256,12 @@ async function applyTenantTokenAndRefresh(token: string) {
   accessStore.setAccessMenus(accessibleMenus);
   accessStore.setAccessRoutes(accessibleRoutes);
   accessStore.setIsAccessChecked(true);
+  persistAccessSnapshot({
+    accessCodes: accessStore.accessCodes,
+    accessMenus: accessibleMenus,
+    accessToken: accessStore.accessToken,
+    menuPathToDirectButtonCodes: accessStore.menuPathToDirectButtonCodes,
+  });
 
   const currentPath = router.currentRoute.value.path;
   if (!hasMenuPath(accessibleMenus as AccessMenuItem[], currentPath)) {
