@@ -1,8 +1,22 @@
 import type { IconifyIconStructure } from '@vben-core/icons';
 
-import { addIcon } from '@vben-core/icons';
+import { addIcon, registerIconLoader } from '@vben-core/icons';
 
-loadSvgIcons();
+const svgModules = import.meta.glob('./icons/**/*.svg', {
+  import: 'default',
+  query: '?raw',
+});
+
+const svgLoaders = Object.fromEntries(
+  Object.entries(svgModules).map(([key, loader]) => {
+    const start = key.lastIndexOf('/') + 1;
+    const end = key.lastIndexOf('.');
+    return [key.slice(start, end), loader as () => Promise<string>];
+  }),
+) as Record<string, () => Promise<string>>;
+
+const loadingIcons = new Map<string, Promise<void>>();
+const registeredIcons = new Set<string>();
 
 function parseSvg(svgData: string): IconifyIconStructure {
   const parser = new DOMParser();
@@ -52,24 +66,38 @@ function parseSvg(svgData: string): IconifyIconStructure {
  * @example ./svg/avatar.svg
  * <Icon icon="svg:avatar"></Icon>
  */
-async function loadSvgIcons() {
-  const svgEagers = import.meta.glob('./icons/**', {
-    eager: true,
-    query: '?raw',
-  });
+async function ensureSvgIconRegistered(iconName: string) {
+  if (registeredIcons.has(iconName)) {
+    return;
+  }
 
-  await Promise.all(
-    Object.entries(svgEagers).map((svg) => {
-      const [key, body] = svg as [string, string | { default: string }];
+  const currentTask = loadingIcons.get(iconName);
+  if (currentTask) {
+    return currentTask;
+  }
 
-      // ./icons/xxxx.svg => xxxxxx
-      const start = key.lastIndexOf('/') + 1;
-      const end = key.lastIndexOf('.');
-      const iconName = key.slice(start, end);
+  const loadSvgModule = svgLoaders[iconName];
+  if (!loadSvgModule) {
+    return;
+  }
 
-      return addIcon(`svg:${iconName}`, {
-        ...parseSvg(typeof body === 'object' ? body.default : body),
-      });
-    }),
-  );
+  const task = loadSvgModule()
+    .then((svgContent) => {
+      addIcon(`svg:${iconName}`, parseSvg(svgContent));
+      registeredIcons.add(iconName);
+    })
+    .finally(() => {
+      loadingIcons.delete(iconName);
+    });
+
+  loadingIcons.set(iconName, task);
+  return task;
 }
+
+async function loadSvgIcons() {
+  await Promise.all(Object.keys(svgLoaders).map(ensureSvgIconRegistered));
+}
+
+registerIconLoader('svg', ensureSvgIconRegistered);
+
+export { ensureSvgIconRegistered, loadSvgIcons };

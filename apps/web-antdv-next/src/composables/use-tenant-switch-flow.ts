@@ -15,6 +15,7 @@ import { message } from 'antdv-next';
 import { switchTenantPublicApi } from '#/api/core/auth';
 import { $t } from '#/locales';
 import { generateAccess } from '#/router/access';
+import { persistAccessSnapshot } from '#/router/access-snapshot';
 import { accessRoutes } from '#/router/routes';
 import { useAuthStore } from '#/store';
 
@@ -86,6 +87,12 @@ export function useTenantSwitchFlow(router: Router) {
     accessStore.setAccessMenus(accessibleMenus);
     accessStore.setAccessRoutes(accessibleRoutes);
     accessStore.setIsAccessChecked(true);
+    persistAccessSnapshot({
+      accessCodes: accessStore.accessCodes,
+      accessMenus: accessibleMenus,
+      accessToken: accessStore.accessToken,
+      menuPathToDirectButtonCodes: accessStore.menuPathToDirectButtonCodes,
+    });
 
     const firstMenuPath = getFirstMenuPath(accessibleMenus as AccessMenuItem[]);
     const targetPath =

@@ -126,6 +126,18 @@ export const BUTTON_PERMISSION_LIST = (projectCode: string) =>
 // 子应用离开时触发
 export const DEACTIVATEDAPP = (projectCode: string) =>
   `${projectCode}:deactivatedApp`;
+// 子应用请求基座关闭指定 tab
+export const CLOSE_TAB_EVENT = (projectCode: string) => {
+  return `${projectCode}:closeTab`;
+};
+
+export interface HostBridgeCloseTabPayload {
+  /** 子应用内当前 fullPath，如 /dispatch/detail/1?a=1；也兼容基座完整路径 /vpp/dispatch/detail/1 */
+  currentPath: string;
+  /** 关闭后跳转的子应用内路径，如 /dispatch/scheduling-plan；也兼容基座完整路径 */
+  toPath?: string;
+}
+
 // 切换租户
 export const SWITCHTENANT_EVENT = 'switchTenantEvent';
 // editior
@@ -142,3 +154,19 @@ export const OPEN_INSPECT_SCHEME_DIALOG_RECEIVE = `noticeInspectOpenReceive`;
 
 // 通知子应用刷新页面
 export const HOST_BRIDGE_REFRESH = 'hostBridge:refresh';
+
+// 通知子应用切换到某个微应用 tab（仅当基座当前路由属于微应用时触发）
+export const HOST_BRIDGE_TAB_CHANGE = 'hostBridge:tabChange';
+
+export interface HostBridgeTabChangePayload {
+  /** 当前微应用 projectCode，如 vpp */
+  projectCode: string;
+  /** 当前基座完整路径，含 query/hash */
+  fullPath: string;
+  /** 当前基座 pathname */
+  path: string;
+  /** 当前路由 name */
+  name?: string;
+  /** 当前 tab key，与基座 tabbar key 一致 */
+  tabKey: string;
+}

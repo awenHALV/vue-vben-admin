@@ -27,7 +27,7 @@ const assistantIconSrc = AI_ASSISTANT_ICON_URL;
       <div
         class="mt-2 flex-col-center flex cursor-pointer border-[rgba(0,0,0,0.06)] p-1 transition-[colors,box-shadow] hover:rounded-sm hover:bg-white hover:shadow-[0px_1px_2px_0px_rgba(0,0,0,0.03),0px_1px_6px_-1px_rgba(0,0,0,0.02),0px_2px_4px_0px_rgba(0,0,0,0.02)] dark:hover:bg-accent dark:hover:shadow-none"
         type="text"
-        aria-label="小曦助手"
+        aria-label="小羲助手"
         @click="emit('goChat')"
       >
         <div class="py-1">
@@ -36,7 +36,7 @@ const assistantIconSrc = AI_ASSISTANT_ICON_URL;
         <span
           class="shrink-0 text-center text-[12px] leading-none whitespace-nowrap text-[rgba(0,0,0,0.88)] dark:text-foreground"
         >
-          小曦助手
+          小羲助手
         </span>
       </div>
 
@@ -52,7 +52,7 @@ const assistantIconSrc = AI_ASSISTANT_ICON_URL;
         />
       </Button> -->
       <div
-        class="mt-auto flex-center size-10 cursor-pointer rounded-lg border border-[rgba(0,0,0,0.06)] bg-white p-1.5 transition-colors hover:bg-[rgba(0,0,0,0.04)] dark:border-border dark:bg-[rgba(0,0,0,0.04)] dark:hover:bg-accent"
+        class="mt-auto mb-9 flex-center size-10 cursor-pointer rounded-lg border border-[rgba(0,0,0,0.06)] bg-white p-1.5 transition-colors hover:bg-[rgba(0,0,0,0.04)] dark:border-border dark:bg-[rgba(0,0,0,0.04)] dark:hover:bg-accent"
         role="button"
         tabindex="0"
         aria-label="历史记录"

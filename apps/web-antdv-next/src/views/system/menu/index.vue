@@ -21,6 +21,7 @@ import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteFeatureApi, getRawMenusApi } from '#/api/core/menu';
 import { usePageButtonAccess } from '#/composables/use-page-button-access';
 import { generateAccess } from '#/router/access';
+import { persistAccessSnapshot } from '#/router/access-snapshot';
 import { accessRoutes } from '#/router/routes';
 
 import AddOrUpdate from './AddOrUpdate.vue';
@@ -470,6 +471,12 @@ async function refreshMenuCacheIfNeeded(options?: { force?: boolean }) {
     // 更新权限存储
     accessStore.setAccessMenus(accessibleMenus);
     accessStore.setAccessRoutes(accessibleRoutes);
+    persistAccessSnapshot({
+      accessCodes: accessStore.accessCodes,
+      accessMenus: accessibleMenus,
+      accessToken: accessStore.accessToken,
+      menuPathToDirectButtonCodes: accessStore.menuPathToDirectButtonCodes,
+    });
 
     // 动态路由已重建，刷新页签缓存 include 列表，避免旧路由组件缓存继续参与 deactivate。
     await tabbarStore.updateCacheTabs();

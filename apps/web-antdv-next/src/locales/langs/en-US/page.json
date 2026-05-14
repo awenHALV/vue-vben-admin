@@ -17,5 +17,20 @@
     "title": "Dashboard",
     "analytics": "Analytics",
     "workspace": "Workspace"
+  },
+  "downloadCenter": {
+    "title": "Download Center",
+    "fileName": "File Name",
+    "fileStatus": "File Status",
+    "generateTime": "Generate Time",
+    "download": "Download",
+    "generating": "Generating",
+    "failed": "Failed",
+    "completed": "Completed",
+    "total": "Total {0} items",
+    "selected": "Selected {0} items",
+    "refresh": "Refresh",
+    "usageTip": "Usage: 1. File download progress with large dynamic data will be displayed on this page. 2. Files generated more than 7 days ago will be cleaned up and cannot be re-downloaded.",
+    "downloadSuccess": "Download successful"
   }
 }

@@ -1,8 +1,10 @@
 import type { TabDefinition } from '@vben/types';
 
 import type {
+  HostBridgeCloseTabPayload,
   HostBridgeLanguageChangePayload,
   HostBridgeState,
+  HostBridgeTabChangePayload,
   HostBridgeThemeChangePayload,
 } from './event';
 
@@ -15,17 +17,20 @@ import WujieVue from 'wujie-vue3';
 
 import { router } from '#/router';
 import { useAuthStore } from '#/store';
+import { getMicroProjectCodeFromRoutePath } from '#/wujie-config/micro-route';
 
 import {
   BUTTON_PERMISSION_LIST,
   BUTTON_PERMISSION_LIST_CHANGE,
   CHANGELANUAGE_EVENT,
   CHANGETHEME_EVENT,
+  CLOSE_TAB_EVENT,
   HOST_BRIDGE_HOST_STATE_PUSH,
   HOST_BRIDGE_REQUEST_BUILTIN_THEME,
   HOST_BRIDGE_REQUEST_COLOR_MODE,
   HOST_BRIDGE_REQUEST_HOST_STATE,
   HOST_BRIDGE_REQUEST_TOKEN,
+  HOST_BRIDGE_TAB_CHANGE,
   JUMPROUTE_EVENT,
   LOGOUT_EVENT,
   NOTICECHILDAPPTOKEN_EVENT,
@@ -33,6 +38,34 @@ import {
 import website from './website';
 
 const { bus } = WujieVue;
+
+function safeDecodeURIComponent(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function ensureLeadingSlash(path: string): string {
+  return path.startsWith('/') ? path : `/${path}`;
+}
+
+function getPathname(path: string): string {
+  return path.split(/[?#]/)[0] ?? '';
+}
+
+function toHostMicroPath(projectCode: string, path: string): string {
+  const normalized = ensureLeadingSlash(String(path ?? '').trim());
+  const projectPrefix = `/${projectCode}`;
+  if (
+    normalized === projectPrefix ||
+    normalized.startsWith(`${projectPrefix}/`)
+  ) {
+    return normalized;
+  }
+  return `${projectPrefix}${normalized}`;
+}
 
 /** 与基座 UI 一致的明暗解析（含 theme.mode === 'auto'） */
 function getResolvedColorMode(): 'dark' | 'light' {
@@ -100,6 +133,24 @@ function buildHostState(
   };
 }
 
+function buildMicroTabChangePayload(): HostBridgeTabChangePayload | null {
+  const route = router.currentRoute.value;
+  const projectCode =
+    (route.meta.microName as string | undefined) ??
+    getMicroProjectCodeFromRoutePath(route.fullPath);
+  if (!projectCode) {
+    return null;
+  }
+
+  return {
+    projectCode,
+    fullPath: route.fullPath,
+    path: route.path,
+    name: route.name ? String(route.name) : undefined,
+    tabKey: getTabKey(route),
+  };
+}
+
 /**
  * 注册主应用侧 Wujie bus：响应子应用的 token / 主题相关请求，并在状态变化时广播。
  * 须在 Pinia `initStores` 之后调用。
@@ -119,6 +170,57 @@ export function setupWujieHostBridge() {
       }
     });
     return [...codes];
+  }
+
+  function findTabByHostPath(hostPath: string): TabDefinition | undefined {
+    const decodedHostPath = safeDecodeURIComponent(hostPath);
+    const hostPathname = getPathname(decodedHostPath);
+    const shouldMatchFullPath = /[?#]/.test(decodedHostPath);
+
+    return tabbarStore.getTabs.find((tab) => {
+      const candidates = [tab.key, tab.fullPath, tab.path]
+        .filter((v): v is string => typeof v === 'string' && v.length > 0)
+        .map(safeDecodeURIComponent);
+
+      return candidates.some((candidate) => {
+        if (candidate === decodedHostPath) {
+          return true;
+        }
+        if (shouldMatchFullPath) {
+          return false;
+        }
+        return getPathname(candidate) === hostPathname;
+      });
+    });
+  }
+
+  async function handleCloseMicroTab(
+    projectCode: string,
+    payload: HostBridgeCloseTabPayload,
+  ) {
+    if (!payload?.currentPath) {
+      return;
+    }
+
+    const currentHostPath = toHostMicroPath(projectCode, payload.currentPath);
+    const tab = findTabByHostPath(currentHostPath);
+    if (!tab) {
+      return;
+    }
+
+    const tabKey = tab.key ?? tab.fullPath ?? tab.path;
+    if (!tabKey) {
+      return;
+    }
+
+    if (payload.toPath) {
+      const toHostPath = toHostMicroPath(projectCode, payload.toPath);
+      if (router.currentRoute.value.fullPath !== toHostPath) {
+        await router.replace(toHostPath);
+      }
+    }
+
+    await tabbarStore.closeTabByKey(tabKey, router);
   }
 
   bus.$on(HOST_BRIDGE_REQUEST_TOKEN, (callback?: (token: string) => void) => {
@@ -160,15 +262,26 @@ export function setupWujieHostBridge() {
     void authStore.terminateSession(true, { reason: 'session_expired' });
   });
 
-  // 监听 VPP 子应用菜单请求
-  bus.$on(
-    BUTTON_PERMISSION_LIST('vpp'),
-    (callback?: (codes: string[]) => void) => {
-      if (typeof callback === 'function') {
-        callback(getProjectAccessCodes('vpp'));
-      }
-    },
-  );
+  // 监听子应用权限码请求
+  website.projectCodes.forEach((projectCode) => {
+    bus.$on(
+      BUTTON_PERMISSION_LIST(projectCode),
+      (callback?: (codes: string[]) => void) => {
+        if (typeof callback === 'function') {
+          callback(getProjectAccessCodes(projectCode));
+        }
+      },
+    );
+  });
+
+  website.projectCodes.forEach((projectCode) => {
+    bus.$on(
+      CLOSE_TAB_EVENT(projectCode),
+      (payload: HostBridgeCloseTabPayload) => {
+        void handleCloseMicroTab(projectCode, payload);
+      },
+    );
+  });
 
   function emitHostStatePush() {
     bus.$emit(HOST_BRIDGE_HOST_STATE_PUSH, buildHostState(accessStore));
@@ -224,6 +337,14 @@ export function setupWujieHostBridge() {
     });
   }
 
+  function emitMicroTabChange() {
+    const payload = buildMicroTabChangePayload();
+    if (!payload) {
+      return;
+    }
+    bus.$emit(HOST_BRIDGE_TAB_CHANGE, payload);
+  }
+
   watch(
     () => ({
       token: accessStore.accessToken,
@@ -254,6 +375,12 @@ export function setupWujieHostBridge() {
     () => accessStore.accessToken,
     () => emitNoticeChildToken(),
     { immediate: true },
+  );
+
+  watch(
+    () => router.currentRoute.value.fullPath,
+    () => emitMicroTabChange(),
+    { flush: 'post' },
   );
 
   // 监听菜单变化并自动派发权限码给子应用
