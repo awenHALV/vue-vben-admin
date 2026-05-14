@@ -1,0 +1,107 @@
+{
+  "weather": {
+    "defaultUser": "User",
+    "greetings": {
+      "lateNight": "🌙 Late night, {name}",
+      "earlyMorning": "🌅 Early morning, {name}",
+      "morning": "☀️ Good morning, {name}",
+      "forenoon": "🌤️ Good forenoon, {name}",
+      "noon": "🍱 Good noon, {name}",
+      "afterNoon": "🌥️ Early afternoon, {name}",
+      "afternoon": "⛅ Good afternoon, {name}",
+      "dusk": "🌇 Good dusk, {name}",
+      "evening": "🌆 Good evening, {name}",
+      "night": "🌃 Good night, {name}"
+    }
+  },
+  "info": {
+    "todo": {
+      "title": "Todo Center",
+      "tabs": {
+        "all": "All",
+        "approval": "Approval",
+        "workorder": "Work Order"
+      },
+      "empty": {
+        "todo": "No todos",
+        "workorder": "No work orders"
+      }
+    },
+    "message": {
+      "title": "Message Center",
+      "tabs": {
+        "all": "All",
+        "system": "System",
+        "release": "Release",
+        "alarm": "Alarm"
+      },
+      "tags": {
+        "system": "System",
+        "release": "Release",
+        "alarm": "Alarm"
+      },
+      "empty": {
+        "all": "No messages",
+        "system": "No system messages",
+        "release": "No release notices",
+        "alarm": "No alarms"
+      }
+    },
+    "news": {
+      "title": "Industry News",
+      "empty": "No news",
+      "categories": {
+        "policy": "Policy",
+        "news": "News",
+        "report": "Report",
+        "other": "Other"
+      }
+    },
+    "releaseDetail": {
+      "title": "Release Notice Detail",
+      "publishTime": "Published At: ",
+      "imageAlt": "Version release",
+      "description": "Release Notes",
+      "detail": "Release Details"
+    }
+  },
+  "customApps": {
+    "title": "Custom Apps",
+    "config": "App Config",
+    "add": "Add App",
+    "emptyText": "No custom apps yet. Add shortcuts for common features.",
+    "drawerTitle": "Configure Custom App",
+    "appName": "App Name",
+    "appNamePlaceholder": "Please enter app name",
+    "themeColor": "Theme Color",
+    "appIcon": "App Icon",
+    "selectMenu": "Select Menus",
+    "cancel": "Cancel",
+    "save": "Save",
+    "validation": {
+      "appNameRequired": "Please enter app name",
+      "appNameMaxLength": "App name can contain up to 20 characters",
+      "menuRequired": "Select at least one menu"
+    },
+    "deleteConfirm": {
+      "title": "Confirm Delete",
+      "content": "Are you sure you want to delete this app?",
+      "okText": "Delete",
+      "cancelText": "Cancel"
+    },
+    "defaultApps": {
+      "salesTool": "Sales Tool",
+      "settlementCenter": "Settlement Center",
+      "alarmCenter": "Alarm Center",
+      "vppDispatch": "VPP Dispatch"
+    },
+    "colors": {
+      "blue": "Blue",
+      "green": "Green",
+      "orange": "Orange",
+      "purple": "Purple",
+      "red": "Red",
+      "cyan": "Cyan"
+    }
+  }
+}

@@ -406,6 +406,8 @@ const [VbenModal, modalApi] = useVbenModal({
   title: $t('system.role.permissionConfig', '权限管理'),
   class: 'w-[55vw]',
   bordered: true,
+  // 点击弹窗外侧不关闭弹窗
+  closeOnClickModal: false,
   confirmText: $t('system.common.ok'),
   onOpenChange: async (open) => {
     if (!open) {

@@ -1,0 +1,54 @@
+{
+  "title": "Industry News",
+  "listTitle": "Industry News List",
+  "fields": {
+    "title": "News Title",
+    "category": "News Type",
+    "source": "Source",
+    "url": "News URL",
+    "publishTime": "Publish Time",
+    "action": "Action"
+  },
+  "category": {
+    "policy": "Policy",
+    "news": "Industry News",
+    "report": "Market Report",
+    "other": "Other News"
+  },
+  "placeholder": {
+    "title": "Please enter news title",
+    "category": "Please select news type",
+    "source": "e.g. National Energy Administration",
+    "url": "Please enter full URL, e.g. https://www.example.com/news/1",
+    "publishTime": "Please select publish time"
+  },
+  "action": {
+    "search": "Search",
+    "reset": "Reset",
+    "add": "Add",
+    "detail": "Detail",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "modal": {
+    "addTitle": "Add Industry News",
+    "detailTitle": "Industry News Detail",
+    "editTitle": "Edit Industry News"
+  },
+  "validation": {
+    "titleRequired": "Please enter news title",
+    "titleMax": "Title cannot exceed 100 characters",
+    "categoryRequired": "Please select news type",
+    "sourceRequired": "Please enter source",
+    "urlRequired": "Please enter news URL",
+    "urlInvalid": "URL must start with http:// or https://",
+    "publishTimeRequired": "Please select publish time"
+  },
+  "tips": {
+    "url": "URL must start with http:// or https://",
+    "deleteConfirm": "Are you sure you want to delete this data?",
+    "deleteContent": "This cannot be restored after deletion. Please choose carefully."
+  }
+}

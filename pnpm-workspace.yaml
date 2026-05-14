@@ -70,6 +70,7 @@ catalog:
   '@vueuse/core': ^14.2.1
   '@vueuse/integrations': ^14.2.1
   '@vueuse/motion': ^3.0.3
+  '@wangeditor/editor': ^5.1.23
   ant-design-vue: ^4.2.6
   antdv-next: ^1.1.0
   archiver: ^7.0.1

@@ -293,6 +293,17 @@ export const useTabbarStore = defineStore('core-tabbar', {
       await this.updateCacheTabs();
     },
     /**
+     * 进入工作台自定义应用沙箱时，清空当前窗口从 opener 复制来的旧页签。
+     */
+    async clearTabsForSandbox() {
+      this.tabs = [];
+      if (isVisitHistory()) {
+        this.visitHistory.clear();
+      }
+      this.cachedRoutes.clear();
+      await this.updateCacheTabs();
+    },
+    /**
      * 菜单变更后移除「路径已不在新菜单树中」的标签（含固定标签），避免切换租户等场景残留旧页签。
      * @param menus 本次 generateAccess 得到的 accessibleMenus
      * @param router 用于在关闭当前激活 tab 时 replace 到剩余 tab 或首菜单

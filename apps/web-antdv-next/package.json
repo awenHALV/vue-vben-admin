@@ -42,6 +42,7 @@
     "@vben/types": "workspace:*",
     "@vben/utils": "workspace:*",
     "@vueuse/core": "catalog:",
+    "@wangeditor/editor": "catalog:",
     "antdv-next": "catalog:",
     "crypto-js": "catalog:",
     "dayjs": "catalog:",

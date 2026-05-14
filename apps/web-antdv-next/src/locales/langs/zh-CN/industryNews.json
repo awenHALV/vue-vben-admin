@@ -1,0 +1,54 @@
+{
+  "title": "行业资讯",
+  "listTitle": "行业资讯列表",
+  "fields": {
+    "title": "资讯标题",
+    "category": "资讯类型",
+    "source": "来源平台",
+    "url": "资讯URL链接",
+    "publishTime": "发布时间",
+    "action": "操作"
+  },
+  "category": {
+    "policy": "政策发布",
+    "news": "行业新闻",
+    "report": "市场报告",
+    "other": "其他资讯"
+  },
+  "placeholder": {
+    "title": "请输入资讯标题",
+    "category": "请选择资讯类型",
+    "source": "如：国家能源局、北极星售电网",
+    "url": "请输入完整URL，如：https://www.example.com/news/1",
+    "publishTime": "请选择发布时间"
+  },
+  "action": {
+    "search": "查询",
+    "reset": "重置",
+    "add": "新增",
+    "detail": "详情",
+    "edit": "编辑",
+    "delete": "删除",
+    "cancel": "取消",
+    "save": "保存"
+  },
+  "modal": {
+    "addTitle": "新增行业资讯",
+    "detailTitle": "行业资讯详情",
+    "editTitle": "编辑行业资讯"
+  },
+  "validation": {
+    "titleRequired": "请输入资讯标题",
+    "titleMax": "标题最多100字符",
+    "categoryRequired": "请选择资讯类型",
+    "sourceRequired": "请输入来源平台",
+    "urlRequired": "请输入资讯URL链接",
+    "urlInvalid": "URL必须以http://或https://开头",
+    "publishTimeRequired": "请选择发布时间"
+  },
+  "tips": {
+    "url": "URL必须以http://或https://开头",
+    "deleteConfirm": "请确定是否删除数据？",
+    "deleteContent": "删除后不可恢复，请慎重选择"
+  }
+}

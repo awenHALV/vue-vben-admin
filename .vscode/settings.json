@@ -231,5 +231,6 @@
   "commentTranslate.multiLineMerge": true,
   "vue.server.hybridMode": true,
   "typescript.tsdk": "node_modules/typescript/lib",
-  "oxc.enable": false
+  "oxc.enable": false,
+  "Codegeex.RepoIndex": true
 }

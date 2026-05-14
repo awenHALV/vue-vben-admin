@@ -62,6 +62,8 @@ const [Form, formApi] = useVbenForm({
 const [VbenModal, modalApi] = useVbenModal({
   bordered: true,
   destroyOnClose: true,
+  // 点击弹窗外侧不关闭弹窗
+  closeOnClickModal: false,
   confirmText: $t('system.common.ok'),
   onOpenChange: async (open) => {
     if (!open) return;

@@ -90,6 +90,16 @@ const coreRoutes: RouteRecordRaw[] = [
         },
       },
       {
+        name: 'WorkbenchAppSandbox',
+        path: '/workbench/app-sandbox',
+        component: () => import('#/views/workbench/app-sandbox.vue'),
+        meta: {
+          hideInBreadcrumb: true,
+          hideInMenu: true,
+          title: '自定义应用',
+        },
+      },
+      {
         name: 'GridChargeGunDetail',
         path: 'grid/equipmentMonitoring/chargeGun/:id',
         component: () => import('#/views/micro/index.vue'),
@@ -98,6 +108,30 @@ const coreRoutes: RouteRecordRaw[] = [
           hideInMenu: true,
           microName: 'grid',
           title: '充电枪详情',
+        },
+      },
+      {
+        name: 'VppLongTermTradingAdd',
+        path: '/vpp/market-trading/long-term-trading/add',
+        component: () => import('#/views/micro/index.vue'),
+        meta: {
+          activePath: '/vpp/market-trading/long-term-trading',
+          hideInBreadcrumb: true,
+          hideInMenu: true,
+          microName: 'vpp',
+          title: $t('tradingCalendar.newLongTermTrading'),
+        },
+      },
+      {
+        name: 'VppEnergyStorageProjectPlanDetail',
+        path: '/vpp/analysis-revenue/energy-storage-project/plan',
+        component: () => import('#/views/micro/index.vue'),
+        meta: {
+          activePath: '/vpp/analysis-revenue/energy-storage-project/plan',
+          hideInBreadcrumb: true,
+          hideInMenu: true,
+          microName: 'vpp',
+          title: '储能项目收益测算方案详情',
         },
       },
     ],

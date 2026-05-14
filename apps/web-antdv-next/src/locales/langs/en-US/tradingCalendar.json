@@ -1,0 +1,37 @@
+{
+  "common": {
+    "cancelSelect": "Cancel Selection",
+    "applyToDeclaration": "Apply to Declaration"
+  },
+  "weekdays": {
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat",
+    "sun": "Sun"
+  },
+  "actions": {
+    "collapse": "Collapse"
+  },
+  "labels": {
+    "province": "Grid Area",
+    "items": "items"
+  },
+  "page": {
+    "calendarTitle": "Medium & Long-term Trading Calendar",
+    "monthFormat": "{month}/{year}"
+  },
+  "status": {
+    "notStarted": "Not Started",
+    "inProgress": "In Progress",
+    "ended": "Ended"
+  },
+  "messages": {
+    "selectTaskFirst": "Please select a trade task first"
+  },
+  "modal": {
+    "clickTaskToSelect": "Click a trading task in the calendar to select it"
+  }
+}
