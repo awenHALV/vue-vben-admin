@@ -41,6 +41,43 @@ const baseName = (route.meta.microName as string) || 'default-app';
 const myUniqueName = `${baseName}-${myPath}`;
 const LOADING_WATCHDOG_MS = 3000;
 
+const MICRO_URL_QUERY_BLOCKLIST = new Set(['pageKey', 'title']);
+
+/**
+ * 跳转已注册的路由时,需要merge一下quer
+ * 排除title,因为title已作为tab的标签
+ */
+function mergeCurrentRouteQuery(url: string) {
+  const [urlWithoutHash, hash = ''] = url.split('#');
+  if (!urlWithoutHash) {
+    return url;
+  }
+
+  const [pathname, rawQuery = ''] = urlWithoutHash.split('?');
+  if (!pathname) {
+    return url;
+  }
+
+  const params = new URLSearchParams(rawQuery);
+
+  for (const [key, value] of Object.entries(route.query)) {
+    if (MICRO_URL_QUERY_BLOCKLIST.has(key) || value === undefined) {
+      continue;
+    }
+
+    params.delete(key);
+    const values = Array.isArray(value) ? value : [value];
+    values.forEach((item) => {
+      if (item !== null) {
+        params.append(key, item);
+      }
+    });
+  }
+
+  const query = params.toString();
+  return `${pathname}${query ? `?${query}` : ''}${hash ? `#${hash}` : ''}`;
+}
+
 function resolveMicroUrl() {
   /**
    * 菜单路由由后端下发时，会在 `meta.microUrl` 写入完整子应用 URL（域名 + 子路径）。
@@ -49,7 +86,7 @@ function resolveMicroUrl() {
    */
   const url = route.meta.microUrl as string | undefined;
   if (url) {
-    return url;
+    return mergeCurrentRouteQuery(url);
   }
 
   /**
