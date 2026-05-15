@@ -287,33 +287,83 @@ export function setupWujieHostBridge() {
     bus.$emit(HOST_BRIDGE_HOST_STATE_PUSH, buildHostState(accessStore));
   }
 
-  // 监听子路由跳转：基座地址栏以本次 push 的 path 为准，须与子应用实际页面一致（含 /detail/:id 等动态段）
-  bus.$on(
-    JUMPROUTE_EVENT,
-    (payload: { path: string; query?: Record<string, string | undefined> }) => {
-      const title = payload.query?.title;
-      const { title: _ignored, ...query } = payload.query ?? {};
-      router
-        .push({
-          path: payload.path,
-          query,
-        })
-        .then(async () => {
-          if (!title) {
-            return;
-          }
+  type JumpRoutePayload = {
+    path: string;
+    query?: Record<string, string | undefined>;
+    tabPlacement?: 'afterCurrent' | 'append';
+  };
 
-          // 路由已完成，但 tab 可能尚未由 tabbar 的 route.fullPath watch 写入 store。
-          const key = getTabKey(router.currentRoute.value);
-          await nextTick();
-          const tab = await waitTabByKey(tabbarStore, key, 500);
-          if (tab) {
-            await tabbarStore.setTabTitle(tab, title);
-            tabbarStore.setUpdateTime();
-          }
-        });
-    },
-  );
+  function moveTabAfterAnchor(
+    tabbarStore: ReturnType<typeof useTabbarStore>,
+    targetKey: string,
+    anchorKey: string,
+  ) {
+    const tabs = tabbarStore.getTabs;
+
+    const targetIndex = tabs.findIndex((tab) => getTabKey(tab) === targetKey);
+    const anchorIndex = tabs.findIndex((tab) => getTabKey(tab) === anchorKey);
+
+    if (targetIndex === -1 || anchorIndex === -1) {
+      return;
+    }
+
+    if (targetIndex === anchorIndex || targetIndex === anchorIndex + 1) {
+      return;
+    }
+
+    const newIndex = targetIndex < anchorIndex ? anchorIndex : anchorIndex + 1;
+
+    tabbarStore.sortTabs(targetIndex, newIndex);
+    tabbarStore.setUpdateTime();
+  }
+
+  // 监听子路由跳转：基座地址栏以本次 push 的 path 为准，须与子应用实际页面一致（含 /detail/:id 等动态段）
+  bus.$on(JUMPROUTE_EVENT, async (payload: JumpRoutePayload) => {
+    console.log('paypay', payload);
+    const title = payload.query?.title;
+    const { title: _ignored, ...query } = payload.query ?? {};
+
+    // push 前记录当前 tab，也就是 A tab
+    const anchorKey =
+      payload.tabPlacement === 'afterCurrent'
+        ? getTabKey(router.currentRoute.value)
+        : undefined;
+
+    // push 前 resolve 目标路由，提前锁定 B tab 的 key
+    const targetRoute = router.resolve({
+      path: payload.path,
+      query,
+    });
+    const targetKey = getTabKey(targetRoute);
+
+    // push 前判断目标 tab 是否已存在
+    const existedBefore = tabbarStore.getTabs.some(
+      (tab) => getTabKey(tab) === targetKey,
+    );
+
+    await router.push({
+      path: payload.path,
+      query,
+    });
+
+    await nextTick();
+
+    const tab = await waitTabByKey(tabbarStore, targetKey, 500);
+
+    if (tab && title) {
+      await tabbarStore.setTabTitle(tab, title);
+      tabbarStore.setUpdateTime();
+    }
+
+    if (
+      tab &&
+      anchorKey &&
+      payload.tabPlacement === 'afterCurrent' &&
+      !existedBefore
+    ) {
+      moveTabAfterAnchor(tabbarStore, targetKey, anchorKey);
+    }
+  });
 
   function emitChangeThemeToChild() {
     const payload: HostBridgeThemeChangePayload = {
