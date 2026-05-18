@@ -1,10 +1,11 @@
+// ==================== 修改后的 use-tabbar.ts ====================
 import type { RouteLocationNormalizedGeneric } from 'vue-router';
 
 import type { TabDefinition } from '@vben/types';
 
 import type { IContextMenuItem } from '@vben-core/tabs-ui';
 
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, unref } from 'vue'; // 【修改】增加导入 unref
 import { useRoute, useRouter } from 'vue-router';
 
 import { useContentMaximize, useTabs } from '@vben/hooks';
@@ -87,9 +88,15 @@ export function useTabbar() {
 
   function wrapperTabLocale(tab: RouteLocationNormalizedGeneric) {
     const m = tab?.meta;
+
+    // 【新增】根据语言环境选择对应语言下的自定义动态标题，并进行 unref 解包处理
+    const targetCustomTitle = locale.value.startsWith('en')
+      ? (m?.newTabTitleEn || m?.newTabTitle)
+      : m?.newTabTitle;
+
     const title = resolveMenuTitle(
       {
-        title: m?.title as string | undefined,
+        title: (targetCustomTitle || m?.title) as string | undefined, // 【修改】解包提取
         name: tab.name as string | undefined,
         featureName: m?.featureName as string | undefined,
         featureNameEn: m?.featureNameEn as string | undefined,
@@ -101,6 +108,8 @@ export function useTabbar() {
       meta: {
         ...tab?.meta,
         title,
+        // 【新增联动核心】重写当前渲染层状态下的 newTabTitle，保证底层盲取 newTabTitle 的组件自动适配国际化
+        newTabTitle: (targetCustomTitle) as string | undefined,
       },
     };
   }
