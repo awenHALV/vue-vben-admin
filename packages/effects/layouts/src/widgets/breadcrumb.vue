@@ -91,6 +91,36 @@ function findMenuChainByPath(
   return bestChain;
 }
 
+/**
+ * 从菜单树中查找指定路径的菜单项
+ * @param menus 菜单树
+ * @param targetPath 目标路径
+ * @returns 找到的菜单项
+ */
+function findMenuByPath(
+  menus: MenuRecordLike[],
+  targetPath: string,
+): MenuRecordLike | undefined {
+  const normalizedTarget = normalizePath(targetPath);
+  if (!normalizedTarget) {
+    return undefined;
+  }
+
+  for (const menu of menus) {
+    const menuPath = normalizePath(String(menu.path ?? ''));
+    if (menuPath && menuPath === normalizedTarget) {
+      return menu;
+    }
+    if (menu.children?.length) {
+      const found = findMenuByPath(menu.children, targetPath);
+      if (found) {
+        return found;
+      }
+    }
+  }
+  return undefined;
+}
+
 const breadcrumbs = computed((): IBreadcrumb[] => {
   const matched = route.matched;
   const currentPath = route.path;
@@ -100,8 +130,8 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
   for (const match of matched) {
     const { meta, name: routeName, path } = match;
     const {
-      featureName,
-      featureNameEn,
+      featureName: metaFeatureName,
+      featureNameEn: metaFeatureNameEn,
       hideChildrenInMenu,
       hideInBreadcrumb,
       icon,
@@ -111,6 +141,19 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
       continue;
     }
 
+    // 优先从 route.meta 获取，如果没有则从菜单树中查找
+    let featureName = metaFeatureName as string | undefined;
+    let featureNameEn = metaFeatureNameEn as string | undefined;
+
+    // 如果 meta 中没有 featureName，尝试从 accessMenus 中查找
+    if (!featureName && accessStore.accessMenus.length > 0) {
+      const menuItem = findMenuByPath(accessStore.accessMenus as MenuRecordLike[], path);
+      if (menuItem) {
+        featureName = (menuItem.meta?.featureName ?? menuItem.featureName) as string | undefined;
+        featureNameEn = (menuItem.meta?.featureNameEn ?? menuItem.featureNameEn) as string | undefined;
+      }
+    }
+
     resultBreadcrumb.push({
       icon,
       path: path || route.path,
@@ -118,8 +161,8 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
         {
           title: title as string | undefined,
           name: routeName as string | undefined,
-          featureName: featureName as string | undefined,
-          featureNameEn: featureNameEn as string | undefined,
+          featureName,
+          featureNameEn,
         },
         { locale: locale.value, t: $t, te: $te },
       ),
@@ -163,8 +206,9 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
           {
             title: (m.meta as any)?.title ?? (m.title as any),
             name: (m.name as any) ?? undefined,
-            featureName: (m.meta as any)?.featureName ?? undefined,
-            featureNameEn: (m.meta as any)?.featureNameEn ?? undefined,
+            // 优先使用菜单项上的 featureName/featureNameEn（由 generateMenus 生成）
+            featureName: (m.featureName as string) ?? (m.meta as any)?.featureName ?? undefined,
+            featureNameEn: (m.featureNameEn as string) ?? (m.meta as any)?.featureNameEn ?? undefined,
           },
           { locale: locale.value, t: $t, te: $te },
         ),
