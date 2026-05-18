@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, reactive } from 'vue';
+import { computed, onMounted, reactive } from 'vue';
 
 import { IconifyIcon } from '@vben/icons';
 import { useUserStore } from '@vben/stores';
@@ -7,6 +7,7 @@ import { useUserStore } from '@vben/stores';
 import { Avatar, Card, Typography } from 'antdv-next';
 import dayjs from 'dayjs';
 
+import { getWorkbenchWeatherLocationApi } from '#/api/workbench';
 import { $t } from '#/locales';
 
 const { Text: TypographyText, Title: TypographyTitle } = Typography;
@@ -71,6 +72,19 @@ const weatherData = reactive({
   temperature: 24,
   weather: '多云',
   icon: 'lucide:cloud-sun',
+});
+
+async function loadWeatherLocation() {
+  try {
+    const location = await getWorkbenchWeatherLocationApi();
+    weatherData.city = location.city || location.province || weatherData.city;
+  } catch (error) {
+    console.error('加载天气地理位置失败:', error);
+  }
+}
+
+onMounted(() => {
+  void loadWeatherLocation();
 });
 </script>
 

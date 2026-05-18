@@ -126,6 +126,9 @@ catalogs:
     '@vueuse/motion':
       specifier: ^3.0.3
       version: 3.0.3
+    '@wangeditor/editor':
+      specifier: ^5.1.23
+      version: 5.1.23
     antdv-next:
       specifier: ^1.1.0
       version: 1.1.5
@@ -637,6 +640,9 @@ importers:
       markdown-it-multimd-table:
         specifier: 'catalog:'
         version: 4.2.3
+      mitt:
+        specifier: ^3.0.1
+        version: 3.0.1
       pinia:
         specifier: ^3.0.4
         version: 3.0.4(typescript@5.9.3)(vue@3.5.30(typescript@5.9.3))

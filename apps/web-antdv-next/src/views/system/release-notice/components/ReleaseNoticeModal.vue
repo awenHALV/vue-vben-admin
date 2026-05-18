@@ -9,6 +9,8 @@ import type {
   IToolbarConfig,
 } from '@wangeditor/editor';
 
+import type { ReleaseNoticeItem } from '#/api/system/release-notice';
+
 import {
   computed,
   nextTick,
@@ -25,17 +27,17 @@ import { $t } from '@vben/locales';
 import { createEditor, createToolbar } from '@wangeditor/editor';
 import { Form, FormItem, Input } from 'antdv-next';
 
+import {
+  createReleaseNoticeApi,
+  toReleaseNoticeCreateParams,
+  toReleaseNoticeUpdateParams,
+  updateReleaseNoticeApi,
+} from '#/api/system/release-notice';
+
 import '@wangeditor/editor/dist/css/style.css';
 
-interface ReleaseNotice {
-  id: string;
-  title: string;
-  description: string;
-  content: string;
-}
-
 const emit = defineEmits<{
-  success: [data: ReleaseNotice];
+  success: [];
 }>();
 
 // ==================== 表单数据 ====================
@@ -47,11 +49,14 @@ const toolbarContainerRef = ref<HTMLElement | null>(null);
 let toolbar: null | ReturnType<typeof createToolbar> = null;
 let isInitializingEditor = false;
 
-const formData = reactive<ReleaseNotice>({
+const formData = reactive<ReleaseNoticeItem>({
   id: '',
   title: '',
   description: '',
   content: '',
+  createTime: '',
+  publishTime: '',
+  status: 'draft',
 });
 
 function fileToDataUrl(file: File) {
@@ -175,13 +180,19 @@ function resetForm() {
   formData.title = '';
   formData.description = '';
   formData.content = '';
+  formData.createTime = '';
+  formData.publishTime = '';
+  formData.status = 'draft';
 }
 
-function setFormData(data: ReleaseNotice) {
+function setFormData(data: ReleaseNoticeItem) {
   formData.id = data.id;
   formData.title = data.title;
   formData.description = data.description;
   formData.content = data.content;
+  formData.createTime = data.createTime;
+  formData.publishTime = data.publishTime;
+  formData.status = data.status;
 }
 
 const [VbenModal, modalApi] = useVbenModal({
@@ -223,9 +234,10 @@ const [VbenModal, modalApi] = useVbenModal({
 
     modalApi.setState({ confirmLoading: true });
     try {
-      // 模拟提交
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      emit('success', { ...formData });
+      await (isEdit.value
+        ? updateReleaseNoticeApi(toReleaseNoticeUpdateParams(formData))
+        : createReleaseNoticeApi(toReleaseNoticeCreateParams(formData)));
+      emit('success');
       modalApi.close();
     } finally {
       modalApi.setState({ confirmLoading: false });
@@ -233,7 +245,7 @@ const [VbenModal, modalApi] = useVbenModal({
   },
 });
 
-function open(record?: ReleaseNotice) {
+function open(record?: ReleaseNoticeItem) {
   isEdit.value = Boolean(record);
   resetForm();
   formRef.value?.clearValidate?.();

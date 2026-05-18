@@ -1,5 +1,10 @@
 <script lang="ts" setup>
 import type { BackendMenuItem } from '#/api/core/menu';
+import type {
+  WorkbenchAppConfigApiItem,
+  WorkbenchAppConfigDetailApiItem,
+  WorkbenchAppFeatureItem,
+} from '#/api/workbench';
 
 import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -9,6 +14,12 @@ import { IconifyIcon } from '@vben/icons';
 import { Button, Card, Drawer, Input, message, Modal, Tree } from 'antdv-next';
 
 import { getMineFeaturesRawApi } from '#/api/core/menu';
+import {
+  createWorkbenchAppConfigApi,
+  deleteWorkbenchAppConfigApi,
+  getWorkbenchAppConfigDetailApi,
+  getWorkbenchAppConfigListApi,
+} from '#/api/workbench';
 import { $t } from '#/locales';
 
 // ==================== 自定义应用 ====================
@@ -46,46 +57,11 @@ interface MenuTreeNode {
   title: string;
 }
 
-// 临时 mock：应用配置列表。后端就绪后替换为接口读取/保存。
-const CUSTOM_APPS_SESSION_KEY = 'workbench_custom_apps';
 // 当前浏览器页签的沙箱上下文；每个 window.open 页签各自独立。
 const CUSTOM_APP_SANDBOX_SESSION_KEY = 'workbench_app_sandbox';
 const router = useRouter();
 
-const customApps = ref<CustomApp[]>([
-  {
-    id: '1',
-    name: $t('workbench.customApps.defaultApps.salesTool'),
-    icon: 'lucide:trending-up',
-    color: 'blue',
-    menuKeys: [],
-    menus: [],
-  },
-  {
-    id: '2',
-    name: $t('workbench.customApps.defaultApps.settlementCenter'),
-    icon: 'lucide:calculator',
-    color: 'green',
-    menuKeys: [],
-    menus: [],
-  },
-  {
-    id: '3',
-    name: $t('workbench.customApps.defaultApps.alarmCenter'),
-    icon: 'lucide:bell',
-    color: 'orange',
-    menuKeys: [],
-    menus: [],
-  },
-  {
-    id: '4',
-    name: $t('workbench.customApps.defaultApps.vppDispatch'),
-    icon: 'lucide:zap',
-    color: 'purple',
-    menuKeys: [],
-    menus: [],
-  },
-]);
+const customApps = ref<CustomApp[]>([]);
 
 const appConfigVisible = ref(false);
 const appForm = reactive({
@@ -138,8 +114,6 @@ const colorOptions = [
 ];
 
 const availableMenus = ref<MenuTreeNode[]>([]);
-// 接口返回的完整菜单树，用于保存时按选中 key 裁剪出菜单快照。
-const fullMenuTree = ref<BackendMenuItem[]>([]);
 
 const availableIcons = [
   { icon: 'lucide:zap' },
@@ -183,6 +157,7 @@ function openAppConfig() {
   appForm.selectedMenus = [];
   appFormErrors.name = '';
   appConfigVisible.value = true;
+  checkedKeys.value = [];
 }
 
 // 输入后清理名称错误态，提交时仍会完整校验。
@@ -207,29 +182,6 @@ function validateAppConfig() {
   }
 
   return !appFormErrors.name && appForm.selectedMenus.length > 0;
-}
-
-// 临时保存到当前页签 session；正式版改为保存到后端。
-function saveCustomAppsToSession(apps: CustomApp[]) {
-  sessionStorage.setItem(CUSTOM_APPS_SESSION_KEY, JSON.stringify(apps));
-
-  // TODO: 后端接口就绪后，替换为保存自定义应用配置接口。
-  // await saveCustomAppConfigApi(apps);
-}
-
-// 从当前页签 session 恢复已配置应用；正式版改为后端列表接口。
-function readCustomAppsFromSession(): CustomApp[] {
-  const savedApps = sessionStorage.getItem(CUSTOM_APPS_SESSION_KEY);
-  if (!savedApps) {
-    return [];
-  }
-
-  try {
-    return JSON.parse(savedApps) as CustomApp[];
-  } catch (error) {
-    console.error('解析自定义应用配置失败:', error);
-    return [];
-  }
 }
 
 // 判断一个路径段数组是否已经包含父级前缀，用于识别后端返回的绝对路径。
@@ -317,47 +269,6 @@ function toCustomAppMenu(
   };
 }
 
-/**
- * 按 Tree 勾选结果裁剪菜单树：
- * - 选中父级：保存父级及其全部后代；
- * - 选中深层子级：保存从根到该子级的完整链路。
- */
-function filterSelectedMenuTree(
-  items: BackendMenuItem[],
-  selectedKeySet: Set<string>,
-  parentAbsoluteRoutePath?: string,
-): CustomAppMenu[] {
-  return items
-    .filter((item) => isMenuFeature(item))
-    .map((item) => {
-      const absoluteRoutePath = resolveMenuAbsoluteRoutePath(
-        item.routePath,
-        parentAbsoluteRoutePath,
-      );
-      const selected = selectedKeySet.has(
-        getMenuNodeKey(item, absoluteRoutePath),
-      );
-      if (selected) {
-        return toCustomAppMenu(item, parentAbsoluteRoutePath);
-      }
-
-      const children = filterSelectedMenuTree(
-        (item.children ?? []).filter(Boolean),
-        selectedKeySet,
-        absoluteRoutePath,
-      );
-      if (children.length === 0) {
-        return null;
-      }
-
-      return {
-        ...toCustomAppMenu({ ...item, children: [] }, parentAbsoluteRoutePath),
-        children,
-      };
-    })
-    .filter((item): item is CustomAppMenu => !!item);
-}
-
 // 收集最终菜单快照里的所有 key，供后续回显/统计使用。
 function collectMenuKeys(items: CustomAppMenu[], keys = new Set<string>()) {
   for (const item of items) {
@@ -369,22 +280,90 @@ function collectMenuKeys(items: CustomAppMenu[], keys = new Set<string>()) {
   return keys;
 }
 
-// 保存一个新的自定义应用配置。
-function saveAppConfig() {
-  if (!validateAppConfig()) return;
-  const selectedKeySet = new Set(appForm.selectedMenus);
-  const menus = filterSelectedMenuTree(fullMenuTree.value, selectedKeySet);
-  const newApp: CustomApp = {
-    id: String(Date.now()),
-    name: appForm.name.trim(),
-    icon: appForm.icon,
-    color: appForm.color,
-    menuKeys: [...collectMenuKeys(menus)],
+function normalizeBackendMenuItem(
+  item: WorkbenchAppFeatureItem,
+): BackendMenuItem {
+  return {
+    children: Array.isArray(item.children)
+      ? item.children.map((child) => normalizeBackendMenuItem(child))
+      : [],
+    featureCode: String(item.featureCode ?? ''),
+    featureIcon: item.featureIcon || undefined,
+    featureName: String(item.featureName ?? ''),
+    featureNameEn: item.featureNameEn || undefined,
+    featureType: String(item.featureType ?? ''),
+    id: String(item.id),
+    parentId:
+      item.parentId === null || item.parentId === undefined
+        ? null
+        : String(item.parentId),
+    resourceCode: item.resourceCode || undefined,
+    routePath: String(item.routePath ?? ''),
+    sort: item.sort,
+  };
+}
+
+function mapAppConfigToCustomApp(item: WorkbenchAppConfigApiItem): CustomApp {
+  return {
+    id: String(item.id),
+    name: item.appName || '',
+    icon: item.appIcon || 'lucide:layout-grid',
+    color: 'blue',
+    menuKeys: [],
+    menus: [],
+  };
+}
+
+function mapAppConfigDetailToCustomApp(
+  detail: WorkbenchAppConfigDetailApiItem,
+): CustomApp {
+  const menus = (detail.features ?? [])
+    .filter(Boolean)
+    .filter((item) => isMenuFeature(item))
+    .map((item) => toCustomAppMenu(normalizeBackendMenuItem(item)));
+  return {
+    ...mapAppConfigToCustomApp(detail),
+    menuKeys: detail.featureIds
+      ? detail.featureIds.split(',').filter(Boolean)
+      : [...collectMenuKeys(menus)],
     menus,
   };
-  customApps.value.push(newApp);
-  saveCustomAppsToSession(customApps.value);
-  appConfigVisible.value = false;
+}
+
+// 保存一个新的自定义应用配置。
+async function loadCustomApps() {
+  try {
+    const apps = await getWorkbenchAppConfigListApi();
+    customApps.value = apps.map((item) => mapAppConfigToCustomApp(item));
+  } catch (error) {
+    console.error('加载自定义应用配置失败:', error);
+    customApps.value = [];
+  }
+}
+
+// 定义一个变量存储半选状态
+const halfCheckedKeys = ref<(number | string)[]>([]);
+const checkedKeys = ref<(number | string)[]>([]);
+function updateCheckedKeys(keys: (number | string)[], infos: any) {
+  checkedKeys.value = keys.map(String);
+  halfCheckedKeys.value = infos.halfCheckedKeys;
+  appForm.selectedMenus = keys.map(String);
+}
+
+async function saveAppConfig() {
+  if (!validateAppConfig()) return;
+  try {
+    const allKeys = [...checkedKeys.value, ...halfCheckedKeys.value];
+    await createWorkbenchAppConfigApi({
+      appIcon: appForm.icon,
+      appName: appForm.name.trim(),
+      featureIds: allKeys.join(','),
+    });
+    appConfigVisible.value = false;
+    await loadCustomApps();
+  } catch (error) {
+    console.error('保存自定义应用配置失败:', error);
+  }
 }
 
 /**
@@ -392,25 +371,30 @@ function saveAppConfig() {
  * workbench_app_sandbox 只表示当前打开的应用上下文；
  * 新 window 会复制一份 sessionStorage，之后与原工作台窗口互不影响。
  */
-function openAppSandbox(app: CustomApp) {
+async function openAppSandbox(app: CustomApp) {
+  let appForSandbox = app;
+  try {
+    const detail = await getWorkbenchAppConfigDetailApi(app.id);
+    appForSandbox = mapAppConfigDetailToCustomApp(detail);
+  } catch (error) {
+    console.error('加载自定义应用详情失败:', error);
+  }
+
   sessionStorage.setItem(
     CUSTOM_APP_SANDBOX_SESSION_KEY,
     JSON.stringify({
-      appId: app.id,
-      app,
+      appId: appForSandbox.id,
+      app: appForSandbox,
     }),
   );
 
-  // TODO: 后端接口就绪后，新页签根据 appId 调接口读取应用绑定菜单。
-  // const app = await getCustomAppConfigApi(appId);
   const { href } = router.resolve({
     path: '/workbench/app-sandbox',
-    query: { appId: app.id },
+    query: { appId: appForSandbox.id },
   });
   window.open(href, '_blank');
 }
 
-// 删除应用配置并同步 session mock 数据。
 function deleteApp(appId: string) {
   Modal.confirm({
     title: $t('workbench.customApps.deleteConfirm.title'),
@@ -418,9 +402,9 @@ function deleteApp(appId: string) {
     okText: $t('workbench.customApps.deleteConfirm.okText'),
     cancelText: $t('workbench.customApps.deleteConfirm.cancelText'),
     okButtonProps: { danger: true },
-    onOk: () => {
-      customApps.value = customApps.value.filter((a) => a.id !== appId);
-      saveCustomAppsToSession(customApps.value);
+    onOk: async () => {
+      await deleteWorkbenchAppConfigApi(appId);
+      await loadCustomApps();
     },
   });
 }
@@ -481,22 +465,15 @@ function mapMenuTree(
 async function loadAvailableMenus() {
   try {
     const rawMenus = await getMineFeaturesRawApi();
-    fullMenuTree.value = rawMenus;
     availableMenus.value = mapMenuTree(rawMenus);
   } catch (error) {
     console.error('加载菜单失败:', error);
-    fullMenuTree.value = [];
     availableMenus.value = [];
   }
 }
 // ==================== 生命周期 ====================
 onMounted(() => {
-  // TODO: 后端接口就绪后，替换为读取自定义应用配置列表接口。
-  // customApps.value = await getCustomAppConfigListApi();
-  const savedApps = readCustomAppsFromSession();
-  if (savedApps.length > 0) {
-    customApps.value = savedApps;
-  }
+  void loadCustomApps();
   void loadAvailableMenus();
 });
 </script>
@@ -641,11 +618,12 @@ onMounted(() => {
         </label>
         <div class="menu-tree-wrapper">
           <Tree
-            v-model:checked-keys="appForm.selectedMenus"
+            :checked-keys="checkedKeys"
             :tree-data="availableMenus"
             checkable
             :selectable="false"
             :default-expand-all="true"
+            @check="(keys, infos) => updateCheckedKeys(keys, infos)"
           >
             <template #title="{ title, icon }">
               <span class="tree-node-title">

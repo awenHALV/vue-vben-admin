@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { nextTick, ref } from 'vue';
 
-import { useTabbarStore } from '@vben/stores';
+import { getTabKey, useTabbarStore } from '@vben/stores';
 
 import { $t } from '#/locales';
 import { router } from '#/router';

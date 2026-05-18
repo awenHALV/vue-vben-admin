@@ -1,9 +1,5 @@
 <script lang="ts" setup>
-import type { IndustryNewsItem } from '#/api/system/industry-news';
-import type { ReleaseNoticeItem } from '#/api/system/release-notice';
-import type { WorkbenchMessageItem } from '#/api/workbench';
-
-import { nextTick, onMounted, ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { IconifyIcon } from '@vben/icons';
@@ -11,13 +7,7 @@ import { getTabKey, useTabbarStore } from '@vben/stores';
 
 import { Card, Drawer, Empty, TabPane, Tabs, Tag } from 'antdv-next';
 
-import { getIndustryNewsListApi } from '#/api/system/industry-news';
-import { getPublishedReleaseNoticeListApi } from '#/api/system/release-notice';
-import { getRevenueSchemeShareMessageListApi } from '#/api/workbench';
 import { $t } from '#/locales';
-import emitter from '#/utils/mitt';
-
-// import {useMenu} from '@vben/core/menu-ui'
 
 const router = useRouter();
 const tabbarStore = useTabbarStore();
@@ -80,11 +70,12 @@ const workorderTodos = ref<TodoItem[]>([
 
 // ==================== 消息中心 ====================
 interface MessageItem {
-  content?: string;
   id: string;
-  time: string;
   title: string;
+  content?: string;
+  time: string;
   type: string;
+  link?: string;
 }
 // 修改子应用apps/web-antdv-next/src/views/analysis-revenue/energyStorageProject/plan/index.vue
 // const route = useRoute();
@@ -100,20 +91,121 @@ interface MessageItem {
 //   })(),
 // );
 // 系统消息 - 统一模板：xxx项目xxx方案已完成，请查看。
-const systemMessages = ref<WorkbenchMessageItem[]>([]);
+const systemMessages = ref<MessageItem[]>([
+  {
+    id: '1',
+    title: '储能项目收益测算方案已完成，请查看',
+    content: '',
+    time: '2025-06-09 14:35:28',
+    type: 'system',
+    link: '/vpp/analysis-revenue/energy-storage-project/plan?projectId=2044264130276392961',
+  },
+  {
+    id: '2',
+    title: 'VPP调度优化方案已完成，请查看',
+    content: '',
+    time: '2025-06-09 14:15:42',
+    type: 'system',
+    link: '/strategy-workbench',
+  },
+  {
+    id: '3',
+    title: '现货交易策略回测方案已完成，请查看',
+    content: '',
+    time: '2025-06-09 13:45:10',
+    type: 'system',
+    link: '/trading-replay',
+  },
+  {
+    id: '4',
+    title: '中长期交易结算方案已完成，请查看',
+    content: '',
+    time: '2025-06-09 12:30:05',
+    type: 'system',
+    link: '/settlement/vpp',
+  },
+  {
+    id: '5',
+    title: '需求响应能力评估方案已完成，请查看',
+    content: '',
+    time: '2025-06-09 11:25:33',
+    type: 'system',
+    link: '/demand-response',
+  },
+]);
 
 // 发版通知 - 后台配置
-const releaseNotices = ref<ReleaseNoticeItem[]>([]);
+interface ReleaseNotice {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  publishTime: string;
+  status: 'draft' | 'published';
+}
+
+const releaseNotices = ref<ReleaseNotice[]>([
+  {
+    id: '1',
+    title: 'V2.1.0 现货交易辅助模块上线',
+    description:
+      '本次更新聚焦现货交易场景，新增辅助决策功能和算法优化，提升交易效率和准确性。',
+    content: `<h4>功能更新</h4>
+      <ul>
+        <li><strong>现货交易辅助决策：</strong>基于历史数据和实时行情，智能推荐交易策略，支持多维度风险评估</li>
+        <li><strong>电价预测算法优化：</strong>采用深度学习模型，预测准确度从90%提升至95%，预测周期延长至72小时</li>
+        <li><strong>结算报表导出增强：</strong>支持Excel、PDF、CSV多格式导出，新增自定义字段配置和数据透视功能</li>
+      </ul>
+      <h4>性能优化</h4>
+      <ul>
+        <li>页面加载速度提升40%，首屏渲染时间降至1.2秒以内</li>
+        <li>大数据量场景下表格渲染性能优化，支持百万级数据流畅展示</li>
+        <li>内存占用降低25%，长时间运行更稳定</li>
+      </ul>
+      <p><strong>温馨提示：</strong>本次更新涉及核心交易模块，建议在交易低峰期进行系统升级。升级过程中如有任何问题，请联系技术支持团队：400-888-8888</p>`,
+    publishTime: '2025-06-09 10:00:00',
+    status: 'published',
+  },
+  {
+    id: '2',
+    title: 'V2.0.5 热修复版本发布',
+    description: '紧急修复结算报表导出异常问题，优化系统稳定性。',
+    content: `<h4>修复内容</h4>
+      <ul>
+        <li><strong>报表导出：</strong>修复大数据量导出时的内存溢出问题</li>
+        <li><strong>数据同步：</strong>优化同步机制，降低延迟至1秒以内</li>
+        <li><strong>权限控制：</strong>修复部分用户无法查看结算明细的问题</li>
+      </ul>
+      <p><strong>版本状态：</strong>已稳定运行72小时，无新增问题反馈</p>`,
+    publishTime: '2025-06-08 16:30:00',
+    status: 'published',
+  },
+  {
+    id: '3',
+    title: 'V2.0.0 大版本更新',
+    description: '全新工作台功能上线，重构用户界面，提升操作体验。',
+    content: `<h4>主要更新</h4>
+      <ul>
+        <li><strong>工作台首页：</strong>个性化仪表盘设计，集中展示天气、待办、消息、资讯、日历等关键信息</li>
+        <li><strong>自定义应用：</strong>支持创建快捷应用入口，最多可添加8个常用功能</li>
+        <li><strong>消息中心：</strong>统一消息管理入口，系统通知、发版公告、告警提醒分类展示</li>
+        <li><strong>交易日历：</strong>可视化展示交易任务和时间节点</li>
+      </ul>
+      <p><strong>版本状态：</strong>已稳定运行30天，用户反馈良好</p>`,
+    publishTime: '2025-06-01 09:00:00',
+    status: 'published',
+  },
+]);
 
 const noticeDrawerVisible = ref(false);
-const currentNotice = ref<null | ReleaseNoticeItem>(null);
+const currentNotice = ref<null | ReleaseNotice>(null);
 
-function openNoticeDetail(notice: ReleaseNoticeItem) {
+function openNoticeDetail(notice: ReleaseNotice) {
   currentNotice.value = notice;
   noticeDrawerVisible.value = true;
 }
 
-// 告警消息：接口文档未提供对应端点，暂保留静态占位数据。
+// 告警消息 - Mock数据
 const alarmMessages = ref<MessageItem[]>([
   {
     id: '1',
@@ -138,7 +230,7 @@ const alarmMessages = ref<MessageItem[]>([
   },
 ]);
 
-async function handleMessageClick(msg: WorkbenchMessageItem) {
+async function handleMessageClick(msg: MessageItem) {
   if (msg.link) {
     await router.push(msg.link);
     await nextTick();
@@ -146,25 +238,93 @@ async function handleMessageClick(msg: WorkbenchMessageItem) {
     const key = getTabKey(router.currentRoute.value);
     const tab = tabbarStore.getTabByKey(key);
     if (tab) {
-      await tabbarStore.setTabTitle(tab, `独立储能测算分析-${msg.title}`);
+      await tabbarStore.setTabTitle(tab, `独立投资储能测算-${msg.title}`);
       tabbarStore.setUpdateTime();
     }
   }
 }
 
 // ==================== 行业资讯 ====================
-const newsData = ref<IndustryNewsItem[]>([]);
+interface NewsItem {
+  id: string;
+  title: string;
+  category: 'news' | 'other' | 'policy' | 'report';
+  source: string;
+  publishTime: string;
+  url: string;
+}
+
+const newsData = ref<NewsItem[]>([
+  {
+    id: '1',
+    title: '2026年新能源上网电价调整方案发布',
+    category: 'policy',
+    source: '省发改委',
+    publishTime: '2025-06-01',
+    url: 'https://www.example.com/news/1',
+  },
+  {
+    id: '2',
+    title: '三季度碳交易配额分配方案已公示',
+    category: 'news',
+    source: '交易中心',
+    publishTime: '2025-05-28',
+    url: 'https://www.example.com/news/2',
+  },
+  {
+    id: '3',
+    title: '国家能源局发布新型储能项目管理规范',
+    category: 'policy',
+    source: '国家能源局',
+    publishTime: '2025-05-25',
+    url: 'https://www.example.com/news/3',
+  },
+  {
+    id: '4',
+    title: '2026年Q2电力市场交易分析报告',
+    category: 'report',
+    source: '研究院',
+    publishTime: '2025-05-20',
+    url: 'https://www.example.com/news/4',
+  },
+  {
+    id: '5',
+    title: '电力市场运行基本规则修订征求意见稿',
+    category: 'policy',
+    source: '国家能源局',
+    publishTime: '2025-05-15',
+    url: 'https://www.example.com/news/5',
+  },
+  {
+    id: '6',
+    title: '储能行业2026年发展预测报告',
+    category: 'report',
+    source: '行业协会',
+    publishTime: '2025-05-10',
+    url: 'https://www.example.com/news/6',
+  },
+  {
+    id: '7',
+    title: '虚拟电厂参与调频辅助服务市场新政解读',
+    category: 'news',
+    source: '电力报',
+    publishTime: '2025-05-08',
+    url: 'https://www.example.com/news/7',
+  },
+  {
+    id: '8',
+    title: '平台系统维护公告：6月15日凌晨升级',
+    category: 'other',
+    source: '系统管理员',
+    publishTime: '2025-06-08',
+    url: 'https://www.example.com/news/8',
+  },
+]);
 
 const newsCategoryMap: Record<string, { color: string; label: string }> = {
-  policy_release: {
-    label: $t('workbench.info.news.categories.policy'),
-    color: 'blue',
-  },
-  industry_news: {
-    label: $t('workbench.info.news.categories.news'),
-    color: 'orange',
-  },
-  market_report: {
+  policy: { label: $t('workbench.info.news.categories.policy'), color: 'blue' },
+  news: { label: $t('workbench.info.news.categories.news'), color: 'orange' },
+  report: {
     label: $t('workbench.info.news.categories.report'),
     color: 'green',
   },
@@ -177,45 +337,6 @@ const newsCategoryMap: Record<string, { color: string; label: string }> = {
 function openNews(url: string) {
   window.open(url, '_blank');
 }
-
-function getNewsCategoryMeta(category: string) {
-  return newsCategoryMap[category] ?? newsCategoryMap.other;
-}
-
-async function loadWorkbenchMessages() {
-  try {
-    systemMessages.value = await getRevenueSchemeShareMessageListApi();
-  } catch (error) {
-    console.error('加载测算方案分享消息失败:', error);
-    systemMessages.value = [];
-  }
-}
-
-async function loadReleaseNotices() {
-  try {
-    releaseNotices.value = await getPublishedReleaseNoticeListApi();
-  } catch (error) {
-    console.error('加载发版通知失败:', error);
-    releaseNotices.value = [];
-  }
-}
-
-async function loadIndustryNews() {
-  try {
-    newsData.value = await getIndustryNewsListApi();
-  } catch (error) {
-    console.error('加载行业资讯失败:', error);
-    newsData.value = [];
-  }
-}
-
-onMounted(() => {
-  void loadWorkbenchMessages();
-  void loadReleaseNotices();
-  void loadIndustryNews();
-  emitter.on('industry-new-update', loadIndustryNews);
-  emitter.on('release-notice-update', loadReleaseNotices);
-});
 </script>
 
 <template>
@@ -490,8 +611,8 @@ onMounted(() => {
           @click="openNews(news.url)"
         >
           <div class="news-tag">
-            <Tag :color="getNewsCategoryMeta(news.category).color" size="small">
-              {{ getNewsCategoryMeta(news.category).label }}
+            <Tag :color="newsCategoryMap[news.category].color" size="small">
+              {{ newsCategoryMap[news.category].label }}
             </Tag>
           </div>
           <div class="news-content">
@@ -514,8 +635,8 @@ onMounted(() => {
     v-model:open="noticeDrawerVisible"
     :title="$t('workbench.info.releaseDetail.title')"
     width="640px"
+    closable
     :body-style="{ padding: '16px' }"
-    :closable="{ placement: 'end' }"
   >
     <div v-if="currentNotice" class="notice-detail">
       <!-- 头部卡片：标题和发布时间 -->
@@ -531,7 +652,7 @@ onMounted(() => {
         </div>
         <div class="notice-header-icon">
           <img
-            src="./svg/version-release.png"
+            src="./version-release.png"
             :alt="$t('workbench.info.releaseDetail.imageAlt')"
             class="version-icon"
           />

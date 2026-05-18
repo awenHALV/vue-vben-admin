@@ -1,17 +1,29 @@
 <script lang="ts" setup>
 import type { SelectProps } from 'antdv-next';
 
-import { computed, h, ref } from 'vue';
+import type {
+  IndustryNewsCategory,
+  IndustryNewsItem,
+  IndustryNewsPageParams,
+} from '#/api/system/industry-news';
+
+import { computed, h, onMounted, ref } from 'vue';
 
 import { Page, VbenButton, VbenInput } from '@vben/common-ui';
 import { IconifyIcon, Plus } from '@vben/icons';
 import { $t } from '@vben/locales';
 
 import { App, Button, Select, Space, Tag } from 'antdv-next';
-import dayjs from 'dayjs';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import { getDictOptionsApi } from '#/api/system/dict';
+import {
+  deleteIndustryNewsApi,
+  getIndustryNewsDetailApi,
+  getIndustryNewsPageApi,
+} from '#/api/system/industry-news';
 import { usePageButtonAccess } from '#/composables/use-page-button-access';
+import emitter from '#/utils/mitt';
 
 import { INDUSTRY_NEWS_PAGE_BUTTON_CODES } from './button-permissions';
 import IndustryNewsDetail from './components/IndustryNewsDetail.vue';
@@ -21,103 +33,30 @@ defineOptions({ name: 'SystemIndustryNews' });
 const { modal } = App.useApp();
 const { canButton } = usePageButtonAccess();
 
-type IndustryNewsCategory = 'news' | 'other' | 'policy' | 'report';
+const categoryOptions = ref<SelectProps['options']>([]);
 
-interface IndustryNews {
-  category: IndustryNewsCategory;
-  createTime: string;
-  id: string;
-  publishTime: string;
-  source: string;
-  title: string;
-  url: string;
-}
+const categoryMap = computed<Record<string, { color: string; label: string }>>(
+  () => {
+    const colorMap: Record<IndustryNewsCategory | string, string> = {
+      news: 'green',
+      other: 'default',
+      policy: 'blue',
+      report: 'orange',
+    };
 
-interface IndustryNewsPageParams {
-  category?: string;
-  current?: number;
-  size?: number;
-  title?: string;
-}
-
-const categoryOptions = computed<SelectProps['options']>(() => [
-  { label: $t('industryNews.category.policy'), value: 'policy' },
-  { label: $t('industryNews.category.news'), value: 'news' },
-  { label: $t('industryNews.category.report'), value: 'report' },
-  { label: $t('industryNews.category.other'), value: 'other' },
-]);
-
-const categoryMap = computed<
-  Record<
-    IndustryNewsCategory,
-    {
-      color: string;
-      label: string;
+    const map: Record<string, { color: string; label: string }> = {};
+    for (const option of categoryOptions.value ?? []) {
+      const value = String(option.value ?? '');
+      if (value) {
+        map[value] = {
+          color: colorMap[value] ?? 'default',
+          label: String(option.label ?? value),
+        };
+      }
     }
-  >
->(() => ({
-  news: { color: 'green', label: $t('industryNews.category.news') },
-  other: { color: 'default', label: $t('industryNews.category.other') },
-  policy: { color: 'blue', label: $t('industryNews.category.policy') },
-  report: { color: 'orange', label: $t('industryNews.category.report') },
-}));
-
-const mockData = ref<IndustryNews[]>([
-  {
-    id: '1',
-    title: '国家能源局发布新型电力系统建设指导意见',
-    category: 'policy',
-    source: '国家能源局',
-    url: 'https://example.com/news/1',
-    publishTime: '2024-01-15',
-    createTime: '2024-01-15 10:00:00',
+    return map;
   },
-  {
-    id: '2',
-    title: '2024年电力市场交易规模持续扩大',
-    category: 'news',
-    source: '中国电力报',
-    url: 'https://example.com/news/2',
-    publishTime: '2024-01-14',
-    createTime: '2024-01-14 14:30:00',
-  },
-  {
-    id: '3',
-    title: '新能源消纳能力分析报告',
-    category: 'report',
-    source: '电力规划设计总院',
-    url: 'https://example.com/news/3',
-    publishTime: '2024-01-13',
-    createTime: '2024-01-13 09:15:00',
-  },
-  {
-    id: '4',
-    title: '虚拟电厂参与电力市场交易试点启动',
-    category: 'news',
-    source: '能源新闻网',
-    url: 'https://example.com/news/4',
-    publishTime: '2024-01-12',
-    createTime: '2024-01-12 16:45:00',
-  },
-  {
-    id: '5',
-    title: '电力现货市场基本规则解读',
-    category: 'policy',
-    source: '发改委',
-    url: 'https://example.com/news/5',
-    publishTime: '2024-01-11',
-    createTime: '2024-01-11 11:20:00',
-  },
-  {
-    id: '6',
-    title: '储能技术发展趋势研究',
-    category: 'report',
-    source: '清华大学能源研究院',
-    url: 'https://example.com/news/6',
-    publishTime: '2024-01-10',
-    createTime: '2024-01-10 08:30:00',
-  },
-]);
+);
 
 const searchTitle = ref('');
 const searchCategory = ref<string>();
@@ -128,31 +67,6 @@ const industryNewsModalRef = ref<InstanceType<typeof IndustryNewsModal> | null>(
   null,
 );
 
-async function getIndustryNewsPage(params: IndustryNewsPageParams) {
-  let filteredData = [...mockData.value];
-
-  if (params.title) {
-    filteredData = filteredData.filter((item) =>
-      item.title.includes(params.title ?? ''),
-    );
-  }
-
-  if (params.category) {
-    filteredData = filteredData.filter(
-      (item) => item.category === params.category,
-    );
-  }
-
-  const current = params.current ?? 1;
-  const size = params.size ?? 10;
-  const start = (current - 1) * size;
-
-  return {
-    items: filteredData.slice(start, start + size),
-    total: filteredData.length,
-  };
-}
-
 function getSearchPayload(): Partial<IndustryNewsPageParams> {
   const payload: Partial<IndustryNewsPageParams> = {};
   const title = searchTitle.value.trim();
@@ -162,19 +76,15 @@ function getSearchPayload(): Partial<IndustryNewsPageParams> {
   }
 
   if (searchCategory.value) {
-    payload.category = searchCategory.value;
+    payload.newsType = searchCategory.value;
   }
 
   return payload;
 }
 
-const [Grid, gridApi] = useVbenVxeGrid<IndustryNews>({
+const [Grid, gridApi] = useVbenVxeGrid<IndustryNewsItem>({
   gridClass: 'p-6 pt-4',
   gridOptions: {
-    checkboxConfig: {
-      highlight: true,
-      range: true,
-    },
     columns: [
       {
         field: 'title',
@@ -210,7 +120,7 @@ const [Grid, gridApi] = useVbenVxeGrid<IndustryNews>({
     proxyConfig: {
       ajax: {
         query: async ({ page }, formValues) => {
-          return await getIndustryNewsPage({
+          return await getIndustryNewsPageApi({
             ...formValues,
             current: page.currentPage,
             size: page.pageSize,
@@ -245,15 +155,30 @@ function handleAdd() {
   industryNewsModalRef.value?.open();
 }
 
-function handleDetail(record: IndustryNews) {
-  industryNewsDetailRef.value?.open({ ...record });
+function getCategoryColor(category: string) {
+  return (
+    categoryMap.value[category as IndustryNewsCategory]?.color ?? 'default'
+  );
 }
 
-function handleEdit(record: IndustryNews) {
+function getCategoryLabel(row: IndustryNewsItem) {
+  return (
+    categoryMap.value[row.category as IndustryNewsCategory]?.label ??
+    row.newsTypeLabel ??
+    row.category
+  );
+}
+
+async function handleDetail(record: IndustryNewsItem) {
+  const detail = await getIndustryNewsDetailApi(record.id);
+  industryNewsDetailRef.value?.open(detail, categoryOptions.value);
+}
+
+function handleEdit(record: IndustryNewsItem) {
   industryNewsModalRef.value?.open({ ...record });
 }
 
-function handleDelete(record: IndustryNews) {
+function handleDelete(record: IndustryNewsItem) {
   modal.confirm({
     title: $t('industryNews.tips.deleteConfirm'),
     content: $t('industryNews.tips.deleteContent'),
@@ -275,28 +200,32 @@ function handleDelete(record: IndustryNews) {
         }),
       ],
     ),
-    onOk: () => {
-      mockData.value = mockData.value.filter((item) => item.id !== record.id);
-      void reloadGrid();
+    async onOk() {
+      await deleteIndustryNewsApi(record.id);
+      await reloadGrid();
+      // 通知工作台刷新
+      emitter.emit('industry-new-update');
     },
   });
 }
 
-function handleModalSuccess(data: IndustryNews) {
-  if (data.id) {
-    mockData.value = mockData.value.map((item) =>
-      item.id === data.id ? { ...item, ...data } : item,
-    );
-  } else {
-    mockData.value.unshift({
-      ...data,
-      createTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
-      id: Date.now().toString(),
-    });
-  }
-
+function handleModalSuccess() {
   void reloadGrid();
+  // 通知工作台刷新
+  emitter.emit('industry-new-update');
 }
+
+async function loadCategoryOptions() {
+  const options = await getDictOptionsApi('sys_news_type');
+  categoryOptions.value = options.map((item) => ({
+    label: item.optionValue,
+    value: item.optionKey,
+  }));
+}
+
+onMounted(() => {
+  void loadCategoryOptions();
+});
 </script>
 
 <template>
@@ -354,7 +283,9 @@ function handleModalSuccess(data: IndustryNews) {
       </div>
     </div>
 
-    <div class="min-h-0 flex-1 rounded-lg border border-border bg-background">
+    <div
+      class="industry-news-grid min-h-0 flex-1 rounded-lg border border-border bg-background"
+    >
       <Grid class="h-full min-h-0">
         <template #toolbar-actions>
           <div class="flex w-full items-center justify-between p-0 pb-2">
@@ -375,8 +306,8 @@ function handleModalSuccess(data: IndustryNews) {
         </template>
 
         <template #category="{ row }">
-          <Tag :color="categoryMap[row.category].color">
-            {{ categoryMap[row.category].label }}
+          <Tag :color="getCategoryColor(row.category)">
+            {{ getCategoryLabel(row) }}
           </Tag>
         </template>
 
@@ -422,3 +353,9 @@ function handleModalSuccess(data: IndustryNews) {
     <IndustryNewsDetail ref="industryNewsDetailRef" />
   </Page>
 </template>
+
+<style>
+.industry-news-grid :deep(.vxe-table--empty-place-wrapper) {
+  height: 150px !important;
+}
+</style>

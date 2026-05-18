@@ -127,7 +127,7 @@ const coreRoutes: RouteRecordRaw[] = [
         path: '/vpp/analysis-revenue/energy-storage-project/plan',
         component: () => import('#/views/micro/index.vue'),
         meta: {
-          activePath: '/vpp/analysis-revenue/energy-storage-project/plan',
+          activePath: '/vpp/analysis-revenue/energy-storage-project',
           hideInBreadcrumb: true,
           hideInMenu: true,
           microName: 'vpp',

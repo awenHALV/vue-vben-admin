@@ -1,4 +1,10 @@
 <script lang="ts" setup>
+import type {
+  ReleaseNoticeItem,
+  ReleaseNoticePageParams,
+  ReleaseNoticeStatus,
+} from '#/api/system/release-notice';
+
 import { computed, h, ref } from 'vue';
 
 import { Page, VbenButton, VbenInput } from '@vben/common-ui';
@@ -6,10 +12,17 @@ import { IconifyIcon, Plus } from '@vben/icons';
 import { $t } from '@vben/locales';
 
 import { App, Button, Space, Tag, Tooltip } from 'antdv-next';
-import dayjs from 'dayjs';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import {
+  deleteReleaseNoticeApi,
+  getReleaseNoticeDetailApi,
+  getReleaseNoticePageApi,
+  publishReleaseNoticeApi,
+  unpublishReleaseNoticeApi,
+} from '#/api/system/release-notice';
 import { usePageButtonAccess } from '#/composables/use-page-button-access';
+import emitter from '#/utils/mitt';
 
 import { RELEASE_NOTICE_PAGE_BUTTON_CODES } from './button-permissions';
 import ReleaseNoticeDetail from './components/ReleaseNoticeDetail.vue';
@@ -19,24 +32,6 @@ defineOptions({ name: 'SystemReleaseNotice' });
 
 const { modal } = App.useApp();
 const { canButton } = usePageButtonAccess();
-
-type ReleaseNoticeStatus = 'draft' | 'published';
-
-interface ReleaseNotice {
-  content: string;
-  createTime: string;
-  description: string;
-  id: string;
-  publishTime: string;
-  status: ReleaseNoticeStatus;
-  title: string;
-}
-
-interface ReleaseNoticePageParams {
-  current?: number;
-  size?: number;
-  title?: string;
-}
 
 const statusMap = computed<
   Record<
@@ -54,40 +49,6 @@ const statusMap = computed<
   },
 }));
 
-const mockData = ref<ReleaseNotice[]>([
-  {
-    id: '1',
-    title: 'V2.1.0 现货交易辅助模块上线',
-    description:
-      '本次更新聚焦现货交易场景，新增辅助决策功能和算法优化，提升交易效率和准确性。',
-    content:
-      '<p><strong>功能更新：</strong></p><ul><li>现货交易辅助决策功能：基于历史数据和实时行情，智能推荐交易策略</li><li>电价预测算法优化：采用深度学习模型，提升预测准确度至95%</li><li>结算报表导出功能增强：支持多格式导出，新增自定义字段配置</li></ul><p><strong>性能优化：</strong></p><ul><li>页面加载速度提升40%</li><li>大数据量场景下表格渲染性能优化</li></ul>',
-    publishTime: '2025-06-01',
-    status: 'published',
-    createTime: '2025-05-28',
-  },
-  {
-    id: '2',
-    title: 'V2.0.5 热修复版本发布',
-    description: '修复了结算报表导出异常问题，优化数据同步机制。',
-    content:
-      '<p><strong>修复内容：</strong></p><ul><li>结算报表导出异常：修复大数据量导出时的内存溢出问题</li><li>数据同步延迟：优化同步机制，降低延迟至1秒以内</li></ul>',
-    publishTime: '2025-05-28',
-    status: 'published',
-    createTime: '2025-05-25',
-  },
-  {
-    id: '3',
-    title: 'V2.0.0 大版本更新',
-    description: '全新工作台功能上线，重构用户界面，提升操作体验。',
-    content:
-      '<p><strong>全新特性：</strong></p><ul><li>工作台首页：个性化仪表盘，集中展示关键信息</li><li>自定义应用：支持创建快捷应用入口</li><li>消息中心：统一消息管理，重要通知不遗漏</li><li>交易日历：可视化展示交易任务和时间节点</li></ul>',
-    publishTime: '',
-    status: 'draft',
-    createTime: '2025-05-01',
-  },
-]);
-
 const searchTitle = ref('');
 const releaseNoticeDetailRef = ref<InstanceType<
   typeof ReleaseNoticeDetail
@@ -95,25 +56,6 @@ const releaseNoticeDetailRef = ref<InstanceType<
 const releaseNoticeModalRef = ref<InstanceType<
   typeof ReleaseNoticeModal
 > | null>(null);
-
-async function getReleaseNoticePage(params: ReleaseNoticePageParams) {
-  let filteredData = [...mockData.value];
-
-  if (params.title) {
-    filteredData = filteredData.filter((item) =>
-      item.title.includes(params.title ?? ''),
-    );
-  }
-
-  const current = params.current ?? 1;
-  const size = params.size ?? 10;
-  const start = (current - 1) * size;
-
-  return {
-    items: filteredData.slice(start, start + size),
-    total: filteredData.length,
-  };
-}
 
 function getSearchPayload(): Partial<ReleaseNoticePageParams> {
   const payload: Partial<ReleaseNoticePageParams> = {};
@@ -126,7 +68,7 @@ function getSearchPayload(): Partial<ReleaseNoticePageParams> {
   return payload;
 }
 
-const [Grid, gridApi] = useVbenVxeGrid<ReleaseNotice>({
+const [Grid, gridApi] = useVbenVxeGrid<ReleaseNoticeItem>({
   gridClass: 'p-6 pt-4',
   gridOptions: {
     checkboxConfig: {
@@ -174,7 +116,7 @@ const [Grid, gridApi] = useVbenVxeGrid<ReleaseNotice>({
     proxyConfig: {
       ajax: {
         query: async ({ page }, formValues) => {
-          return await getReleaseNoticePage({
+          return await getReleaseNoticePageApi({
             ...formValues,
             current: page.currentPage,
             size: page.pageSize,
@@ -208,18 +150,18 @@ function handleAdd() {
   releaseNoticeModalRef.value?.open();
 }
 
-function handleDetail(record: ReleaseNotice) {
-  releaseNoticeDetailRef.value?.open({ ...record });
+async function handleDetail(record: ReleaseNoticeItem) {
+  const detail = await getReleaseNoticeDetailApi(record.id);
+  releaseNoticeDetailRef.value?.open(detail);
 }
 
-function handleEdit(record: ReleaseNotice) {
+function handleEdit(record: ReleaseNoticeItem) {
   releaseNoticeModalRef.value?.open({ ...record });
 }
 
-function handleDelete(record: ReleaseNotice) {
+function handleDelete(record: ReleaseNoticeItem) {
   modal.confirm({
-    title: $t('industryNews.tips.deleteConfirm'),
-    content: $t('industryNews.tips.deleteContent'),
+    title: $t('releaseNotice.tips.deleteConfirm'),
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
     icon: h(
@@ -238,47 +180,26 @@ function handleDelete(record: ReleaseNotice) {
         }),
       ],
     ),
-    onOk: () => {
-      mockData.value = mockData.value.filter((item) => item.id !== record.id);
-      void reloadGrid();
+    async onOk() {
+      await deleteReleaseNoticeApi(record.id);
+      await reloadGrid();
+      // 通知工作台刷新
+      emitter.emit('release-notice-update');
     },
   });
 }
 
-function handlePublish(record: ReleaseNotice) {
-  mockData.value = mockData.value.map((item) => {
-    if (item.id !== record.id) {
-      return item;
-    }
-
-    const status = item.status === 'published' ? 'draft' : 'published';
-
-    return {
-      ...item,
-      publishTime: status === 'published' ? dayjs().format('YYYY-MM-DD') : '',
-      status,
-    };
-  });
-
-  void reloadGrid();
+async function handlePublish(record: ReleaseNoticeItem) {
+  await (record.status === 'published'
+    ? unpublishReleaseNoticeApi(record.id)
+    : publishReleaseNoticeApi(record.id));
+  await reloadGrid();
+  emitter.emit('release-notice-update');
 }
 
-function handleModalSuccess(data: ReleaseNotice) {
-  if (data.id) {
-    mockData.value = mockData.value.map((item) =>
-      item.id === data.id ? { ...item, ...data } : item,
-    );
-  } else {
-    mockData.value.unshift({
-      ...data,
-      createTime: dayjs().format('YYYY-MM-DD'),
-      id: String(Date.now()),
-      publishTime: '',
-      status: 'draft',
-    });
-  }
-
+function handleModalSuccess() {
   void reloadGrid();
+  emitter.emit('release-notice-update');
 }
 </script>
 

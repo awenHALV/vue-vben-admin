@@ -1,4 +1,9 @@
 <script lang="ts" setup>
+import type {
+  ReleaseNoticeItem,
+  ReleaseNoticeStatus,
+} from '#/api/system/release-notice';
+
 import { computed, ref } from 'vue';
 
 import { useVbenModal } from '@vben/common-ui';
@@ -6,19 +11,7 @@ import { $t } from '@vben/locales';
 
 defineOptions({ name: 'ReleaseNoticeDetail' });
 
-type ReleaseNoticeStatus = 'draft' | 'published';
-
-interface ReleaseNotice {
-  content: string;
-  createTime: string;
-  description: string;
-  id: string;
-  publishTime: string;
-  status: ReleaseNoticeStatus;
-  title: string;
-}
-
-const detailData = ref<Partial<ReleaseNotice>>({});
+const detailData = ref<Partial<ReleaseNoticeItem>>({});
 
 const statusMap = computed<Record<ReleaseNoticeStatus, string>>(() => ({
   draft: $t('releaseNotice.status.draft'),
@@ -233,7 +226,7 @@ const [VbenModal, modalApi] = useVbenModal({
   },
 });
 
-function open(data: Partial<ReleaseNotice>) {
+function open(data: Partial<ReleaseNoticeItem>) {
   detailData.value = { ...data };
   modalApi.open();
 }

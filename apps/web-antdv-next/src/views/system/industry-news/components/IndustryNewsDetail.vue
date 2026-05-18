@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { IndustryNewsItem } from '#/api/system/industry-news';
+
 import { computed, ref } from 'vue';
 
 import { useVbenModal } from '@vben/common-ui';
@@ -6,27 +8,9 @@ import { $t } from '@vben/locales';
 
 defineOptions({ name: 'IndustryNewsDetail' });
 
-type IndustryNewsCategory = 'news' | 'other' | 'policy' | 'report';
+const detailData = ref<Partial<IndustryNewsItem>>({});
 
-interface IndustryNews {
-  category: IndustryNewsCategory;
-  createTime: string;
-  id: string;
-  publishTime: string;
-  source: string;
-  title: string;
-  url: string;
-}
-
-const detailData = ref<Partial<IndustryNews>>({});
-
-const categoryMap = computed<Record<IndustryNewsCategory, string>>(() => ({
-  news: $t('industryNews.category.news'),
-  other: $t('industryNews.category.other'),
-  policy: $t('industryNews.category.policy'),
-  report: $t('industryNews.category.report'),
-}));
-
+const categoryOptions = ref<{ label: string; value: string }[]>([]);
 const viewModel = computed(() => {
   const data = detailData.value;
   const displayText = (value: unknown) => {
@@ -35,7 +19,9 @@ const viewModel = computed(() => {
   };
 
   return {
-    category: data.category ? categoryMap.value[data.category] : '-',
+    category:
+      categoryOptions.value.find((item) => item.value === data.category)
+        ?.label ?? '-',
     publishTime: displayText(data.publishTime),
     source: displayText(data.source),
     title: displayText(data.title),
@@ -61,8 +47,9 @@ const [VbenModal, modalApi] = useVbenModal({
   },
 });
 
-function open(data: Partial<IndustryNews>) {
+function open(data: Partial<IndustryNewsItem>, options: []) {
   detailData.value = { ...data };
+  categoryOptions.value = options;
   modalApi.open();
 }
 

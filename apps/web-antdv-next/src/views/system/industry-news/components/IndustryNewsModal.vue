@@ -1,9 +1,13 @@
 <script lang="ts" setup>
+import type { SelectProps } from 'antdv-next';
+
+import type { IndustryNewsItem } from '#/api/system/industry-news';
+
 /**
  * 行业资讯 - 新增/编辑弹窗
  * @author inspur-iep-ai
  */
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 
 import { useVbenModal } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
@@ -12,39 +16,33 @@ import { $t } from '@vben/locales';
 import { DatePicker, Form, FormItem, Input, Select } from 'antdv-next';
 import dayjs from 'dayjs';
 
-interface IndustryNews {
-  id: string;
-  title: string;
-  category: 'news' | 'other' | 'policy' | 'report';
-  source: string;
-  url: string;
-  publishTime: string;
-}
+import { getDictOptionsApi } from '#/api/system/dict';
+import {
+  createIndustryNewsApi,
+  toIndustryNewsCreateParams,
+  toIndustryNewsUpdateParams,
+  updateIndustryNewsApi,
+} from '#/api/system/industry-news';
 
 const emit = defineEmits<{
-  success: [data: IndustryNews];
+  success: [];
 }>();
 
 // ==================== 表单数据 ====================
 const formRef = ref<any>(null);
 const isEdit = ref(false);
 
-const formData = reactive<IndustryNews>({
+const formData = reactive<IndustryNewsItem>({
   id: '',
   title: '',
-  category: 'news',
+  category: '',
   source: '',
   url: '',
   publishTime: dayjs().format('YYYY-MM-DD'),
 });
 
 // ==================== 选项 ====================
-const categoryOptions = computed(() => [
-  { label: $t('industryNews.category.policy'), value: 'policy' },
-  { label: $t('industryNews.category.news'), value: 'news' },
-  { label: $t('industryNews.category.report'), value: 'report' },
-  { label: $t('industryNews.category.other'), value: 'other' },
-]);
+const categoryOptions = ref<SelectProps['options']>([]);
 
 // ==================== 表单校验 ====================
 const rules = computed(() => ({
@@ -107,13 +105,13 @@ const rules = computed(() => ({
 function resetForm() {
   formData.id = '';
   formData.title = '';
-  formData.category = 'news';
+  formData.category = '';
   formData.source = '';
   formData.url = '';
   formData.publishTime = dayjs().format('YYYY-MM-DD');
 }
 
-function setFormData(data: IndustryNews) {
+function setFormData(data: IndustryNewsItem) {
   formData.id = data.id;
   formData.title = data.title;
   formData.category = data.category;
@@ -152,9 +150,10 @@ const [VbenModal, modalApi] = useVbenModal({
 
     modalApi.setState({ confirmLoading: true });
     try {
-      // 模拟提交
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      emit('success', { ...formData });
+      await (isEdit.value
+        ? updateIndustryNewsApi(toIndustryNewsUpdateParams(formData))
+        : createIndustryNewsApi(toIndustryNewsCreateParams(formData)));
+      emit('success');
       modalApi.close();
     } finally {
       modalApi.setState({ confirmLoading: false });
@@ -162,7 +161,7 @@ const [VbenModal, modalApi] = useVbenModal({
   },
 });
 
-function open(record?: IndustryNews) {
+function open(record?: IndustryNewsItem) {
   isEdit.value = Boolean(record);
   resetForm();
   formRef.value?.clearValidate?.();
@@ -182,7 +181,19 @@ function open(record?: IndustryNews) {
   modalApi.open();
 }
 
+async function loadCategoryOptions() {
+  const options = await getDictOptionsApi('sys_news_type');
+  categoryOptions.value = options.map((item) => ({
+    label: item.optionValue,
+    value: item.optionKey,
+  }));
+}
+
 defineExpose({ open });
+
+onMounted(() => {
+  void loadCategoryOptions();
+});
 </script>
 
 <template>
