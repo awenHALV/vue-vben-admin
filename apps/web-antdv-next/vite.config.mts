@@ -63,6 +63,7 @@ export default defineConfig(async (config) => {
   const proxyTarget = env.VITE_DEV_PROXY_TARGET;
   const proxyTargetEnergy = env.VITE_DEV_PROXY_TARGET_ENERGY;
   const proxyTargetAiAssistant = env.VITE_DEV_PROXY_TARGET_AI_ASSISTANT;
+  const VITE_DEV_PROXY_WEATHER = env.VITE_DEV_PROXY_WEATHER;
   return {
     application: {
       // 登录之前的loading页
@@ -87,6 +88,10 @@ export default defineConfig(async (config) => {
             // mock代理目标地址
             target: proxyTargetAiAssistant,
             ws: true,
+          },
+          '/api/kdp-predict-service': {
+            target: VITE_DEV_PROXY_WEATHER,
+            rewrite: (path) => path.replace(/^\/api\/kdp-predict-service/, ''),
           },
           // 研发环境
           '/api': {

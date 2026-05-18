@@ -1,14 +1,22 @@
 <script lang="ts" setup>
 import { computed, onMounted, reactive } from 'vue';
 
-import { IconifyIcon } from '@vben/icons';
 import { useUserStore } from '@vben/stores';
 
 import { Avatar, Card, Typography } from 'antdv-next';
 import dayjs from 'dayjs';
 
-import { getWorkbenchWeatherLocationApi } from '#/api/workbench';
+import {
+  getCurrentWeatherApi,
+  getWorkbenchWeatherLocationApi,
+} from '#/api/workbench';
 import { $t } from '#/locales';
+
+import {
+  getWeatherIconPath,
+  getWeatherInfo,
+  parseTemperature,
+} from './weather-config';
 
 const { Text: TypographyText, Title: TypographyTitle } = Typography;
 const userStore = useUserStore();
@@ -78,8 +86,35 @@ async function loadWeatherLocation() {
   try {
     const location = await getWorkbenchWeatherLocationApi();
     weatherData.city = location.city || location.province || weatherData.city;
+
+    // 如果有经纬度，查询当前天气
+    if (location.latitude && location.longitude) {
+      await loadCurrentWeather(
+        Number(location.latitude),
+        Number(location.longitude),
+      );
+    }
   } catch (error) {
     console.error('加载天气地理位置失败:', error);
+  }
+}
+
+/**
+ * 加载当前天气
+ * @author inspur-iep-ai
+ */
+async function loadCurrentWeather(latitude: number, longitude: number) {
+  try {
+    const weather = await getCurrentWeatherApi({ latitude, longitude });
+    // 解析温度
+    weatherData.temperature = parseTemperature(weather.temperature);
+    // 获取天气描述和图标
+    const weatherInfo = getWeatherInfo(weather.weatherCode);
+    weatherData.weather = weatherInfo.desc;
+    // 使用自定义 SVG 图标
+    weatherData.icon = getWeatherIconPath(weather.weatherCode);
+  } catch (error) {
+    console.error('加载当前天气失败:', error);
   }
 }
 
@@ -107,7 +142,11 @@ onMounted(() => {
         </div>
       </div>
       <div class="weather-section">
-        <IconifyIcon :icon="weatherData.icon" class="weather-icon" />
+        <img
+          :src="weatherData.icon"
+          class="weather-icon-svg"
+          alt="weather icon"
+        />
         <div class="weather-info">
           <div class="city-name">{{ weatherData.city }}</div>
           <div class="temp-weather-row">
@@ -210,6 +249,12 @@ onMounted(() => {
 .weather-icon {
   font-size: 24px;
   color: #faad14;
+}
+
+.weather-icon-svg {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .weather-info {

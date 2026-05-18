@@ -14,6 +14,26 @@ export interface WorkbenchWeatherLocation {
   province?: string;
 }
 
+/**
+ * 当前天气响应
+ */
+export interface CurrentWeatherResponse {
+  /** 温度 */
+  temperature: string;
+  /** 相对湿度 */
+  relativeHumidity: string;
+  /** 风速 */
+  windSpeed: string;
+  /** 天气代码 */
+  weatherCode: string;
+  /** 查询时间 */
+  queryTime: string;
+  /** 纬度 */
+  latitude: string;
+  /** 经度 */
+  longitude: string;
+}
+
 export interface RevenueSchemeShareMessageApiItem {
   createTime?: string;
   id: number | string;
@@ -84,7 +104,7 @@ export async function getWorkbenchWeatherLocationApi(): Promise<WorkbenchWeather
     `${basePath}/weather/current`,
     {
       headers: {
-        'Deframe-ip': ip?.data?.origin,
+        'Deframe-ip': ip?.origin,
       },
     },
   );
@@ -127,4 +147,18 @@ export async function createWorkbenchAppConfigApi(
 
 export async function deleteWorkbenchAppConfigApi(id: number | string) {
   return requestClient.post(`${basePath}/app-config/delete/${id}`);
+}
+
+/**
+ * 获取当前天气
+ * @param params 包含 latitude 和 longitude 的参数
+ */
+export async function getCurrentWeatherApi(params: {
+  latitude: string;
+  longitude: string;
+}): Promise<CurrentWeatherResponse> {
+  return requestClient.post<CurrentWeatherResponse>(
+    '/kdp-predict-service/internal/external/weather/current',
+    params,
+  );
 }

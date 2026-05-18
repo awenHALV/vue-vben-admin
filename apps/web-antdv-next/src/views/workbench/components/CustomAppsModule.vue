@@ -756,6 +756,11 @@ onMounted(() => {
   color: hsl(var(--foreground));
   text-align: center;
   transition: color 0.3s;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.4;
 }
 
 .app-item:hover .app-name {
