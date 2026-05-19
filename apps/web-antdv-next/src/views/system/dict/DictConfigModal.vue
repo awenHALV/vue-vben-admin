@@ -241,6 +241,8 @@ function handleBatchDelete() {
 const [VbenModal, modalApi] = useVbenModal({
   destroyOnClose: true,
   footer: false,
+  // 点击弹窗外侧不关闭弹窗
+  closeOnClickModal: false,
   cancelText: $t('common.cancel'),
   confirmText: $t('common.confirm'),
   title: $t('dict.config.title'),

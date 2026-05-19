@@ -61,6 +61,8 @@ const [VbenModal, modalApi] = useVbenModal({
   destroyOnClose: true,
   footer: false,
   title: '批量导入',
+  // 点击弹窗外侧不关闭弹窗
+  closeOnClickModal: false,
   class: 'w-[min(100%,500px)]',
   async onOpenChange(open: boolean) {
     if (!open) {

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { MenuRecordRaw } from '@vben/types';
+
 import {
   computed,
   nextTick,
@@ -10,10 +12,15 @@ import {
 } from 'vue';
 import { useRoute } from 'vue-router';
 
+import { i18n } from '@vben/locales';
+import { preferences } from '@vben/preferences';
 import { useAccessStore, useTabbarStore } from '@vben/stores';
+import { resolveMenuTitle } from '@vben/utils';
 
+import { useTitle } from '@vueuse/core';
 import WujieVue from 'wujie-vue3';
 
+import { $t, $te } from '#/locales';
 import { emitChangeThemeToChildWithTab } from '#/wujie-config/hostBridge.ts';
 import {
   buildMicroUrl,
@@ -41,6 +48,43 @@ const baseName = (route.meta.microName as string) || 'default-app';
 const myUniqueName = `${baseName}-${myPath}`;
 const LOADING_WATCHDOG_MS = 3000;
 
+const MICRO_URL_QUERY_BLOCKLIST = new Set(['pageKey', 'title']);
+
+/**
+ * 跳转已注册的路由时,需要merge一下quer
+ * 排除title,因为title已作为tab的标签
+ */
+function mergeCurrentRouteQuery(url: string) {
+  const [urlWithoutHash, hash = ''] = url.split('#');
+  if (!urlWithoutHash) {
+    return url;
+  }
+
+  const [pathname, rawQuery = ''] = urlWithoutHash.split('?');
+  if (!pathname) {
+    return url;
+  }
+
+  const params = new URLSearchParams(rawQuery);
+
+  for (const [key, value] of Object.entries(route.query)) {
+    if (MICRO_URL_QUERY_BLOCKLIST.has(key) || value === undefined) {
+      continue;
+    }
+
+    params.delete(key);
+    const values = Array.isArray(value) ? value : [value];
+    values.forEach((item) => {
+      if (item !== null) {
+        params.append(key, item);
+      }
+    });
+  }
+
+  const query = params.toString();
+  return `${pathname}${query ? `?${query}` : ''}${hash ? `#${hash}` : ''}`;
+}
+
 function resolveMicroUrl() {
   /**
    * 菜单路由由后端下发时，会在 `meta.microUrl` 写入完整子应用 URL（域名 + 子路径）。
@@ -49,7 +93,7 @@ function resolveMicroUrl() {
    */
   const url = route.meta.microUrl as string | undefined;
   if (url) {
-    return url;
+    return mergeCurrentRouteQuery(url);
   }
 
   /**
@@ -72,6 +116,59 @@ function resolveMicroUrl() {
 
 const microUrl = resolveMicroUrl();
 const microProps = computed(() => ({ token: accessStore.accessToken ?? '' }));
+
+function normalizePath(path: string) {
+  const withSlash = path.startsWith('/') ? path : `/${path}`;
+  return withSlash.replace(/\/+$/, '') || '/';
+}
+
+function findMenuByPath(
+  menus: MenuRecordRaw[],
+  targetPath: string,
+): MenuRecordRaw | undefined {
+  const normalizedTargetPath = normalizePath(targetPath);
+
+  for (const menu of menus) {
+    if (normalizePath(menu.path) === normalizedTargetPath) {
+      return menu;
+    }
+
+    const child = findMenuByPath(menu.children ?? [], normalizedTargetPath);
+    if (child) {
+      return child;
+    }
+  }
+}
+
+async function syncTabTitleWithMenu() {
+  const menu = findMenuByPath(accessStore.accessMenus, route.path);
+  if (!menu) {
+    return;
+  }
+
+  const tab = tabbarStore.getTabByKey(route.fullPath);
+  if (!tab) {
+    return;
+  }
+
+  const title = resolveMenuTitle(
+    {
+      title: menu.name,
+      name: menu.name,
+      featureName: menu.featureName,
+      featureNameEn: menu.featureNameEn,
+    },
+    { locale: i18n.global.locale.value, t: (key) => key, te: () => false },
+  );
+  route.meta.title = title;
+  const appName = $te(preferences.app.name)
+    ? $t(preferences.app.name)
+    : preferences.app.name;
+  useTitle(`${title} - ${appName}`);
+
+  await tabbarStore.setTabTitle(tab, title);
+  tabbarStore.setUpdateTime();
+}
 
 // 渲染控制：【防白屏 & 生命周期管理 & 兜底策略】
 const renderWujie = ref(false);
@@ -155,10 +252,12 @@ const safeMount = async () => {
 
 onMounted(() => {
   safeMount();
+  void nextTick(syncTabTitleWithMenu);
 });
 
 onActivated(() => {
   safeMount();
+  void nextTick(syncTabTitleWithMenu);
 });
 
 onDeactivated(() => {
@@ -182,7 +281,7 @@ onBeforeUnmount(() => {
     if (stillExists) {
       // 若仍在页签列表中，说明仅是 Vue 路由正常切换导致的组件卸载
       // 保留无界实例，等待下次 keep-alive 唤醒
-      console.log(` [保护沙箱] 壳子被卸载，但页签仍在: ${myUniqueName}`);
+      console.warn(` [保护沙箱] 壳子被卸载，但页签仍在: ${myUniqueName}`);
     } else {
       // 若不在页签列表中，说明用户主动关闭了该标签页 (Tag)
       // 此时执行彻底销毁，清空无界缓存，释放内存

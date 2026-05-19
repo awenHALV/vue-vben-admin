@@ -216,6 +216,8 @@ const [VbenModal, modalApi] = useVbenModal({
   destroyOnClose: true,
   showConfirmButton: true,
   confirmLoading: false,
+  // 点击弹窗外侧不关闭弹窗
+  closeOnClickModal: false,
   title: $t('menu.action.add'),
   confirmText: $t('system.common.ok'),
   onOpenChange: async (isOpen) => {

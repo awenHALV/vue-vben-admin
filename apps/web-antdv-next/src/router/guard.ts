@@ -8,14 +8,15 @@ import { startProgress, stopProgress } from '@vben/utils';
 import { accessRoutes, coreRouteNames } from '#/router/routes';
 import { useAuthStore } from '#/store';
 
+import { generateAccess } from './access';
 import {
   persistAccessSnapshot,
   restoreAccessSnapshot,
 } from './access-snapshot';
-import { generateAccess } from './access';
 
 // 无后端菜单权限时的落地页
 const NO_MENU_PERMISSION_PATH = '/no-menu-permission';
+const CUSTOM_APP_SANDBOX_SESSION_KEY = 'workbench_app_sandbox';
 interface AccessMenuItem {
   children?: AccessMenuItem[];
   path?: string;
@@ -48,6 +49,18 @@ function normalizeQueryParam(value: unknown): string | undefined {
     return value;
   }
   return undefined;
+}
+
+function hasSandboxContext() {
+  return !!sessionStorage.getItem(CUSTOM_APP_SANDBOX_SESSION_KEY);
+}
+
+function clearSandboxContext() {
+  sessionStorage.removeItem(CUSTOM_APP_SANDBOX_SESSION_KEY);
+}
+
+function isExitSandboxTarget(path: string) {
+  return path === '/workbench' || path === preferences.app.defaultHomePath;
 }
 
 let pendingBackgroundAccessSync: null | Promise<void> = null;
@@ -222,6 +235,22 @@ function setupAccessGuard(router: Router) {
       return to;
     }
 
+    if (hasSandboxContext() && isExitSandboxTarget(to.path)) {
+      clearSandboxContext();
+      if (accessStore.isAccessChecked) {
+        accessStore.setIsAccessChecked(false);
+        await syncAccessState(router, accessStore, userStore, authStore);
+
+        const resolved = router.resolve(to.fullPath);
+        return {
+          path: resolved.path,
+          query: resolved.query,
+          hash: resolved.hash,
+          replace: true,
+        };
+      }
+    }
+
     // 是否已经生成过动态路由
     if (accessStore.isAccessChecked) {
       if (
@@ -275,7 +304,9 @@ function setupAccessGuard(router: Router) {
     let redirectPath: string;
     if (accessibleMenus.length === 0) {
       redirectPath =
-        (to.name === 'Profile' || to.name === 'DownloadCenter') ? to.fullPath : NO_MENU_PERMISSION_PATH;
+        to.name === 'Profile' || to.name === 'DownloadCenter'
+          ? to.fullPath
+          : NO_MENU_PERMISSION_PATH;
     } else {
       redirectPath =
         pathFromQuery ||
