@@ -40,7 +40,9 @@ export const WEATHER_CODE_MAP: WeatherCodeMapItem[] = [
  * @param weatherCode 天气代码
  * @returns 天气描述和图标
  */
-export function getWeatherInfo(weatherCode: string | number): WeatherCodeMapItem {
+export function getWeatherInfo(
+  weatherCode: number | string,
+): WeatherCodeMapItem {
   const code = Number(weatherCode);
 
   const weather = WEATHER_CODE_MAP.find((item) => {
@@ -49,7 +51,6 @@ export function getWeatherInfo(weatherCode: string | number): WeatherCodeMapItem
     }
     return item.code === code;
   });
-
   if (weather) {
     return weather;
   }
@@ -73,8 +74,10 @@ export function parseTemperature(temperature: string): number {
  * @param weatherCode 天气代码
  * @returns SVG 图标路径
  */
-export function getWeatherIconPath(weatherCode: string | number): string {
+export function getWeatherIconPath(weatherCode: number | string): string {
   const weather = getWeatherInfo(weatherCode);
+  // 对图标文件名中的逗号进行 URL 编码，避免路径解析问题
+  const encodedIcon = encodeURIComponent(weather.icon);
   // 使用相对路径引用 svg 目录下的图标
-  return `./svg/${weather.icon}.svg`;
+  return `./svg/${encodedIcon}.svg`;
 }

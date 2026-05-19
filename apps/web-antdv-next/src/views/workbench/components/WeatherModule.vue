@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onMounted, reactive } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 
 import { useUserStore } from '@vben/stores';
 
@@ -12,16 +12,34 @@ import {
 } from '#/api/workbench';
 import { $t } from '#/locales';
 
-import {
-  getWeatherIconPath,
-  getWeatherInfo,
-  parseTemperature,
-} from './weather-config';
+import { getWeatherInfo, parseTemperature } from './weather-config';
 
 const { Text: TypographyText, Title: TypographyTitle } = Typography;
 const userStore = useUserStore();
 const defaultAvatar =
   'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png';
+
+// ==================== 天气图标动态导入 ====================
+const currentWeatherCode = ref<string>('');
+
+// 预加载所有 SVG 图标
+const icons = import.meta.glob('./svg/weather/*.svg', {
+  eager: true,
+  import: 'default',
+});
+
+// 获取天气图标 URL
+function getWeatherIconUrl(weatherCode: string): string {
+  const weather = getWeatherInfo(weatherCode);
+  // 获取图标文件名（逗号分隔的第一个，如 "51,53,55" -> "51"）
+  const iconPath = `./svg/weather/${weather.icon}.svg`;
+  // 从预加载的模块中获取 URL
+  return (icons[iconPath] as string) || '';
+}
+
+const weatherIconUrl = computed(() => {
+  return getWeatherIconUrl(currentWeatherCode.value);
+});
 
 // ==================== 欢迎与天气 ====================
 const userName = computed(() => {
@@ -76,10 +94,9 @@ const currentDate = computed(() => ({
 }));
 
 const weatherData = reactive({
-  city: '苏州工业园区',
+  city: '',
   temperature: 24,
-  weather: '多云',
-  icon: 'lucide:cloud-sun',
+  weather: '',
 });
 
 async function loadWeatherLocation() {
@@ -89,10 +106,7 @@ async function loadWeatherLocation() {
 
     // 如果有经纬度，查询当前天气
     if (location.latitude && location.longitude) {
-      await loadCurrentWeather(
-        Number(location.latitude),
-        Number(location.longitude),
-      );
+      await loadCurrentWeather(location.latitude, location.longitude);
     }
   } catch (error) {
     console.error('加载天气地理位置失败:', error);
@@ -103,16 +117,16 @@ async function loadWeatherLocation() {
  * 加载当前天气
  * @author inspur-iep-ai
  */
-async function loadCurrentWeather(latitude: number, longitude: number) {
+async function loadCurrentWeather(latitude: string, longitude: string) {
   try {
     const weather = await getCurrentWeatherApi({ latitude, longitude });
     // 解析温度
     weatherData.temperature = parseTemperature(weather.temperature);
-    // 获取天气描述和图标
+    // 获取天气描述
     const weatherInfo = getWeatherInfo(weather.weatherCode);
     weatherData.weather = weatherInfo.desc;
-    // 使用自定义 SVG 图标
-    weatherData.icon = getWeatherIconPath(weather.weatherCode);
+    // 更新天气代码，触发图标加载
+    currentWeatherCode.value = weather.weatherCode;
   } catch (error) {
     console.error('加载当前天气失败:', error);
   }
@@ -142,13 +156,19 @@ onMounted(() => {
         </div>
       </div>
       <div class="weather-section">
-        <img
-          :src="weatherData.icon"
-          class="weather-icon-svg"
-          alt="weather icon"
-        />
-        <div class="weather-info">
-          <div class="city-name">{{ weatherData.city }}</div>
+        <div class="weather-icon-wrapper">
+          <img
+            v-if="weatherIconUrl"
+            :src="weatherIconUrl"
+            class="weather-icon-svg"
+            alt="weather icon"
+          />
+          <div v-else class="weather-icon-placeholder"></div>
+        </div>
+        <div class="weather-info" v-if="weatherData.city">
+          <div class="city-name">
+            {{ weatherData.city }}
+          </div>
           <div class="temp-weather-row">
             <span class="temp-value">{{ weatherData.temperature }}°C</span>
             <span class="weather-divider">·</span>
@@ -251,10 +271,24 @@ onMounted(() => {
   color: #faad14;
 }
 
+.weather-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
 .weather-icon-svg {
   width: 32px;
   height: 32px;
-  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.weather-icon-placeholder {
+  width: 32px;
+  height: 32px;
+  background: transparent;
 }
 
 .weather-info {

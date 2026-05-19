@@ -104,7 +104,7 @@ export async function getWorkbenchWeatherLocationApi(): Promise<WorkbenchWeather
     `${basePath}/weather/current`,
     {
       headers: {
-        'Deframe-ip': ip?.origin,
+        'Deframe-ip': ip?.data?.origin,
       },
     },
   );
@@ -157,8 +157,12 @@ export async function getCurrentWeatherApi(params: {
   latitude: string;
   longitude: string;
 }): Promise<CurrentWeatherResponse> {
+  const { latitude, longitude } = params;
   return requestClient.post<CurrentWeatherResponse>(
-    '/kdp-predict-service/internal/external/weather/current',
-    params,
+    `/kdp-predict-service/internal/external/weather/current?latitude=${latitude}&longitude=${longitude}`,
+    {},
+    {
+      responseReturn: 'body',
+    },
   );
 }
