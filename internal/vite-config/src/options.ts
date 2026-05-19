@@ -38,7 +38,6 @@ const defaultImportmapOptions: ImportmapPluginOptions = {
     { name: 'vue-router' },
     // { name: 'vue-i18n' },
     { name: 'dayjs' },
-    { name: 'vue-demi' },
   ],
 };
 
