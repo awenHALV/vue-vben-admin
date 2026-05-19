@@ -180,6 +180,7 @@ function getItemStyle(index: number, isSelected: boolean) {
     :title="$t('tradingCalendar.subjectTypeModal.title')"
     :width="520"
     :footer="null"
+    class="subject-type-modal"
     @cancel="handleCancel"
     @after-close="handleAfterClose"
   >
@@ -253,3 +254,29 @@ function getItemStyle(index: number, isSelected: boolean) {
     </div>
   </Modal>
 </template>
+
+<style scoped>
+/* 暗黑模式下的 Modal 样式 */
+.subject-type-modal :deep(.ant-modal-content) {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+}
+
+.subject-type-modal :deep(.ant-modal-header) {
+  background-color: hsl(var(--card));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.subject-type-modal :deep(.ant-modal-title) {
+  color: hsl(var(--foreground));
+}
+
+.subject-type-modal :deep(.ant-modal-close) {
+  color: hsl(var(--muted-foreground));
+}
+
+.subject-type-modal :deep(.ant-modal-close:hover) {
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--accent));
+}
+</style>

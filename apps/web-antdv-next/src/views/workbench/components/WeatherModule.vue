@@ -139,7 +139,7 @@ onMounted(() => {
 
 <template>
   <!-- 区域A：欢迎与天气 -->
-  <Card class="welcome-card" :bordered="false">
+  <Card class="welcome-card">
     <div class="welcome-content">
       <div class="user-section">
         <div class="avatar-wrapper">
@@ -301,7 +301,6 @@ onMounted(() => {
 .city-name {
   font-size: 13px;
   font-weight: 500;
-  color: #262626;
 }
 
 .temp-weather-row {

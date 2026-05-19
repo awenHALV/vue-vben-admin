@@ -481,7 +481,7 @@ onMounted(() => {
 <template>
   <!-- eslint-disable vue/max-attributes-per-line -->
   <!-- 区域B：自定义应用入口 -->
-  <Card v-if="customApps.length > 0" class="app-card" :bordered="false">
+  <Card v-if="customApps.length > 0" class="app-card">
     <template #title>
       <div class="card-title">
         <span>{{ $t('workbench.customApps.title') }}</span>
@@ -700,7 +700,10 @@ onMounted(() => {
     0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
-
+/* 暗黑模式下悬浮背景色 */
+.dark .app-item:hover {
+  background-color: #292c33;
+}
 .app-shine {
   display: none;
 }
@@ -775,10 +778,10 @@ onMounted(() => {
   align-items: center;
   gap: 1px;
   padding: 1px 4px;
-  background: rgba(24, 144, 255, 0.1);
+  background: hsl(var(--primary) / 0.1);
   border-radius: 8px;
   font-size: 9px;
-  color: #1890ff;
+  color: hsl(var(--primary));
   font-weight: 600;
 }
 
@@ -813,9 +816,9 @@ onMounted(() => {
 .app-empty-compact {
   margin-bottom: 16px;
   padding: 10px 12px;
-  background: linear-gradient(135deg, #f0f7ff 0%, #e6f7ff 100%);
+  background: hsl(var(--card));
   border-radius: 8px;
-  border: 1px dashed #91d5ff;
+  border: 1px dashed hsl(var(--border));
 }
 
 .empty-content {
@@ -827,12 +830,12 @@ onMounted(() => {
 
 .empty-icon {
   font-size: 16px;
-  color: #1890ff;
+  color: hsl(var(--primary));
 }
 
 .empty-text {
   font-size: 13px;
-  color: #595959;
+  color: hsl(var(--muted-foreground));
 }
 
 /* 应用配置表单 */
@@ -861,7 +864,7 @@ onMounted(() => {
 .form-label {
   font-size: 13px;
   font-weight: 500;
-  color: #262626;
+  color: hsl(var(--foreground));
 }
 
 .required {
@@ -907,8 +910,8 @@ onMounted(() => {
 
 .color-item.active {
   box-shadow:
-    0 0 0 2px white,
-    0 0 0 3px #1890ff;
+    0 0 0 2px hsl(var(--background)),
+    0 0 0 3px hsl(var(--primary));
   transform: scale(1.05);
 }
 
@@ -926,7 +929,8 @@ onMounted(() => {
   max-height: 280px;
   overflow-y: auto;
   padding: 12px;
-  background: #f8fafc;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 8px;
 }
 
@@ -942,25 +946,25 @@ onMounted(() => {
   padding: 10px 6px;
   border-radius: 8px;
   border: 2px solid transparent;
-  background: white;
+  background: hsl(var(--background));
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .icon-item:hover {
-  background: #e2e8f0;
+  background: hsl(var(--accent));
   transform: translateY(-1px);
 }
 
 .icon-item.active {
-  border-color: #1890ff;
-  background: #e6f7ff;
-  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+  box-shadow: 0 2px 8px hsl(var(--primary) / 0.15);
 }
 
 .icon-item svg {
   font-size: 20px;
-  color: #64748b;
+  color: hsl(var(--muted-foreground));
   transition: color 0.2s;
 }
 
@@ -971,7 +975,7 @@ onMounted(() => {
 
 .icon-label {
   font-size: 10px;
-  color: #64748b;
+  color: hsl(var(--muted-foreground));
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -980,16 +984,16 @@ onMounted(() => {
 }
 
 .icon-item.active .icon-label {
-  color: #1890ff;
+  color: hsl(var(--primary));
   font-weight: 500;
 }
 
 /* 菜单树选择器 */
 .menu-tree-wrapper {
-  border: 1px solid #e2e8f0;
+  border: 1px solid hsl(var(--border));
   border-radius: 8px;
   padding: 12px;
-  background: #f8fafc;
+  background: hsl(var(--card));
   max-height: calc(100vh - 500px);
   overflow-y: auto;
 }
@@ -1011,6 +1015,6 @@ onMounted(() => {
 
 .tree-node-icon {
   font-size: 14px;
-  color: #64748b;
+  color: hsl(var(--muted-foreground));
 }
 </style>

@@ -223,7 +223,7 @@ onMounted(() => {
   <!-- 中间区域：待办、消息、资讯 -->
   <div class="middle-section">
     <!-- 区域C：待办中心 -->
-    <Card class="todo-card" :bordered="false">
+    <Card class="todo-card">
       <template #title>
         <div class="card-title">{{ $t('workbench.info.todo.title') }}</div>
       </template>
@@ -316,7 +316,7 @@ onMounted(() => {
     </Card>
 
     <!-- 区域D：消息中心 -->
-    <Card class="message-card" :bordered="false">
+    <Card class="message-card">
       <template #title>
         <div class="card-title">{{ $t('workbench.info.message.title') }}</div>
       </template>
@@ -475,7 +475,7 @@ onMounted(() => {
     </Card>
 
     <!-- 区域E：行业资讯 -->
-    <Card class="news-card" :bordered="false">
+    <Card class="news-card">
       <template #title>
         <div class="card-title">
           <span>{{ $t('workbench.info.news.title') }}</span>
@@ -834,11 +834,11 @@ onMounted(() => {
 }
 
 .alarm-item {
-  background: #fff2f0;
+  background: #ff240010;
 }
 
 .alarm-item:hover {
-  background: #ffe6e6;
+  background: #ff240020;
 }
 
 /* 资讯卡片 */
@@ -936,8 +936,8 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background: rgba(22, 119, 255, 0.1);
-  border: 1px solid rgba(22, 119, 255, 0.2);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 8px;
 }
 
@@ -948,7 +948,7 @@ onMounted(() => {
 .notice-title {
   font-size: 18px;
   font-weight: 600;
-  color: #262626;
+  color: hsl(var(--foreground));
   margin: 0 0 8px 0;
   line-height: 1.4;
 }
@@ -958,11 +958,11 @@ onMounted(() => {
 }
 
 .time-label {
-  color: #8c8c8c;
+  color: hsl(var(--muted-foreground));
 }
 
 .time-value {
-  color: #262626;
+  color: hsl(var(--foreground));
 }
 
 .notice-header-icon {
@@ -978,15 +978,15 @@ onMounted(() => {
 /* 信息卡片 */
 .notice-section-card {
   padding: 16px;
-  background: #fff;
-  border: 1px solid #f0f0f0;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 8px;
 }
 
 .section-title {
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: hsl(var(--foreground));
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -1001,13 +1001,13 @@ onMounted(() => {
 
 .section-desc {
   font-size: 14px;
-  color: #595959;
+  color: hsl(var(--muted-foreground));
   line-height: 1.6;
 }
 
 .section-content {
   font-size: 14px;
-  color: #434343;
+  color: hsl(var(--foreground));
   line-height: 1.6;
 }
 
@@ -1015,7 +1015,7 @@ onMounted(() => {
 .content-body {
   font-size: 14px;
   line-height: 1.6;
-  color: #434343;
+  color: hsl(var(--foreground));
 }
 
 .content-body :deep(p) {
@@ -1035,7 +1035,7 @@ onMounted(() => {
 .content-body :deep(h4) {
   font-size: 14px;
   font-weight: 600;
-  color: #262626;
+  color: hsl(var(--foreground));
   margin: 16px 0 12px 0;
 }
 </style>

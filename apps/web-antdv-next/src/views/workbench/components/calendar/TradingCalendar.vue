@@ -485,7 +485,7 @@ defineExpose({ clearSelection });
 }
 
 .trading-calendar-wrap :deep(.ant-card-body) {
-  padding: 16px;
+  padding: 0px;
 }
 
 .toolbar {
