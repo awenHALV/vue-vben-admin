@@ -48,6 +48,7 @@ const emit = defineEmits<{
           />
 
           <HistoryItemTimeArea
+            :agent-name="props.item.agentName"
             :formatted-time="props.formattedTime"
             :variant="props.variant"
           />

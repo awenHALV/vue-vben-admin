@@ -43,21 +43,24 @@ const approvalTodos = ref<TodoItem[]>([
     title: 'VPP-20260401结算单复核申请',
     initiator: '张三',
     time: '2025-06-09 14:35:28',
-    status: '审批',
+    key: 'approval',
+    status: $t('workbench.info.todo.tabs.approval'),
   },
   {
     id: '2',
     title: '储能站接入审批',
     initiator: '李四',
     time: '2025-06-09 14:15:42',
-    status: '审批',
+    key: 'approval',
+    status: $t('workbench.info.todo.tabs.approval'),
   },
   {
     id: '3',
     title: '电价调整方案审批',
     initiator: '王五',
     time: '2025-06-09 13:45:10',
-    status: '审批',
+    key: 'approval',
+    status: $t('workbench.info.todo.tabs.approval'),
   },
 ]);
 
@@ -67,14 +70,16 @@ const workorderTodos = ref<TodoItem[]>([
     title: '星火储能站1号柜离线排查',
     initiator: '系统',
     time: '2025-06-09 14:35:28',
-    status: '工单',
+    key: 'workorder',
+    status: $t('workbench.info.todo.tabs.workorder'),
   },
   {
     id: '2',
     title: '光伏逆变器定期巡检',
     initiator: '系统',
     time: '2025-06-09 13:35:15',
-    status: '工单',
+    key: 'workorder',
+    status: $t('workbench.info.todo.tabs.workorder'),
   },
 ]);
 
@@ -258,7 +263,7 @@ onMounted(() => {
         >
           <div class="todo-tag">
             <Tag
-              :color="item.status === '审批' ? 'orange' : 'blue'"
+              :color="item.key === 'approval' ? 'orange' : 'blue'"
               size="small"
             >
               {{ item.status }}

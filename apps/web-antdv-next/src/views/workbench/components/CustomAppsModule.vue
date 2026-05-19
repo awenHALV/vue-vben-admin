@@ -6,12 +6,12 @@ import type {
   WorkbenchAppFeatureItem,
 } from '#/api/workbench';
 
-import { onMounted, reactive, ref } from 'vue';
+import { h, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { IconifyIcon } from '@vben/icons';
 
-import { Button, Card, Drawer, Input, message, Modal, Tree } from 'antdv-next';
+import { App, Button, Card, Drawer, Input, message, Tree } from 'antdv-next';
 
 import { getMineFeaturesRawApi } from '#/api/core/menu';
 import {
@@ -56,7 +56,7 @@ interface MenuTreeNode {
   key: string;
   title: string;
 }
-
+const { modal } = App.useApp();
 // 当前浏览器页签的沙箱上下文；每个 window.open 页签各自独立。
 const CUSTOM_APP_SANDBOX_SESSION_KEY = 'workbench_app_sandbox';
 const router = useRouter();
@@ -308,7 +308,7 @@ function mapAppConfigToCustomApp(item: WorkbenchAppConfigApiItem): CustomApp {
     id: String(item.id),
     name: item.appName || '',
     icon: item.appIcon || 'lucide:layout-grid',
-    color: 'blue',
+    color: item.appColor || 'blue',
     menuKeys: [],
     menus: [],
   };
@@ -355,6 +355,7 @@ async function saveAppConfig() {
   try {
     const allKeys = [...checkedKeys.value, ...halfCheckedKeys.value];
     await createWorkbenchAppConfigApi({
+      appColor: appForm.color,
       appIcon: appForm.icon,
       appName: appForm.name.trim(),
       featureIds: allKeys.join(','),
@@ -396,12 +397,27 @@ async function openAppSandbox(app: CustomApp) {
 }
 
 function deleteApp(appId: string) {
-  Modal.confirm({
+  modal.confirm({
     title: $t('workbench.customApps.deleteConfirm.title'),
     content: $t('workbench.customApps.deleteConfirm.content'),
     okText: $t('workbench.customApps.deleteConfirm.okText'),
     cancelText: $t('workbench.customApps.deleteConfirm.cancelText'),
-    okButtonProps: { danger: true },
+    icon: h(
+      'span',
+      {
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          marginRight: '12px',
+        },
+      },
+      [
+        h(IconifyIcon, {
+          icon: 'ant-design:exclamation-circle-filled',
+          style: { color: '#FF4D4F', fontSize: '22px' },
+        }),
+      ],
+    ),
     onOk: async () => {
       await deleteWorkbenchAppConfigApi(appId);
       await loadCustomApps();

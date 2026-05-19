@@ -296,7 +296,7 @@ defineExpose({ clearSelection });
 </script>
 
 <template>
-  <Card class="trading-calendar-wrap" :bordered="false">
+  <Card class="trading-calendar-wrap">
     <div class="trading-calendar">
       <!-- 工具栏 -->
       <div class="toolbar">
@@ -482,10 +482,6 @@ defineExpose({ clearSelection });
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-.trading-calendar-wrap :deep(.ant-card-body) {
-  padding: 0px;
 }
 
 .toolbar {
