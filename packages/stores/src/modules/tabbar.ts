@@ -1,3 +1,4 @@
+// ==================== 修改后的 tabbar.ts ====================
 import type { ComputedRef, VNode } from 'vue';
 import type {
   RouteLocationNormalized,
@@ -255,6 +256,10 @@ export const useTabbarStore = defineStore('core-tabbar', {
           if (Reflect.has(curMeta, 'newTabTitle')) {
             mergedTab.meta.newTabTitle = curMeta.newTabTitle;
           }
+          // 【新增】合并已存在的英文动态标签页标题
+          if (Reflect.has(curMeta, 'newTabTitleEn')) {
+            mergedTab.meta.newTabTitleEn = curMeta.newTabTitleEn;
+          }
         }
         tab = mergedTab;
         this.tabs.splice(tabIndex, 1, mergedTab);
@@ -285,6 +290,17 @@ export const useTabbarStore = defineStore('core-tabbar', {
      * 菜单接口无可用菜单时清空标签（含固定标签）与访问历史，避免残留无权限页签
      */
     async clearTabsForEmptyMenus() {
+      this.tabs = [];
+      if (isVisitHistory()) {
+        this.visitHistory.clear();
+      }
+      this.cachedRoutes.clear();
+      await this.updateCacheTabs();
+    },
+    /**
+     * 进入工作台自定义应用沙箱时，清空当前窗口从 opener 复制来的旧页签。
+     */
+    async clearTabsForSandbox() {
       this.tabs = [];
       if (isVisitHistory()) {
         this.visitHistory.clear();
@@ -570,12 +586,14 @@ export const useTabbarStore = defineStore('core-tabbar', {
      * @zh_CN 重置标签页标题
      */
     async resetTabTitle(tab: TabDefinition) {
-      if (tab?.meta?.newTabTitle) {
+      // 【修改】如果存在中文或英文自定义标题，则进行重置清理
+      if (tab?.meta?.newTabTitle || tab?.meta?.newTabTitleEn) {
         return;
       }
       const findTab = this.tabs.find((item) => equalTab(item, tab));
       if (findTab) {
         findTab.meta.newTabTitle = undefined;
+        findTab.meta.newTabTitleEn = undefined; // 【新增】重置英文标题
         await this.updateCacheTabs();
       }
     },
@@ -622,6 +640,21 @@ export const useTabbarStore = defineStore('core-tabbar', {
 
       if (findTab) {
         findTab.meta.newTabTitle = title;
+
+        await this.updateCacheTabs();
+      }
+    },
+
+    /**
+     * 【新增】设置标签页英文标题
+     * @param {TabDefinition} tab - 标签页对象
+     * @param {ComputedRef<string> | string} title - 英文标题内容,支持静态字符串或计算属性
+     */
+    async setTabTitleEn(tab: TabDefinition, title: ComputedRef<string> | string) {
+      const findTab = this.tabs.find((item) => equalTab(item, tab));
+
+      if (findTab) {
+        findTab.meta.newTabTitleEn = title;
 
         await this.updateCacheTabs();
       }
@@ -819,6 +852,7 @@ function cloneTab(route: TabDefinition): TabDefinition {
     meta: {
       ...meta,
       newTabTitle: meta.newTabTitle,
+      newTabTitleEn: meta.newTabTitleEn, // 【新增】克隆对应的英文动态标题
     },
   };
 }

@@ -1,0 +1,199 @@
+{
+  "_author": "inspur-iep-ai",
+  "title": "Trading Calendar",
+  "subtitle": "View medium and long-term trading windows, contract periods, and task status in one place with fast entry, conflict alerts, and local export.",
+  "common": {
+    "cancelSelect": "Cancel Selection",
+    "applyToDeclaration": "Apply to Declaration"
+  },
+  "viewModes": {
+    "month": "Month",
+    "week": "Week",
+    "day": "Day"
+  },
+  "summary": {
+    "all": "Total Tasks",
+    "notStarted": "Not Started",
+    "inProgress": "In Progress",
+    "ended": "Ended"
+  },
+  "tradeTypes": {
+    "centralized": "Centralized Bidding",
+    "rolling": "Rolling Matching",
+    "listing": "Listing"
+  },
+  "tradingCycles": {
+    "year": "Yearly",
+    "month": "Monthly",
+    "monthInner": "Intra-month"
+  },
+  "status": {
+    "notStarted": "Not Started",
+    "inProgress": "In Progress",
+    "ended": "Ended"
+  },
+  "weekdays": {
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat",
+    "sun": "Sun"
+  },
+  "actions": {
+    "add": "Add",
+    "addForDay": "Add Daily Task",
+    "export": "Export Data",
+    "today": "Today",
+    "prev": "Previous",
+    "next": "Next",
+    "switchToDay": "View Day",
+    "more": "{count} more",
+    "collapse": "Collapse"
+  },
+  "labels": {
+    "currentDate": "Current Date",
+    "tradeDate": "Trade Date",
+    "tradeType": "Trade Type",
+    "tradingCycle": "Trading Cycle",
+    "targetPeriod": "Target Time Range",
+    "targetStartTime": "Start Time",
+    "targetEndTime": "End Time",
+    "contractStartDate": "Contract Start Date",
+    "contractEndDate": "Contract End Date",
+    "status": "Trade Status",
+    "statusPlaceholder": "The system calculates status from the trade date automatically",
+    "creatorName": "Creator",
+    "items": "items",
+    "province": "Grid Area",
+    "gridArea": "Grid Area",
+    "selectProvince": "Please select grid area",
+    "selectMonth": "Please select trading month",
+    "selectMonthLabel": "Select Trading Month",
+    "targetDate": "Target Date Range",
+    "targetTime": "Target Time Range"
+  },
+  "page": {
+    "title": "Trading Calendar Management",
+    "calendarTitle": "Medium & Long-term Trading Calendar",
+    "switchGridArea": "Switch Grid Area",
+    "monthFormat": "{month}/{year}"
+  },
+  "table": {
+    "manualTitle": "Manual Entry / Recognition Result",
+    "colTradeDate": "Trade Date",
+    "colTradeType": "Trade Type",
+    "colTradingCycle": "Trading Cycle",
+    "colTargetDate": "Target Date Range",
+    "colTargetTime": "Target Time Range",
+    "colAction": "Action"
+  },
+  "placeholder": {
+    "selectWithField": "Please select {0}",
+    "inputWithField": "Please enter {0}"
+  },
+  "form": {
+    "basicInfo": "Basic Information",
+    "commonFields": "Common Fields",
+    "manualEntry": "Manual Entry"
+  },
+  "ocr": {
+    "title": "OCR Recognition",
+    "placeholder": "Paste trading announcement screenshot",
+    "hint": "Supports Ctrl+V paste",
+    "reRecognize": "Re-recognize",
+    "clearResult": "Clear Result",
+    "recognizing": "Recognizing..."
+  },
+  "modal": {
+    "add": "Add Trade Task",
+    "edit": "Edit Trade Task",
+    "save": "Confirm",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "manualTitle": "Manual Entry",
+    "manualDescription": "Fill in the trade date, trade type, target time range, and contract period. The system derives task status automatically.",
+    "ocrTitle": "OCR Recognition",
+    "ocrDescription": "The PRD reserves OCR import. This version keeps the integration area ready until the backend recognition service is available.",
+    "ocrPlaceholder": "This area is reserved for screenshot paste, image upload, and recognition result backfill. Please use the form on the left for now.",
+    "draftTitle": "Local draft found",
+    "draftDescription": "Your last unfinished entry was saved locally and can be restored to continue editing.",
+    "restoreDraft": "Restore Draft",
+    "ignoreDraft": "Ignore Draft",
+    "clickTaskToSelect": "Click a trading task in the calendar to select it"
+  },
+  "empty": {
+    "week": "No tasks scheduled this week",
+    "day": "No tasks scheduled for this day"
+  },
+  "validation": {
+    "provinceRequired": "Please select a grid area",
+    "monthRequired": "Please select a trading month",
+    "tradeDateRequired": "Please select a trade date",
+    "tradeTypeRequired": "Please select a trade type",
+    "tradingCycleRequired": "Please select a trading cycle",
+    "targetPeriodRequired": "Please select a target time range",
+    "targetStartDateRequired": "Target start date cannot be empty",
+    "targetEndDateRequired": "Target end date cannot be empty",
+    "targetStartDateAfterTradeDate": "Target start date must be later than trade date",
+    "targetStartTimeRequired": "Target start time cannot be empty",
+    "targetEndTimeRequired": "Target end time cannot be empty",
+    "targetTimeRequired": "Please select a target time range",
+    "targetTimeOrder": "Target end time must be later than start time",
+    "targetDateOrder": "Target end date must be later than start date",
+    "targetPeriodOrder": "End time must be later than start time",
+    "contractStartDateRequired": "Please select a contract start date",
+    "contractEndDateRequired": "Please select a contract end date",
+    "contractDateOrder": "Contract start date cannot be later than contract end date",
+    "keepAtLeastOneRow": "Please keep at least one row",
+    "withInMonthCrossMonth": "Current trade is intra-month trade, target date cannot cross months"
+  },
+  "confirm": {
+    "deleteTitle": "Are you sure you want to delete?",
+    "deleteContent": "Delete the {tradeType} task on {tradeDate}?",
+    "deleteWarning": "This action cannot be undone. Please proceed with caution.",
+    "conflictTitle": "Date Conflict Detected",
+    "conflictContent": "A task with the same trade type already exists on {tradeDate}. Continue saving?"
+  },
+  "messages": {
+    "loadFailed": "Failed to load the trading calendar",
+    "saveSuccess": "Trade task saved",
+    "deleteSuccess": "Trade task deleted",
+    "exportSuccess": "Data exported successfully",
+    "exportEmpty": "There are no trade tasks to export",
+    "operationFailed": "Operation failed. Please try again later",
+    "restoreSuccess": "Local draft restored",
+    "saveFailed": "Save failed",
+    "ocrSuccess": "OCR recognition completed, form auto-filled",
+    "selectTaskFirst": "Please select a trade task first"
+  },
+  "export": {
+    "fileName": "trading-calendar"
+  },
+  "detail": {
+    "viewTitle": "View Details",
+    "editTitle": "Edit Trade Task",
+    "editBtn": "Edit",
+    "deleteBtn": "Delete",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "to": "to"
+  },
+  "subjectTypeModal": {
+    "title": "Please Select Subject Type",
+    "options": {
+      "powerPlant": "Power Generation Side (New Energy Station)",
+      "retailCompany": "Retail Side",
+      "virtualPowerPlant": "Virtual Power Plant"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    }
+  },
+  "newLongTermTrading": "New Long Term Trading"
+}

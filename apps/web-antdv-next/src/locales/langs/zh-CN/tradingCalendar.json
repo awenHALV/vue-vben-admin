@@ -1,0 +1,37 @@
+{
+  "common": {
+    "cancelSelect": "取消选择",
+    "applyToDeclaration": "应用至当前申报"
+  },
+  "weekdays": {
+    "mon": "周一",
+    "tue": "周二",
+    "wed": "周三",
+    "thu": "周四",
+    "fri": "周五",
+    "sat": "周六",
+    "sun": "周日"
+  },
+  "actions": {
+    "collapse": "收起"
+  },
+  "labels": {
+    "province": "电网区域",
+    "items": "项"
+  },
+  "page": {
+    "calendarTitle": "中长期交易日历",
+    "monthFormat": "{year}年{month}月"
+  },
+  "status": {
+    "notStarted": "未开始",
+    "inProgress": "交易中",
+    "ended": "已结束"
+  },
+  "messages": {
+    "selectTaskFirst": "请先选择一个交易任务"
+  },
+  "modal": {
+    "clickTaskToSelect": "点击日历中的交易任务进行选择"
+  }
+}

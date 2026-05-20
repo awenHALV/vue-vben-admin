@@ -320,8 +320,13 @@ export function setupWujieHostBridge() {
   // 监听子路由跳转：基座地址栏以本次 push 的 path 为准，须与子应用实际页面一致（含 /detail/:id 等动态段）
   bus.$on(JUMPROUTE_EVENT, async (payload: JumpRoutePayload) => {
     console.log('paypay', payload);
+    
+    // 【修改】同时提取中文/默认标题 title 和英文标题 titleEn
     const title = payload.query?.title;
-    const { title: _ignored, ...query } = payload.query ?? {};
+    const titleEn = payload.query?.titleEn;
+    
+    // 【修改】解构时同时过滤掉 title 和 titleEn，避免这些辅助字段被序列化进真实的 URL query 中
+    const { title: _ignored, titleEn: _ignoredEn, ...query } = payload.query ?? {};
 
     // push 前记录当前 tab，也就是 A tab
     const anchorKey =
@@ -350,9 +355,24 @@ export function setupWujieHostBridge() {
 
     const tab = await waitTabByKey(tabbarStore, targetKey, 500);
 
-    if (tab && title) {
-      await tabbarStore.setTabTitle(tab, title);
-      tabbarStore.setUpdateTime();
+    // 【修改】根据传入的中英文标题，分别调用 Store 中对应的设置方法
+    if (tab) {
+      let isTitleUpdated = false;
+      
+      if (title) {
+        await tabbarStore.setTabTitle(tab, title);
+        isTitleUpdated = true;
+      }
+      
+      if (titleEn) {
+        await tabbarStore.setTabTitleEn(tab, titleEn);
+        isTitleUpdated = true;
+      }
+      
+      // 只要更新了任意语言的标题，则刷新页签更新时间
+      if (isTitleUpdated) {
+        tabbarStore.setUpdateTime();
+      }
     }
 
     if (

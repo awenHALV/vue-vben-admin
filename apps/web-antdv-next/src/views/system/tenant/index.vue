@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { BackendTenantItem, TenantPageParams } from '#/api/core/tenant';
 
-import { h, computed, ref } from 'vue';
+import { computed, h, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { Page, VbenButton, VbenInput } from '@vben/common-ui';
@@ -11,7 +11,7 @@ import { preferences } from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
 import { setCookie, TOKEN_KEY } from '@vben/utils';
 
-import { App, Button, message, Modal, Space } from 'antdv-next';
+import { App, Button, message, Space } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
@@ -32,7 +32,7 @@ import TenantMenuConfig from './TenantMenuConfig.vue';
 
 defineOptions({ name: 'TenantManagement' });
 
-const {modal} = App.useApp();
+const { modal } = App.useApp();
 const router = useRouter();
 const accessStore = useAccessStore();
 const userStore = useUserStore();
@@ -186,7 +186,7 @@ const [Grid, gridApi] = useVbenVxeGrid<BackendTenantItem>({
       },
       {
         title: $t('tenant.list.action'),
-        width: 280,
+        width: preferences.app.locale === 'en-US' ? 350 : 280,
         fixed: 'right',
         align: 'center',
         slots: { default: 'action' },
@@ -333,7 +333,7 @@ function openChangeTenant(record: BackendTenantItem) {
     ]),
     okText: $t('common.confirm'),
     cancelText: $t('common.cancel'),
-        icon: h(
+    icon: h(
       'span',
       {
         style: {

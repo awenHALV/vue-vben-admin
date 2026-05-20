@@ -1,0 +1,203 @@
+{
+  "_author": "inspur-iep-ai",
+  "title": "交易日历",
+  "subtitle": "集中查看中长期交易窗口、合约周期与每日任务状态，支持快速录入、冲突提示和本地导出。",
+  "common": {
+    "cancelSelect": "取消选择",
+    "applyToDeclaration": "应用至当前申报"
+  },
+  "viewModes": {
+    "month": "月",
+    "week": "周",
+    "day": "日"
+  },
+  "summary": {
+    "all": "任务总数",
+    "notStarted": "未开始",
+    "inProgress": "交易中",
+    "ended": "已结束"
+  },
+  "tradeTypes": {
+    "centralized": "集中竞价交易",
+    "rolling": "滚动撮合交易",
+    "listing": "挂牌交易"
+  },
+  "tradingCycles": {
+    "year": "年度",
+    "month": "月度",
+    "monthInner": "月内"
+  },
+  "status": {
+    "notStarted": "未开始",
+    "inProgress": "交易中",
+    "ended": "已结束"
+  },
+  "weekdays": {
+    "mon": "周一",
+    "tue": "周二",
+    "wed": "周三",
+    "thu": "周四",
+    "fri": "周五",
+    "sat": "周六",
+    "sun": "周日"
+  },
+  "actions": {
+    "add": "新增",
+    "addForDay": "新增当日任务",
+    "export": "导出数据",
+    "today": "回到今天",
+    "prev": "上一段",
+    "next": "下一段",
+    "switchToDay": "查看当日",
+    "more": "还有 {count} 项",
+    "collapse": "收起"
+  },
+  "labels": {
+    "currentDate": "当前系统日期",
+    "tradeDate": "交易日期",
+    "tradeType": "交易类型",
+    "tradingCycle": "交易周期",
+    "targetPeriod": "交易标的时段",
+    "targetStartTime": "开始时刻",
+    "targetEndTime": "结束时刻",
+    "contractStartDate": "合约开始日期",
+    "contractEndDate": "合约结束日期",
+    "status": "交易状态",
+    "statusPlaceholder": "系统将根据交易日期自动判定",
+    "creatorName": "创建人",
+    "items": "项",
+    "province": "电网区域",
+    "gridArea": "电网区域",
+    "selectProvince": "请选择电网区域",
+    "selectMonth": "请选择交易月",
+    "selectMonthLabel": "选择交易月",
+    "targetDate": "交易标的日期",
+    "targetTime": "交易标的时段"
+  },
+  "page": {
+    "title": "交易日历管理",
+    "calendarTitle": "中长期交易日历",
+    "switchGridArea": "切换电网区域",
+    "monthFormat": "{year}年{month}月"
+  },
+  "table": {
+    "manualTitle": "手动录入/识别结果",
+    "colTradeDate": "交易日期",
+    "colTradeType": "交易类型",
+    "colTradingCycle": "交易周期",
+    "colTargetDate": "交易标的日期",
+    "colTargetTime": "交易标的时段",
+    "colAction": "操作"
+  },
+  "placeholder": {
+    "selectWithField": "请选择{0}",
+    "inputWithField": "请输入{0}"
+  },
+  "form": {
+    "basicInfo": "基础信息",
+    "commonFields": "基本信息",
+    "manualEntry": "手动录入",
+    "tradingTaskInfo": "交易任务信息"
+  },
+  "ocr": {
+    "title": "OCR 智能识别",
+    "placeholder": "粘贴交易公告截图",
+    "hint": "支持 Ctrl+V 直接粘贴",
+    "reRecognize": "重新识别",
+    "clearResult": "清空识别结果",
+    "recognizing": "正在识别中..."
+  },
+  "modal": {
+    "add": "新增交易日历",
+    "edit": "编辑交易日历任务",
+    "save": "确定",
+    "cancel": "取消",
+    "confirm": "确定",
+    "delete": "删除",
+    "manualTitle": "手动录入",
+    "manualDescription": "新增支持手动填写及OCR智能识别",
+    "ocrTitle": "OCR 智能识别",
+    "ocrDescription": "需求中已预留 OCR 导入能力，当前版本先保留接入位，待后端识别服务完成后可直接接入。",
+    "ocrPlaceholder": "此区域预留给截图粘贴、图片上传和识别结果回填，当前请先通过左侧表单手动录入。",
+    "draftTitle": "检测到本地草稿",
+    "draftDescription": "上次未提交的录入内容已保存在本地，可恢复后继续编辑。",
+    "restoreDraft": "恢复草稿",
+    "ignoreDraft": "忽略草稿",
+    "clickTaskToSelect": "点击日历中的交易任务进行选择"
+  },
+  "empty": {
+    "week": "本周暂无交易任务",
+    "day": "当日暂无交易任务"
+  },
+  "validation": {
+    "provinceRequired": "请选择电网区域",
+    "monthRequired": "请选择交易月",
+    "tradeDateRequired": "请选择交易日期",
+    "tradeTypeRequired": "请选择交易类型",
+    "tradingCycleRequired": "请选择交易周期",
+    "targetPeriodRequired": "请选择交易标的时段",
+    "targetStartDateRequired": "交易标的日期开始日期不能为空",
+    "targetEndDateRequired": "交易标的日期结束日期不能为空",
+    "targetStartDateAfterTradeDate": "交易标的日期开始日期必须大于交易日期",
+    "targetStartTimeRequired": "交易标的时段开始时间不能为空",
+    "targetEndTimeRequired": "交易标的时段结束时间不能为空",
+    "targetTimeRequired": "请选择交易标的时段",
+    "targetTimeOrder": "交易标的时段结束时间必须晚于开始时间",
+    "targetDateOrder": "交易标的日期结束日期必须晚于开始日期",
+    "targetPeriodOrder": "结束时刻必须晚于开始时刻",
+    "contractStartDateRequired": "请选择合约开始日期",
+    "contractEndDateRequired": "请选择合约结束日期",
+    "contractDateOrder": "合约开始日期不得晚于合约结束日期",
+    "keepAtLeastOneRow": "至少保留一行",
+    "withInMonthCrossMonth": "当前交易为月内交易，交易标的日期不能跨月"
+  },
+  "confirm": {
+    "deleteTitle": "请确定是否删除数据？",
+    "deleteContent": "确定删除 {tradeDate} 的 {tradeType} 任务吗？",
+    "deleteWarning": "删除后不可恢复，请慎重选择",
+    "conflictTitle": "检测到日期冲突",
+    "conflictContent": "{tradeDate} 已存在同类型交易任务，是否继续保存？"
+  },
+  "messages": {
+    "loadFailed": "加载交易日历失败",
+    "saveSuccess": "交易任务已保存",
+    "deleteSuccess": "交易任务已删除",
+    "exportSuccess": "数据导出成功",
+    "exportEmpty": "暂无可导出的交易任务",
+    "operationFailed": "操作失败，请稍后重试",
+    "restoreSuccess": "已恢复本地草稿",
+    "saveFailed": "保存失败",
+    "ocrSuccess": "OCR识别完成，已自动回填表单",
+    "selectImageOnly": "请选择图片格式文件",
+    "ocrServiceUnavailable": "当前OCR服务无法连接，请稍后重试",
+    "formErrorHint": "第 {row} 行存在错误，请修正后提交",
+    "selectTaskFirst": "请先选择一个交易任务"
+  },
+  "export": {
+    "fileName": "交易日历"
+  },
+  "detail": {
+    "viewTitle": "查看详情",
+    "editTitle": "编辑交易任务",
+    "editBtn": "编辑",
+    "deleteBtn": "删除",
+    "startDate": "开始日期",
+    "endDate": "结束日期",
+    "startTime": "开始时间",
+    "endTime": "结束时间",
+    "to": "至"
+  },
+  "subjectTypeModal": {
+    "title": "请选择主体类型",
+    "options": {
+      "powerPlant": "发电侧（新能源场站）",
+      "retailCompany": "售电侧",
+      "virtualPowerPlant": "虚拟电厂"
+    },
+    "buttons": {
+      "cancel": "取消",
+      "confirm": "确定"
+    }
+  },
+  "newLongTermTrading": "新增中长期申报"
+}

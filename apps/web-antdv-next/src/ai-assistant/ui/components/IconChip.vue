@@ -20,7 +20,7 @@ const props = withDefaults(
 
 <template>
   <div
-    class="box-content flex-center shrink-0 overflow-hidden rounded-full border border-[rgba(0,0,0,0.06)] bg-white dark:border-border dark:bg-muted"
+    class="box-content flex-center shrink-0 overflow-hidden rounded-full dark:border-border dark:bg-muted"
     :class="props.frameClass"
   >
     <!-- prettier-ignore -->

@@ -19,6 +19,9 @@ import antdEnLocale from 'antdv-next/dist/locale/en_US';
 import antdDefaultLocale from 'antdv-next/dist/locale/zh_CN';
 import dayjs from 'dayjs';
 
+import tradingCalendarEnLocale from './langs/en-US/tradingCalendar.json';
+import tradingCalendarZhLocale from './langs/zh-CN/tradingCalendar.json';
+
 const antdLocale = ref<Locale>(antdDefaultLocale);
 
 const modules = import.meta.glob('./langs/**/*.json');
@@ -37,7 +40,14 @@ async function loadMessages(lang: SupportedLanguagesType) {
     localesMap[lang]?.(),
     loadThirdPartyMessage(lang),
   ]);
-  return appLocaleMessages?.default;
+  const explicitMessages =
+    lang === 'en-US'
+      ? { tradingCalendar: tradingCalendarEnLocale }
+      : { tradingCalendar: tradingCalendarZhLocale };
+  return {
+    ...appLocaleMessages?.default,
+    ...explicitMessages,
+  };
 }
 
 /**

@@ -3,12 +3,13 @@ import type { AiAssistantHistoryItem, AiChatMessage } from '../types';
 
 import type { AssistantMessageMeta } from '#/store/chat';
 
-import { computed, ref } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 
 import { IconifyIcon } from '@vben/icons';
 
 import { Spin } from 'antdv-next';
 
+import { AI_ASSISTANT_ICON_URL, LINGXI_AGENT_ICON_URL } from '../ai-assets';
 import ChartMessage from './components/ChartMessage.vue';
 import ChatPanel from './components/ChatPanel.vue';
 import ComposerFooter from './components/ComposerFooter.vue';
@@ -21,8 +22,12 @@ defineOptions({
 });
 
 const props = defineProps<{
+  activeAgent: string;
   activeConversationFromHistory?: boolean;
   activeConversationId: null | string;
+  agentProfileLoading?: boolean;
+  agentQuestionsById?: Record<string, string[]>;
+  agentWelcomeById?: Record<string, string>;
   assistantMetaById?: Record<string, AssistantMessageMeta>;
   historyItems: AiAssistantHistoryItem[];
   historyLoading?: boolean;
@@ -42,6 +47,7 @@ const emit = defineEmits<{
   goChat: [];
   newChat: [];
   openHistory: [];
+  selectAgent: [agentId: string];
   selectConversation: [id: string];
   sendMessage: [text: string];
   toggleThinking: [messageId: string];
@@ -56,6 +62,36 @@ const isViewingHistoryConversation = computed(
   () =>
     props.panelMode === 'chat' && Boolean(props.activeConversationFromHistory),
 );
+const hasUserMessage = computed(() =>
+  Boolean(props.messages?.some((msg) => msg.role === 'user')),
+);
+const showAgentRecommendation = computed(
+  () => props.panelMode === 'chat' && !hasUserMessage.value,
+);
+
+const agentWelcomeMessage = computed(
+  () => props.agentWelcomeById?.[props.activeAgent] ?? '',
+);
+
+const recommendedQuestions = computed(
+  () => props.agentQuestionsById?.[props.activeAgent] ?? [],
+);
+
+const assistantIconSrcByAgentId: Record<string, string> = {
+  'ops-monitor': AI_ASSISTANT_ICON_URL,
+  'power-trade': LINGXI_AGENT_ICON_URL,
+};
+
+const activeAgentIconSrc = computed(
+  () => assistantIconSrcByAgentId[props.activeAgent] ?? AI_ASSISTANT_ICON_URL,
+);
+
+// const lingxiActions = [
+//   { active: false, label: '查询场站设备运行状态' },
+//   { active: true, label: '查询异常告警信息' },
+//   { active: false, label: '查询运维手册' },
+//   { active: false, label: '故障处理指南' },
+// ] as const;
 
 const detailCharts = computed(() => {
   const id = chartDetailMessageId.value;
@@ -82,14 +118,52 @@ function closeChartDetail() {
 function toggleChartDetailFullscreen() {
   chartDetailFullscreen.value = !chartDetailFullscreen.value;
 }
+
+function toggleAgent(agentId: string) {
+  closeChartDetail();
+  emit('selectAgent', agentId);
+}
+
+function sendRecommendedQuestion(text: string) {
+  emit('sendMessage', text);
+}
+
+// watch(
+//   () => props.open,
+//   (open) => {
+//     document.body.style.overflow = open ? 'hidden' : '';
+//   },
+//   { immediate: true },
+// );
+
+// // 确保组件被销毁时，干净地恢复页面滚动
+// onUnmounted(() => {
+//   document.documentElement.style.overflow = '';
+//   document.body.style.overflow = '';
+// });
+
+watch(
+  () => props.open,
+  (open) => {
+    const action = open ? 'add' : 'remove';
+    document.documentElement.classList[action]('hide-main-scrollbar');
+    document.body.classList[action]('hide-main-scrollbar');
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  document.documentElement.classList.remove('hide-main-scrollbar');
+  document.body.classList.remove('hide-main-scrollbar');
+});
 </script>
 
 <template>
   <div
     v-if="props.open"
-    class="fixed inset-y-0 right-0 z-1000 flex overflow-hidden border-l border-border bg-background shadow-[0px_4px_16px_0px_rgba(0,0,0,0.16)]"
+    class="fixed inset-y-0 right-[-20px] z-9999 flex overflow-hidden border-l border-border bg-background pr-[20px] shadow-[0px_4px_16px_0px_rgba(0,0,0,0.16)]"
     :class="
-      chartDetailOpen && !chartDetailFullscreen ? 'w-[968px]' : 'w-[484px]'
+      chartDetailOpen && !chartDetailFullscreen ? 'w-[988px]' : 'w-[504px]'
     "
   >
     <!-- 详情抽屉放在左侧（靠近页面主体） -->
@@ -166,7 +240,7 @@ function toggleChartDetailFullscreen() {
           <span class="truncate">历史对话</span>
         </button>
         <div v-else class="truncate text-base font-semibold text-foreground">
-          {{ props.title }}
+          {{ props.activeAgent === 'power-trade' ? '灵羲交易' : props.title }}
         </div>
 
         <HeaderActions
@@ -212,10 +286,59 @@ function toggleChartDetailFullscreen() {
             class="min-h-[min(360px,55vh)] w-full shrink-0"
           ></div>
 
+          <div
+            v-else-if="showAgentRecommendation"
+            class="flex items-start gap-3"
+          >
+            <img alt="" class="size-8 shrink-0"
+:src="activeAgentIconSrc" />
+            <div class="min-w-0 flex-1">
+              <div
+                v-if="props.agentProfileLoading"
+                class="flex min-h-8 items-center text-sm leading-[22px] text-[rgba(0,0,0,0.45)] dark:text-muted-foreground"
+              >
+                加载中...
+              </div>
+              <div
+                v-else
+                class="flex min-h-8 items-center text-sm leading-[22px] text-[rgba(0,0,0,0.88)] dark:text-foreground"
+              >
+                {{ agentWelcomeMessage }}
+              </div>
+
+              <div
+                v-if="recommendedQuestions.length > 0"
+                class="mt-[7px] max-w-[400px] rounded-lg border border-[#F0F0F0] bg-white px-4 py-3 dark:border-border dark:bg-card"
+              >
+                <div
+                  class="mb-1 text-xs/5 text-[rgba(0,0,0,0.45)] dark:text-muted-foreground"
+                >
+                  为您推荐
+                </div>
+                <div class="flex flex-col gap-2">
+                  <button
+                    v-for="question in recommendedQuestions"
+                    :key="question"
+                    class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-sm text-left text-sm leading-[22px] text-[rgba(0,0,0,0.88)] transition-colors hover:text-primary dark:text-foreground dark:hover:text-primary"
+                    type="button"
+                    @click="sendRecommendedQuestion(question)"
+                  >
+                    <span class="min-w-0 truncate">{{ question }}</span>
+                    <IconifyIcon
+                      class="size-4 shrink-0"
+                      icon="lucide:chevron-right"
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <ChatPanel
             v-else
             variant="drawer"
             :active-conversation-id="props.activeConversationId"
+            :active-agent="props.activeAgent"
             :assistant-meta-by-id="props.assistantMetaById"
             :messages="props.messages"
             @toggle-thinking="emit('toggleThinking', $event)"
@@ -234,6 +357,7 @@ function toggleChartDetailFullscreen() {
     </div>
 
     <DrawerSideToolbar
+      :active-agent="props.activeAgent"
       :panel-mode="props.panelMode"
       @go-chat="emit('goChat')"
       @open-history="
@@ -242,6 +366,7 @@ function toggleChartDetailFullscreen() {
           emit('openHistory');
         }
       "
+      @select-agent="toggleAgent"
     />
   </div>
 
@@ -292,3 +417,15 @@ function toggleChartDetailFullscreen() {
     </div>
   </Teleport>
 </template>
+
+<style>
+/* 隐藏 webkit 浏览器（Chrome, Safari, Edge）的滚动条 */
+.hide-main-scrollbar::-webkit-scrollbar {
+  width: 0 !important;
+  background: transparent !important;
+}
+/* 隐藏 Firefox 的滚动条 */
+.hide-main-scrollbar {
+  scrollbar-width: none !important;
+}
+</style>

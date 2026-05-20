@@ -1,0 +1,107 @@
+{
+  "weather": {
+    "defaultUser": "用户",
+    "greetings": {
+      "lateNight": "🌙 深夜好，{name}",
+      "earlyMorning": "🌅 清晨好，{name}",
+      "morning": "☀️ 早上好，{name}",
+      "forenoon": "🌤️ 上午好，{name}",
+      "noon": "🍱 中午好，{name}",
+      "afterNoon": "🌥️ 午后好，{name}",
+      "afternoon": "⛅ 下午好，{name}",
+      "dusk": "🌇 傍晚好，{name}",
+      "evening": "🌆 晚上好，{name}",
+      "night": "🌃 夜深了，{name}"
+    }
+  },
+  "info": {
+    "todo": {
+      "title": "待办中心",
+      "tabs": {
+        "all": "全部",
+        "approval": "审批",
+        "workorder": "工单"
+      },
+      "empty": {
+        "todo": "暂无待办",
+        "workorder": "暂无工单"
+      }
+    },
+    "message": {
+      "title": "消息中心",
+      "tabs": {
+        "all": "全部",
+        "system": "系统",
+        "release": "发版",
+        "alarm": "告警"
+      },
+      "tags": {
+        "system": "系统",
+        "release": "发版",
+        "alarm": "告警"
+      },
+      "empty": {
+        "all": "暂无消息",
+        "system": "暂无系统消息",
+        "release": "暂无发版通知",
+        "alarm": "暂无告警"
+      }
+    },
+    "news": {
+      "title": "行业资讯",
+      "empty": "暂无资讯",
+      "categories": {
+        "policy": "政策发布",
+        "news": "行业新闻",
+        "report": "市场报告",
+        "other": "其他"
+      }
+    },
+    "releaseDetail": {
+      "title": "发版通知详情",
+      "publishTime": "发布时间：",
+      "imageAlt": "版本发布",
+      "description": "版本说明",
+      "detail": "版本详情"
+    }
+  },
+  "customApps": {
+    "title": "自定义应用",
+    "config": "应用配置",
+    "add": "添加应用",
+    "emptyText": "暂无自定义应用，可添加常用功能快捷入口",
+    "drawerTitle": "配置自定义应用",
+    "appName": "应用名称",
+    "appNamePlaceholder": "请输入应用名称",
+    "themeColor": "主题颜色",
+    "appIcon": "应用图标",
+    "selectMenu": "选择菜单",
+    "cancel": "取消",
+    "save": "保存",
+    "validation": {
+      "appNameRequired": "请输入应用名称",
+      "appNameMaxLength": "应用名称最多20个字符",
+      "menuRequired": "至少选一个菜单"
+    },
+    "deleteConfirm": {
+      "title": "确认删除",
+      "content": "确定要删除这个应用吗？",
+      "okText": "删除",
+      "cancelText": "取消"
+    },
+    "defaultApps": {
+      "salesTool": "售电工具",
+      "settlementCenter": "结算中心",
+      "alarmCenter": "告警中心",
+      "vppDispatch": "VPP调度"
+    },
+    "colors": {
+      "blue": "蓝色",
+      "green": "绿色",
+      "orange": "橙色",
+      "purple": "紫色",
+      "red": "红色",
+      "cyan": "青色"
+    }
+  }
+}

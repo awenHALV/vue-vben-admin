@@ -1,0 +1,51 @@
+{
+  "title": "发版通知",
+  "listTitle": "发版通知列表",
+  "fields": {
+    "title": "发版标题",
+    "versionTitle": "版本号/标题",
+    "description": "版本说明",
+    "descriptionEdit": "版本解释说明",
+    "content": "发版详情",
+    "createTime": "创建时间",
+    "publishTime": "发布时间",
+    "status": "发布状态",
+    "action": "操作"
+  },
+  "status": {
+    "draft": "未发布",
+    "published": "已发布"
+  },
+  "placeholder": {
+    "title": "请输入发版标题",
+    "titleWithExample": "请输入发版标题，如：V2.1.0 现货交易辅助模块上线",
+    "description": "请输入简短摘要，用于列表外显预览",
+    "content": "请输入发版详情"
+  },
+  "action": {
+    "search": "查询",
+    "reset": "重置",
+    "add": "新增",
+    "detail": "详情",
+    "edit": "编辑",
+    "delete": "删除",
+    "cancel": "取消",
+    "save": "保存",
+    "publish": "发布",
+    "offline": "下线"
+  },
+  "modal": {
+    "addTitle": "新增发版通知",
+    "detailTitle": "发版通知详情",
+    "editTitle": "编辑发版通知"
+  },
+  "validation": {
+    "titleRequired": "请输入发版标题",
+    "contentRequired": "请输入发版详情"
+  },
+  "tips": {
+    "plainText": "支持纯文本编辑",
+    "richText": "支持富文本编辑",
+    "deleteConfirm": "确定要删除这条记录吗？"
+  }
+}

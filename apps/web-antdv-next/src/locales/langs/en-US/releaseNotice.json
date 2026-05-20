@@ -1,0 +1,51 @@
+{
+  "title": "Release Notice",
+  "listTitle": "Release Notice List",
+  "fields": {
+    "title": "Release Title",
+    "versionTitle": "Version/Title",
+    "description": "Version Description",
+    "descriptionEdit": "Version Explanation",
+    "content": "Release Details",
+    "createTime": "Create Time",
+    "publishTime": "Publish Time",
+    "status": "Publish Status",
+    "action": "Action"
+  },
+  "status": {
+    "draft": "Unpublished",
+    "published": "Published"
+  },
+  "placeholder": {
+    "title": "Please enter release title",
+    "titleWithExample": "Please enter release title, e.g. V2.1.0 Spot Trading Assistant Released",
+    "description": "Please enter a short summary for list preview",
+    "content": "Please enter release details"
+  },
+  "action": {
+    "search": "Search",
+    "reset": "Reset",
+    "add": "Add",
+    "detail": "Detail",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "publish": "Publish",
+    "offline": "Offline"
+  },
+  "modal": {
+    "addTitle": "Add Release Notice",
+    "detailTitle": "Release Notice Detail",
+    "editTitle": "Edit Release Notice"
+  },
+  "validation": {
+    "titleRequired": "Please enter release title",
+    "contentRequired": "Please enter release details"
+  },
+  "tips": {
+    "plainText": "Plain text editing is supported",
+    "richText": "Rich text editing is supported",
+    "deleteConfirm": "Are you sure you want to delete this record?"
+  }
+}
