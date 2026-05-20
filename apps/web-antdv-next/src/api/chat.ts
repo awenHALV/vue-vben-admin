@@ -32,6 +32,8 @@ export interface ChatSessionSummary {
   id: string;
   title: string;
   updatedAt: string;
+  agentId: string;
+  agentName: string;
 }
 
 /**
@@ -48,6 +50,7 @@ export function getChatSessionsApi(): Promise<ChatSessionSummary[]> {
 export interface PostChatSendBody {
   message?: string;
   sessionId?: string;
+  agentId?: string;
 }
 
 /** POST /api/chat/send 的 data 字段 */
@@ -63,12 +66,15 @@ export interface PostChatSendData {
 export function postChatSendApi(
   body?: PostChatSendBody,
 ): Promise<PostChatSendData> {
-  const data: { message?: string; sessionId?: string } = {};
+  const data: { agentId?: string; message?: string; sessionId?: string } = {};
   if (body?.message) {
     data.message = body.message;
   }
   if (body?.sessionId) {
     data.sessionId = body.sessionId;
+  }
+  if (body?.agentId) {
+    data.agentId = body.agentId;
   }
   return requestClient.post<PostChatSendData>(
     `${BASE_URL}/chat/send`,
@@ -154,4 +160,69 @@ export function formatChatSessionListTime(iso: string): string {
     return '';
   }
   return d.format('MM-DD HH:mm');
+}
+
+/** Agent 信息 */
+export interface ChatAgentItem {
+  agentId: string;
+  name: string;
+  description: string;
+  icon: null | string;
+}
+
+/** Agent 列表响应 */
+export interface ChatAgentsResponse {
+  code: string;
+  message: null | string;
+  data: ChatAgentItem[];
+  ext: null;
+  success: boolean;
+}
+
+/**
+ * 获取 Agent 列表
+ * GET /api/chat/agents
+ * requestClient 已解包为 data 数组，类型为 ChatAgentItem[]
+ */
+export function getChatAgentsApi(): Promise<ChatAgentItem[]> {
+  return requestClient.get<ChatAgentItem[]>(
+    `${BASE_URL}/chat/agents`,
+    chatRequestOptions(),
+  );
+}
+
+/** GET /chat/agents/{agentId}/welcome — data.welcomeMessage */
+export interface ChatAgentWelcomeData {
+  welcomeMessage: string;
+}
+
+/**
+ * 获取 Agent 欢迎语
+ * GET /chat/agents/{agentId}/welcome
+ */
+export function getChatAgentWelcomeApi(
+  agentId: string,
+): Promise<ChatAgentWelcomeData> {
+  return requestClient.get<ChatAgentWelcomeData>(
+    `${BASE_URL}/chat/agents/${encodeURIComponent(agentId)}/welcome`,
+    chatRequestOptions(),
+  );
+}
+
+/** GET /chat/agents/{agentId}/questions — data.questions */
+export interface ChatAgentQuestionsData {
+  questions: string[];
+}
+
+/**
+ * 获取 Agent 推荐问题
+ * GET /chat/agents/{agentId}/questions
+ */
+export function getChatAgentQuestionsApi(
+  agentId: string,
+): Promise<ChatAgentQuestionsData> {
+  return requestClient.get<ChatAgentQuestionsData>(
+    `${BASE_URL}/chat/agents/${encodeURIComponent(agentId)}/questions`,
+    chatRequestOptions(),
+  );
 }

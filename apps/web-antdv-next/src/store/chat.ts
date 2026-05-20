@@ -18,6 +18,8 @@ import { defineStore } from 'pinia';
 import {
   BASE_URL,
   deleteChatSessionApi,
+  getChatAgentQuestionsApi,
+  getChatAgentWelcomeApi,
   getChatSessionsApi,
   postChatFeedbackApi,
   postChatRestoreApi,
@@ -28,7 +30,7 @@ import { useAuthStore } from '#/store';
 type PanelMode = 'chat' | 'history';
 type ViewMode = 'full' | 'right';
 
-const WELCOME_TEXT = '你好！我是小羲助手。我将为你提供专业的能源互联网支持。';
+// const WELCOME_TEXT = '你好！我是小羲助手。我将为你提供专业的能源互联网支持。';
 
 type ThinkingStepStatus = 'done' | 'error' | 'thinking';
 
@@ -386,6 +388,10 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
   const historySessionsLoading = ref(false);
   const chatMessages = ref<AiChatMessage[]>([]);
   const assistantMetaById = ref<Record<string, AssistantMessageMeta>>({});
+  const currentAgentId = ref('');
+  const agentWelcomeById = ref<Record<string, string>>({});
+  const agentQuestionsById = ref<Record<string, string[]>>({});
+  const agentProfileLoading = ref(false);
 
   // pending / thinking
   const sendLoading = ref(false);
@@ -419,18 +425,63 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     return true;
   }
 
-  function ensureWelcomeMessage() {
+  function setCurrentAgentId(agentId: string) {
+    currentAgentId.value = agentId;
+  }
+
+  async function loadAgentProfile(agentId: string) {
+    if (!agentId) return;
+    agentProfileLoading.value = true;
+    try {
+      const [welcomeRes, questionsRes] = await Promise.all([
+        getChatAgentWelcomeApi(agentId),
+        getChatAgentQuestionsApi(agentId),
+      ]);
+      agentWelcomeById.value = {
+        ...agentWelcomeById.value,
+        [agentId]: welcomeRes.welcomeMessage,
+      };
+      agentQuestionsById.value = {
+        ...agentQuestionsById.value,
+        [agentId]: questionsRes.questions ?? [],
+      };
+    } catch (error) {
+      if (await redirectToLoginIfUnauthorized(error)) return;
+      console.error(error);
+    } finally {
+      agentProfileLoading.value = false;
+    }
+  }
+
+  function ensureWelcomeMessage(agentId?: string) {
     if (activeConversationId.value) return;
     if (chatMessages.value.length > 0) return;
+    const resolvedAgentId = agentId ?? currentAgentId.value;
+    const welcomeText = resolvedAgentId
+      ? (agentWelcomeById.value[resolvedAgentId] ?? '')
+      : '';
+    if (!welcomeText) return;
     chatMessages.value = [
       {
         id: newMessageId(),
         isWelcome: true,
         kind: 'rich',
         role: 'assistant',
-        parts: [{ type: 'markdown', content: WELCOME_TEXT }],
+        parts: [{ type: 'markdown', content: welcomeText }],
       },
     ];
+  }
+
+  async function prepareAgentChat(agentId: string) {
+    if (!agentId) return;
+    currentAgentId.value = agentId;
+    activeConversationId.value = null;
+    activeConversationFromHistory.value = false;
+    chatMessages.value = [];
+    panelMode.value = 'chat';
+    closeSse();
+    await loadAgentProfile(agentId);
+    ensureWelcomeMessage(agentId);
   }
 
   function ensureRichAssistantMessage(
@@ -843,6 +894,8 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
         preview: s.title,
         // time: formatChatSessionListTime(s.updatedAt),
         time: s.updatedAt,
+        agentId: s.agentId,
+        agentName: s.agentName,
       }));
     } catch (error) {
       if (await redirectToLoginIfUnauthorized(error)) return;
@@ -858,22 +911,28 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     open.value = true;
     viewMode.value = 'right';
     panelMode.value = 'chat';
-    ensureWelcomeMessage();
   }
 
   function closePanel() {
     open.value = false;
-    // 关闭后再打开应进入新对话：清空会话、停止 SSE、回到聊天 Tab
-    newChat();
-  }
-
-  function newChat() {
+    // 关闭时仅清空会话；下次打开由 Launcher 重置为第一个 agent 并 prepareAgentChat
     activeConversationId.value = null;
     activeConversationFromHistory.value = false;
     chatMessages.value = [];
     panelMode.value = 'chat';
     closeSse();
-    ensureWelcomeMessage();
+  }
+
+  function newChat(agentId?: string) {
+    activeConversationId.value = null;
+    activeConversationFromHistory.value = false;
+    chatMessages.value = [];
+    panelMode.value = 'chat';
+    closeSse();
+    const resolvedAgentId = agentId ?? currentAgentId.value;
+    if (resolvedAgentId) {
+      void prepareAgentChat(resolvedAgentId);
+    }
   }
 
   function toggleView() {
@@ -885,7 +944,12 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     void loadChatSessions();
   }
 
-  function goChat() {
+  function goChat(agentId?: string) {
+    const resolvedAgentId = agentId ?? currentAgentId.value;
+    if (resolvedAgentId) {
+      void prepareAgentChat(resolvedAgentId);
+      return;
+    }
     newChat();
   }
 
@@ -941,7 +1005,9 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
         }
       }
 
-      if (chatMessages.value.length === 0) ensureWelcomeMessage();
+      if (chatMessages.value.length === 0) {
+        ensureWelcomeMessage(currentAgentId.value);
+      }
       isThinking.value = false;
     } catch (error) {
       if (await redirectToLoginIfUnauthorized(error)) return;
@@ -952,7 +1018,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     }
   }
 
-  async function sendMessage(text: string) {
+  async function sendMessage(text: string, agentId?: string) {
     const trimmed = text.trim();
     const busyId = streamingAssistantMessageId.value;
     if (
@@ -975,6 +1041,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
       const data = await postChatSendApi({
         message: trimmed,
         sessionId: activeConversationId.value ?? undefined,
+        agentId: agentId ?? undefined,
       });
       activeConversationId.value = data.sessionId;
       connectSse(data.sessionId);
@@ -1013,7 +1080,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
         closeSse();
         chatMessages.value = [];
         assistantMetaById.value = {};
-        ensureWelcomeMessage();
+        ensureWelcomeMessage(currentAgentId.value);
       }
 
       antdMessage.success('已删除会话');
@@ -1079,6 +1146,10 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     historySessionsLoading,
     chatMessages,
     assistantMetaById,
+    currentAgentId,
+    agentWelcomeById,
+    agentQuestionsById,
+    agentProfileLoading,
     pending,
     restoreLoading,
 
@@ -1086,6 +1157,9 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
     openPanel,
     closePanel,
     newChat,
+    setCurrentAgentId,
+    loadAgentProfile,
+    prepareAgentChat,
     toggleView,
     openHistory,
     goChat,

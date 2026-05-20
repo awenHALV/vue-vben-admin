@@ -194,6 +194,10 @@ defineExpose({ open });
 onMounted(() => {
   void loadCategoryOptions();
 });
+// 不能选择未来时间
+const disabledDate = (current) => {
+  return current && current > dayjs().endOf('day');
+};
 </script>
 
 <template>
@@ -248,6 +252,7 @@ onMounted(() => {
         <DatePicker
           v-model:value="formData.publishTime"
           value-format="YYYY-MM-DD"
+          :disabled-date="disabledDate"
           :placeholder="$t('industryNews.placeholder.publishTime')"
           style="width: 100%"
         />

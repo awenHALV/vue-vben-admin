@@ -18,6 +18,7 @@ import {
 
 import { IconifyIcon } from '@vben/icons';
 
+import { AI_ASSISTANT_ICON_URL, LINGXI_AGENT_ICON_URL } from '../../ai-assets';
 import { AI_ASSISTANT_DEMO_MESSAGES } from '../../mock/demo-messages';
 import { renderMarkdown } from '../../utils/markdown';
 import Avatar from './Avatar.vue';
@@ -30,6 +31,7 @@ defineOptions({
 
 const props = withDefaults(
   defineProps<{
+    activeAgent?: string;
     activeConversationId: null | string;
     assistantMetaById?: Record<string, AssistantMessageMeta>;
     /** 未传时使用内置 demo；接入 SSE 后由上层拼装为列表传入 */
@@ -37,6 +39,7 @@ const props = withDefaults(
     variant?: AiAssistantPanelVariant;
   }>(),
   {
+    activeAgent: '',
     assistantMetaById: undefined,
     messages: undefined,
     variant: 'drawer',
@@ -56,6 +59,33 @@ const displayMessages = computed(
   () => props.messages ?? AI_ASSISTANT_DEMO_MESSAGES,
 );
 
+/** 与 DrawerSideToolbar 一致：activeAgent 为接口返回的 agentId，非旧版 lingxi/xiaoxi 别名 */
+const assistantAvatarByAgentId: Record<
+  string,
+  { alt: string; imgClass: string; src: string }
+> = {
+  'ops-monitor': {
+    alt: '小羲助手',
+    imgClass: 'size-[18px]',
+    src: AI_ASSISTANT_ICON_URL,
+  },
+  'power-trade': {
+    alt: '灵羲交易',
+    imgClass: 'size-8',
+    src: LINGXI_AGENT_ICON_URL,
+  },
+};
+
+const assistantAvatar = computed(() => {
+  const mapped = assistantAvatarByAgentId[props.activeAgent];
+  if (mapped) return mapped;
+  return {
+    alt: 'AI',
+    imgClass: 'size-[18px]',
+    src: undefined,
+  };
+});
+
 function chartPartOf(msg: AiChatMessage) {
   if (msg.role !== 'assistant') return null;
   if (msg.kind !== 'rich') return null;
@@ -66,6 +96,9 @@ function chartPartOf(msg: AiChatMessage) {
 
 function markdownOf(msg: AiChatMessage): string {
   if (msg.role !== 'assistant') return '';
+  // if (isWelcomeMessage(msg) && props.activeAgent === 'power-trade') {
+  //   return '你好，我是灵羲交易，请问有什么可以帮助你的。';
+  // }
   if (msg.kind === 'text') return msg.text ?? '';
   if (msg.kind === 'rich') {
     const part = msg.parts.find((p) => p.type === 'markdown');
@@ -271,7 +304,12 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
           class="flex gap-3"
           :class="isSingleLineWelcome(msg.id) ? 'items-center' : 'items-start'"
         >
-          <Avatar :class="isSingleLineWelcome(msg.id) ? 'mt-0!' : undefined" />
+          <Avatar
+            :alt="assistantAvatar.alt"
+            :class="isSingleLineWelcome(msg.id) ? 'mt-0!' : undefined"
+            :img-class="assistantAvatar.imgClass"
+            :src="assistantAvatar.src"
+          />
           <div
             class="group flex flex-col gap-2"
             :class="[
@@ -442,7 +480,11 @@ function thinkingTitle(meta: AssistantMessageMeta): string {
 
       <!-- 助手：卡片（每条均带头像） -->
       <div v-else-if="msg.kind === 'card'" class="flex gap-3">
-        <Avatar />
+        <Avatar
+          :alt="assistantAvatar.alt"
+          :img-class="assistantAvatar.imgClass"
+          :src="assistantAvatar.src"
+        />
         <div
           class="rounded-lg border text-sm text-muted-foreground"
           :class="[

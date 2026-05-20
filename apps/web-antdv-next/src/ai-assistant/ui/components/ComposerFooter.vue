@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue';
 
 import { IconifyIcon } from '@vben/icons';
 
-import { Button, Input } from 'antdv-next';
+import { Button, Input, Tooltip } from 'antdv-next';
 
 defineOptions({
   name: 'ComposerFooter',
@@ -80,10 +80,14 @@ function submit() {
     <div
       class="flex h-11 min-h-11 items-center gap-2 rounded-full border border-[#D9D9D9] bg-white pr-1.5 pl-3 dark:border-border dark:bg-background"
     >
-      <IconifyIcon
-        icon="lucide:paperclip"
-        class="size-5 shrink-0 text-[rgba(0,0,0,0.45)] dark:text-muted-foreground"
-      />
+      <Tooltip title="功能正在开发中，敬请期待">
+        <span class="inline-flex cursor-pointer">
+          <IconifyIcon
+            icon="lucide:paperclip"
+            class="size-5 shrink-0 text-[rgba(0,0,0,0.45)] dark:text-muted-foreground"
+          />
+        </span>
+      </Tooltip>
       <Input
         v-model:value="value"
         class="min-w-0 flex-1 border-0! bg-transparent! px-0! text-sm shadow-none! focus:shadow-none! dark:text-foreground"

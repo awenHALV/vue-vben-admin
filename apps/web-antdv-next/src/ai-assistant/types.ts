@@ -1,4 +1,6 @@
 export type AiAssistantHistoryItem = {
+  agentId: string;
+  agentName: string;
   id: string;
   preview: string;
   time: string;

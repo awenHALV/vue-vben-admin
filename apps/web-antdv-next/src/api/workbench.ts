@@ -55,6 +55,7 @@ export interface WorkbenchMessageItem {
 export interface WorkbenchAppConfigApiItem {
   appIcon?: string;
   appName?: string;
+  appColor?: string;
   id: number | string;
 }
 
@@ -70,6 +71,7 @@ export interface WorkbenchAppConfigDetailApiItem extends WorkbenchAppConfigApiIt
 export interface CreateWorkbenchAppConfigParams {
   appIcon?: string;
   appName: string;
+  appColor: string;
   featureIds: string;
 }
 

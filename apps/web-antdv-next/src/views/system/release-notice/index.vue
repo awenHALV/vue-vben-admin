@@ -295,6 +295,7 @@ function handleModalSuccess() {
               v-if="canButton(RELEASE_NOTICE_PAGE_BUTTON_CODES.edit)"
               type="link"
               size="small"
+              :disabled="row.status === 'published'"
               class="text-primary"
               @click="handleEdit(row)"
             >
@@ -305,6 +306,7 @@ function handleModalSuccess() {
                 v-if="canButton(RELEASE_NOTICE_PAGE_BUTTON_CODES.delete)"
                 type="link"
                 danger
+                :disabled="row.status === 'published'"
                 size="small"
                 @click="handleDelete(row)"
               >
