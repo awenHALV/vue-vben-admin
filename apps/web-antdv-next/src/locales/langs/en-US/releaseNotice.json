@@ -47,5 +47,11 @@
     "plainText": "Plain text editing is supported",
     "richText": "Rich text editing is supported",
     "deleteConfirm": "Are you sure you want to delete this record?"
+  },
+  "message": {
+    "deleteSuccess": "Delete successfully",
+    "saveSuccess": "Save successfully",
+    "publishSuccess": "Publish successfully",
+    "offlineSuccess": "Offline successfully"
   }
 }

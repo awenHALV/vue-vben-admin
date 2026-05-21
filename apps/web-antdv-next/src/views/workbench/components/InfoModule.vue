@@ -941,8 +941,8 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
+  background: rgba(22, 119, 255, 0.1);
+  border: 1px solid rgba(22, 119, 255, 0.2);
   border-radius: 8px;
 }
 

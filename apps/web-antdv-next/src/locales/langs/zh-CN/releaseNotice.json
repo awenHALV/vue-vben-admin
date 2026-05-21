@@ -47,5 +47,11 @@
     "plainText": "支持纯文本编辑",
     "richText": "支持富文本编辑",
     "deleteConfirm": "确定要删除这条记录吗？"
+  },
+  "message": {
+    "deleteSuccess": "删除成功",
+    "saveSuccess": "保存成功",
+    "publishSuccess": "发布成功",
+    "offlineSuccess": "下线成功"
   }
 }

@@ -524,7 +524,7 @@ onMounted(() => {
           <IconifyIcon :icon="app.icon" class="app-icon" />
         </div>
 
-        <div class="app-name w-full truncate px-1 text-center">
+        <div class="app-name">
           {{ app.name }}
         </div>
 
@@ -709,7 +709,30 @@ onMounted(() => {
   background: hsl(var(--background));
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   overflow: hidden;
-  width: 100%; /* 必须有明确或相对宽度限制 */
+}
+
+.app-item .app-name {
+  /* 核心核心：打破原有的单行限制，允许换行 */
+  white-space: normal !important; /* 【关键修改】强制覆盖可能存在的 nowrap，允许文本换行 */
+  /* 核心核心：限制 2 行文本，超出显示省略号 (...) */
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* 限制最多显示 2 行 */
+  -webkit-box-orient: vertical; /* 设定伸缩盒子的子元素排列方式 */
+  overflow: hidden; /* 隐藏超出两行的文字 */
+  text-overflow: ellipsis; /* 溢出时显示三个点 */
+  word-break: break-all; /* 确保长英文/数字能在边界自动折行，防止撑破卡片 */
+
+  /* 辅助排版与防错位 */
+  width: 100%; /* 撑满父容器宽度 */
+  text-align: center; /* 文字居中 */
+  font-size: 13px; /* 可以根据实际视觉微调字号 */
+  line-height: 1.4; /* 规范行高 */
+
+  /* 【核心防错位】固定 2 行的高度空间 
+     1.4(line-height) * 2(行数) = 2.8em
+     这样不管名字是 1 行还是 2 行，占用的高度都完全一致，卡片绝对对齐 */
+  min-height: 2.8em;
+  max-height: 2.8em;
 }
 
 .app-item:hover {

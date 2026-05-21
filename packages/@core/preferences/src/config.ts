@@ -18,7 +18,7 @@ const defaultPreferences: Preferences = {
     contentPaddingRight: 0,
     contentPaddingTop: 0,
     defaultAvatar: '/energy-platform/logo.png',
-    defaultHomePath: '/system',
+    defaultHomePath: '/workbench',
     dynamicTitle: true,
     enableCheckUpdates: true,
     enableCopyPreferences: true,

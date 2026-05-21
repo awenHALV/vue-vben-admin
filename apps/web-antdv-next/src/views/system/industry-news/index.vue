@@ -13,7 +13,7 @@ import { Page, VbenButton, VbenInput } from '@vben/common-ui';
 import { IconifyIcon, Plus } from '@vben/icons';
 import { $t } from '@vben/locales';
 
-import { App, Button, Select, Space, Tag } from 'antdv-next';
+import { App, Button, message, Select, Space, Tag } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getDictOptionsApi } from '#/api/system/dict';
@@ -203,6 +203,7 @@ function handleDelete(record: IndustryNewsItem) {
     async onOk() {
       await deleteIndustryNewsApi(record.id);
       await reloadGrid();
+      message.success($t('releaseNotice.message.deleteSuccess'));
       // 通知工作台刷新
       emitter.emit('industry-new-update');
     },

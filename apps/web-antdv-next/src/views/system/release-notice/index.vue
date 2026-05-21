@@ -11,7 +11,7 @@ import { Page, VbenButton, VbenInput } from '@vben/common-ui';
 import { IconifyIcon, Plus } from '@vben/icons';
 import { $t } from '@vben/locales';
 
-import { App, Button, Space, Tag, Tooltip } from 'antdv-next';
+import { App, Button, message, Space, Tag, Tooltip } from 'antdv-next';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
@@ -183,6 +183,7 @@ function handleDelete(record: ReleaseNoticeItem) {
     async onOk() {
       await deleteReleaseNoticeApi(record.id);
       await reloadGrid();
+      message.success($t('system.common.deleteSuccess'));
       // 通知工作台刷新
       emitter.emit('release-notice-update');
     },
@@ -193,6 +194,11 @@ async function handlePublish(record: ReleaseNoticeItem) {
   await (record.status === 'published'
     ? unpublishReleaseNoticeApi(record.id)
     : publishReleaseNoticeApi(record.id));
+  if (record.status === 'published') {
+    message.success($t('releaseNotice.message.offlineSuccess'));
+  } else {
+    message.success($t('releaseNotice.message.publishSuccess'));
+  }
   await reloadGrid();
   emitter.emit('release-notice-update');
 }

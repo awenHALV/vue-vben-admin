@@ -25,7 +25,7 @@ import { IconifyIcon } from '@vben/icons';
 import { $t } from '@vben/locales';
 
 import { createEditor, createToolbar } from '@wangeditor/editor';
-import { Form, FormItem, Input } from 'antdv-next';
+import { Form, FormItem, Input, message } from 'antdv-next';
 
 import {
   createReleaseNoticeApi,
@@ -238,6 +238,7 @@ const [VbenModal, modalApi] = useVbenModal({
         ? updateReleaseNoticeApi(toReleaseNoticeUpdateParams(formData))
         : createReleaseNoticeApi(toReleaseNoticeCreateParams(formData)));
       emit('success');
+      message.success($t('releaseNotice.message.saveSuccess'));
       modalApi.close();
     } finally {
       modalApi.setState({ confirmLoading: false });
@@ -329,9 +330,21 @@ defineExpose({ open });
 }
 
 .release-editor {
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid #d9d9d9;
   border-radius: 6px;
+}
+
+/* 强行让顶部的工具栏左上、右上拥有圆角 */
+.release-editor :deep(.w-e-toolbar) {
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+/* 强行让底部的编辑器主体左下、右下拥有圆角 */
+.release-editor :deep(.w-e-text-container) {
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
 }
 
 .release-editor__toolbar {

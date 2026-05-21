@@ -13,7 +13,7 @@ import { useVbenModal } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
 import { $t } from '@vben/locales';
 
-import { DatePicker, Form, FormItem, Input, Select } from 'antdv-next';
+import { DatePicker, Form, FormItem, Input, message, Select } from 'antdv-next';
 import dayjs from 'dayjs';
 
 import { getDictOptionsApi } from '#/api/system/dict';
@@ -159,6 +159,7 @@ const [VbenModal, modalApi] = useVbenModal({
         ? updateIndustryNewsApi(toIndustryNewsUpdateParams(formData))
         : createIndustryNewsApi(toIndustryNewsCreateParams(formData)));
       emit('success');
+      message.success($t('tenant.message.saveSuccess'));
       modalApi.close();
     } finally {
       modalApi.setState({ confirmLoading: false });
