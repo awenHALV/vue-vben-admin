@@ -125,9 +125,17 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
   const matched = route.matched;
   const currentPath = route.path;
 
+  // =========================================================================
+  // 1. 常规路由过滤与清洗阶段 (Standard Route Filtering)
+  // =========================================================================
+  const filteredMatched = matched.filter((m) => {
+    return (
+      m.meta?.title && m.name !== 'Root' && !m.path.startsWith('/__group__')
+    );
+  });
   const resultBreadcrumb: IBreadcrumb[] = [];
 
-  for (const match of matched) {
+  for (const match of filteredMatched) {
     const { meta, name: routeName, path } = match;
     const {
       featureName: metaFeatureName,
@@ -137,20 +145,25 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
       icon,
       title,
     } = meta || {};
+
     if (hideInBreadcrumb || hideChildrenInMenu || !path) {
       continue;
     }
 
-    // 优先从 route.meta 获取，如果没有则从菜单树中查找
     let featureName = metaFeatureName as string | undefined;
     let featureNameEn = metaFeatureNameEn as string | undefined;
 
-    // 如果 meta 中没有 featureName，尝试从 accessMenus 中查找
     if (!featureName && accessStore.accessMenus.length > 0) {
-      const menuItem = findMenuByPath(accessStore.accessMenus as MenuRecordLike[], path);
+      const menuItem = findMenuByPath(
+        accessStore.accessMenus as MenuRecordLike[],
+        path,
+      );
       if (menuItem) {
-        featureName = (menuItem.meta?.featureName ?? menuItem.featureName) as string | undefined;
-        featureNameEn = (menuItem.meta?.featureNameEn ?? menuItem.featureNameEn) as string | undefined;
+        featureName = (menuItem.meta?.featureName ?? menuItem.featureName) as
+          | string
+          | undefined;
+        featureNameEn = (menuItem.meta?.featureNameEn ??
+          menuItem.featureNameEn) as string | undefined;
       }
     }
 
@@ -168,6 +181,7 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
       ),
     });
   }
+
   if (props.showHome) {
     resultBreadcrumb.unshift({
       icon: 'mdi:home-outline',
@@ -175,48 +189,96 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
       path: '/',
     });
   }
+
   if (props.hideWhenOnlyOne && resultBreadcrumb.length === 1) {
     return [];
   }
 
+  // =========================================================================
+  // 2. 微前端深度链树解析与「首帧防闪烁」对齐阶段
+  // =========================================================================
   const currentKey = getTabKey(route);
   const tab = tabbarStore.getTabByKey(currentKey);
   const overrideTitle = tab?.meta?.newTabTitle;
 
-  // 微前端详情深链：通配容器路由能匹配到，但菜单路由通常缺失，需用菜单树补全父链。
   const hasMicroName = !!(route.meta?.microName as string | undefined);
   const menuChain = hasMicroName
     ? findMenuChainByPath(accessStore.accessMenus, currentPath)
     : [];
 
   if (menuChain.length > 0) {
-    const isDetail = !!overrideTitle;
+    const lastMenuItem = menuChain[menuChain.length - 1];
+
+    // 1. 获取最后一级静态菜单的原始多语言配置字段（Key 或 原始明文）
+    const lastMenuRawName = (lastMenuItem?.meta?.title ??
+      lastMenuItem?.title ??
+      lastMenuItem?.name) as string | undefined;
+
+    // 🌟【降级拦截】提前模拟计算最后一级菜单在“当前激活语种”下的绝对翻译中文字符串
+    // 强制指定 locale: 'zh-CN' 和 'en-US'，用于在后面拦截切换语言时 Tab 里未及时同步的残余标题
+    const fallbackTitleZh =
+      lastMenuRawName && $te(lastMenuRawName)
+        ? $t(lastMenuRawName, {}, { locale: 'zh-CN' })
+        : undefined;
+    const fallbackTitleEn =
+      lastMenuRawName && $te(lastMenuRawName)
+        ? $t(lastMenuRawName, {}, { locale: 'en-US' })
+        : undefined;
+
+    // 2. 遍历菜单链，使用框架最权威的 resolveMenuTitle 组装面包屑实体
     const chainBreadcrumbs: IBreadcrumb[] = menuChain.map((m, idx) => {
       const isLastMenu = idx === menuChain.length - 1;
-      // 交互规则：
-      // - “文件夹/父级”不应可点击（仅展示层级）
-      // - 列表页本身也不需要点击
-      // - 仅当在“详情页”时，允许点击“列表页”返回
-      const clickable = isDetail && isLastMenu;
-
       return {
         icon: (m.meta as any)?.icon ?? (m.icon as any),
-        path: clickable ? String(m.path ?? '') : undefined,
+        path: undefined, // 占位，clickable 状态由下方 isDetail 判定后二次改写，防止破坏首帧计算
         title: resolveMenuTitle(
           {
             title: (m.meta as any)?.title ?? (m.title as any),
             name: (m.name as any) ?? undefined,
-            // 优先使用菜单项上的 featureName/featureNameEn（由 generateMenus 生成）
-            featureName: (m.featureName as string) ?? (m.meta as any)?.featureName ?? undefined,
-            featureNameEn: (m.featureNameEn as string) ?? (m.meta as any)?.featureNameEn ?? undefined,
+            featureName:
+              (m.featureName as string) ??
+              (m.meta as any)?.featureName ??
+              undefined,
+            featureNameEn:
+              (m.featureNameEn as string) ??
+              (m.meta as any)?.featureNameEn ??
+              undefined,
           },
           { locale: locale.value, t: $t, te: $te },
         ),
       };
     });
 
-    // 详情页最后一级：优先使用 tab 的 newTabTitle（来自子应用传入的 title），避免污染 URL query。
-    if (overrideTitle) {
+    // 3. 获取刚刚通过标准翻译引擎翻译出来的“当前语种下面包屑最末级”的真实显示文字
+    const currentTranslatedTitle =
+      chainBreadcrumbs[chainBreadcrumbs.length - 1]?.title;
+
+    // 4. ✨ 【终极天网式多语言全等判定】
+    // 只要子应用上抛的 overrideTitle 满足以下任意一项，即判定为“主页”，杜绝多渲染第4层：
+    //   - overrideTitle 为空（首帧状态）
+    //   - 与菜单原始 Key / 名字字符串强相等
+    //   - 与当前多语言环境完全翻译出来的最末级标准名称（英文名或中文名）强相等
+    //   - 强等于强制提取出的业务中文名（防止切英文时，Tab内部缓存依旧残留中文导致的错位）
+    //   - 强等于强制提取出的业务英文名（防止切中文时，Tab内部缓存依旧残留英文导致的错位）
+    const isSameTitle =
+      !overrideTitle ||
+      String(overrideTitle) === String(lastMenuRawName) ||
+      String(overrideTitle) === String(currentTranslatedTitle) ||
+      (fallbackTitleZh && String(overrideTitle) === String(fallbackTitleZh)) ||
+      (fallbackTitleEn && String(overrideTitle) === String(fallbackTitleEn));
+
+    const isDetail = !isSameTitle; // 只有不等于主页的任何一种多语言形态，才属于真正的详情页
+
+    // 5. 修正最后一级的点击响应行为
+    if (chainBreadcrumbs.length > 0) {
+      const lastBreadcrumb = chainBreadcrumbs[chainBreadcrumbs.length - 1]!;
+      lastBreadcrumb.path = isDetail
+        ? String(lastMenuItem?.path ?? '')
+        : undefined;
+    }
+
+    // 6. 如果是真正的内嵌详情页，且动态标题不为空，则追加最后一层详情面包屑
+    if (isDetail && overrideTitle) {
       chainBreadcrumbs.push({
         path: route.fullPath,
         title: String(overrideTitle),
@@ -241,7 +303,9 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
     return merged;
   }
 
-  // 非微前端详情页：最后一级展示标题以 tab 的 newTabTitle 为准（不污染 URL query）
+  // =========================================================================
+  // 3. 非微前端常规路由覆写兜底
+  // =========================================================================
   if (overrideTitle && resultBreadcrumb.length > 0) {
     resultBreadcrumb[resultBreadcrumb.length - 1]!.title =
       String(overrideTitle);
@@ -249,7 +313,6 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
 
   return resultBreadcrumb;
 });
-
 function handleSelect(path: string) {
   router.push(path);
 }
