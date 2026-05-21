@@ -8,6 +8,7 @@ import { computed, h, onMounted, reactive, ref, watch } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
+import { preferences } from '@vben/preferences';
 
 import {
   App,
@@ -111,7 +112,7 @@ const [Grid, gridApi] = useVbenVxeGrid<RoleInfo>({
       },
       {
         title: $t('system.common.operation'),
-        width: 200,
+        width: preferences.app.locale === 'en-US' ? 300 : 200,
         fixed: 'right',
         align: 'center',
         slots: { default: 'action' },
@@ -317,53 +318,55 @@ class="w-21" @click="handleSearch"
             class="flex h-full min-h-0 flex-col rounded-lg border border-border bg-background"
           >
             <Grid class="h-full min-h-0">
-            <template #toolbar-actions>
-              <div class="flex w-full items-center justify-between p-0 pb-2">
-                <div class="text-base font-bold">
-                  {{ $t('system.role.roleList') }}
+              <template #toolbar-actions>
+                <div class="flex w-full items-center justify-between p-0 pb-2">
+                  <div class="text-base font-bold">
+                    {{ $t('system.role.roleList') }}
+                  </div>
+                  <Button
+                    v-if="canButton(ROLE_PAGE_BUTTON_CODES.add)"
+                    type="primary"
+                    class="w-21"
+                    @click="handleAdd"
+                  >
+                    <template #icon>
+                      <IconifyIcon icon="lucide:plus" />
+                    </template>
+                    {{ $t('system.common.add') }}
+                  </Button>
                 </div>
-                <Button
-                  v-if="canButton(ROLE_PAGE_BUTTON_CODES.add)"
-                  type="primary"
-                  class="w-21"
-                  @click="handleAdd"
-                >
-                  <template #icon><IconifyIcon icon="lucide:plus" /></template>
-                  {{ $t('system.common.add') }}
-                </Button>
-              </div>
-            </template>
-
-            <template #action="{ row }">
-              <template v-if="row.roleAlias !== 'admin'">
-                <Button
-                  type="link"
-                  size="small"
-                  class="text-primary"
-                  v-if="canButton(ROLE_PAGE_BUTTON_CODES.edit)"
-                  @click="handleEdit(row)"
-                >
-                  {{ $t('system.common.edit') }}
-                </Button>
-                <Button
-                  danger
-                  type="link"
-                  size="small"
-                  v-if="canButton(ROLE_PAGE_BUTTON_CODES.delete)"
-                  @click="handleDelete(row)"
-                >
-                  {{ $t('system.common.delete') }}
-                </Button>
-                <Button
-                  type="link"
-                  size="small"
-                  v-if="canButton(ROLE_PAGE_BUTTON_CODES.auth)"
-                  @click="handlePermission(row)"
-                >
-                  {{ $t('system.role.permission') }}
-                </Button>
               </template>
-            </template>
+
+              <template #action="{ row }">
+                <template v-if="row.roleAlias !== 'admin'">
+                  <Button
+                    type="link"
+                    size="small"
+                    class="text-primary"
+                    v-if="canButton(ROLE_PAGE_BUTTON_CODES.edit)"
+                    @click="handleEdit(row)"
+                  >
+                    {{ $t('system.common.edit') }}
+                  </Button>
+                  <Button
+                    danger
+                    type="link"
+                    size="small"
+                    v-if="canButton(ROLE_PAGE_BUTTON_CODES.delete)"
+                    @click="handleDelete(row)"
+                  >
+                    {{ $t('system.common.delete') }}
+                  </Button>
+                  <Button
+                    type="link"
+                    size="small"
+                    v-if="canButton(ROLE_PAGE_BUTTON_CODES.auth)"
+                    @click="handlePermission(row)"
+                  >
+                    {{ $t('system.role.permission') }}
+                  </Button>
+                </template>
+              </template>
             </Grid>
           </div>
         </div>

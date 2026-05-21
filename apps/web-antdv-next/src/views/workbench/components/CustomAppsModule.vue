@@ -517,16 +517,17 @@ onMounted(() => {
         :key="app.id"
         class="app-item"
         :class="`app-color-${app.color || 'blue'}`"
+        :title="app.name"
         @click="openAppSandbox(app)"
       >
         <div class="app-icon-wrapper">
           <IconifyIcon :icon="app.icon" class="app-icon" />
         </div>
-        <div class="app-name">{{ app.name }}</div>
-        <!-- <div class="app-badge" v-if="app.menus && app.menus.length > 1">
-          <IconifyIcon icon="lucide:layers" />
-          <span>{{ app.menus.length }}</span>
-        </div> -->
+
+        <div class="app-name w-full truncate px-1 text-center">
+          {{ app.name }}
+        </div>
+
         <div class="app-delete" @click.stop="deleteApp(app.id)">
           <IconifyIcon icon="lucide:x" />
         </div>
@@ -708,6 +709,7 @@ onMounted(() => {
   background: hsl(var(--background));
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   overflow: hidden;
+  width: 100%; /* 必须有明确或相对宽度限制 */
 }
 
 .app-item:hover {

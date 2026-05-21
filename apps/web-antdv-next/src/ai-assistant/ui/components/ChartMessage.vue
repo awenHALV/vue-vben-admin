@@ -157,20 +157,21 @@ const option = computed(() => {
     },
     xAxis: {
       axisTick: { show: false },
-      axisLabel: useHorizontalLabels
-        ? {
-            fontSize: AXIS_LABEL_FONT_PX,
-            interval: 0,
-            overflow: 'none' as const,
-            rotate: 0,
-          }
-        : {
-            fontSize: AXIS_LABEL_FONT_PX,
-            interval: 0,
-            overflow: 'truncate' as const,
-            rotate: 35,
-            width: 90,
-          },
+      // axisLabel: useHorizontalLabels
+      //   ? {
+      //       fontSize: AXIS_LABEL_FONT_PX,
+      //       interval: 0,
+      //       overflow: 'none' as const,
+      //       rotate: 0,
+      //     }
+      //   : {
+      //       fontSize: AXIS_LABEL_FONT_PX,
+      //       interval: 0,
+      //       overflow: 'truncate' as const,
+      //       rotate: 35,
+      //       width: 90,
+      //     },
+      interval: 'auto',
       data: categories,
       type: 'category' as const,
     },

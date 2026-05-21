@@ -71,6 +71,11 @@ const rules = computed(() => ({
       message: $t('industryNews.validation.sourceRequired'),
       trigger: 'blur',
     },
+    {
+      max: 100,
+      message: $t('industryNews.validation.sourceMax'),
+      trigger: 'blur',
+    },
   ],
   url: [
     {

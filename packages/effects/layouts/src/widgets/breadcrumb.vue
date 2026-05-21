@@ -128,14 +128,14 @@ const breadcrumbs = computed((): IBreadcrumb[] => {
   // =========================================================================
   // 1. 常规路由过滤与清洗阶段 (Standard Route Filtering)
   // =========================================================================
-  const filteredMatched = matched.filter((m) => {
-    return (
-      m.meta?.title && m.name !== 'Root' && !m.path.startsWith('/__group__')
-    );
-  });
+  // const filteredMatched = matched.filter((m) => {
+  //   return (
+  //     m.meta?.title && m.name !== 'Root' && !m.path.startsWith('/__group__')
+  //   );
+  // });
   const resultBreadcrumb: IBreadcrumb[] = [];
 
-  for (const match of filteredMatched) {
+  for (const match of matched) {
     const { meta, name: routeName, path } = match;
     const {
       featureName: metaFeatureName,

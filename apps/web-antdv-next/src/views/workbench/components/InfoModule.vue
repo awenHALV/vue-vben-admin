@@ -346,7 +346,7 @@ onMounted(() => {
           />
           <TabPane
             key="alarm"
-            :tab="`${$t('workbench.info.message.tabs.alarm')}(${alarmMessages.length})`"
+            :tab="`${$t('workbench.info.message.tabs.alarm')}(${alarmMessages.length - 1})`"
           />
         </Tabs>
       </template>

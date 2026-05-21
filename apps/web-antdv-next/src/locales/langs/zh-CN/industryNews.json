@@ -42,6 +42,7 @@
     "titleMax": "标题最多100字符",
     "categoryRequired": "请选择资讯类型",
     "sourceRequired": "请输入来源平台",
+    "sourceMax": "来源最多100字符",
     "urlRequired": "请输入资讯URL链接",
     "urlInvalid": "URL必须以http://或https://开头",
     "publishTimeRequired": "请选择发布时间"

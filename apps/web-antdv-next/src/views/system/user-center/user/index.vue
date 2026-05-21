@@ -7,6 +7,7 @@ import { computed, h, onMounted, reactive, ref, watch } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
+import { preferences } from '@vben/preferences';
 
 import {
   App,
@@ -150,7 +151,7 @@ const [Grid, gridApi] = useVbenVxeGrid<UserInfo>({
       },
       {
         title: $t('system.common.operation'),
-        width: 250,
+        width: preferences.app.locale === 'en-US' ? 350 : 250,
         fixed: 'right',
         align: 'center',
         slots: { default: 'action' },
@@ -388,8 +389,10 @@ const userStatusColorMap: Record<number, string> = {
                 </Form>
               </div>
               <Space class="shrink-0">
-                <Button class="w-21" type="primary"
-@click="handleSearch">
+                <Button
+class="w-21"
+type="primary" @click="handleSearch"
+>
                   <template #icon>
                     <IconifyIcon icon="lucide:search" />
                   </template>

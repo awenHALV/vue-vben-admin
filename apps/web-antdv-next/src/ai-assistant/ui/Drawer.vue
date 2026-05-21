@@ -161,15 +161,20 @@ onUnmounted(() => {
 <template>
   <div
     v-if="props.open"
-    class="fixed inset-y-0 right-[-20px] z-9999 flex overflow-hidden border-l border-border bg-background pr-[20px] shadow-[0px_4px_16px_0px_rgba(0,0,0,0.16)]"
-    :class="
-      chartDetailOpen && !chartDetailFullscreen ? 'w-[988px]' : 'w-[504px]'
-    "
+    class="fixed inset-y-0 right-[-20px] z-9999 flex overflow-hidden border-l border-border bg-background pr-[20px] shadow-[0px_4px_16px_0px_rgba(0,0,0,0.16)] transition-all duration-300"
+    :class="[
+      // 根据详情打开状态及是否全屏，动态计算整个 Drawer 的总宽度
+      chartDetailOpen
+        ? chartDetailFullscreen
+          ? 'w-[calc(100vw-48px)]' /* 全屏时撑满屏幕（留出左右边距，类似原先 inset-6 的感觉） */
+          : 'w-[988px]' /* 正常双栏状态 */
+        : 'w-[504px]' /* 仅聊天栏状态 */,
+    ]"
   >
-    <!-- 详情抽屉放在左侧（靠近页面主体） -->
     <div
-      v-if="chartDetailOpen && detailCharts && !chartDetailFullscreen"
-      class="flex w-[484px] shrink-0 flex-col border-r border-border bg-background"
+      v-if="chartDetailOpen && detailCharts"
+      class="flex shrink-0 flex-col border-r border-border bg-background transition-all duration-300"
+      :class="chartDetailFullscreen ? 'flex-1' : 'w-[484px]'"
     >
       <div
         class="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4"
@@ -179,20 +184,20 @@ onUnmounted(() => {
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- <button
-            class="flex-center size-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-            type="button"
-            aria-label="下载"
-          >
-            <IconifyIcon class="size-4" icon="lucide:download" />
-          </button> -->
           <button
             class="flex-center size-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
             type="button"
-            aria-label="全屏"
+            :aria-label="chartDetailFullscreen ? '退出全屏' : '全屏'"
             @click="toggleChartDetailFullscreen"
           >
-            <IconifyIcon class="size-4" icon="lucide:maximize-2" />
+            <IconifyIcon
+              class="size-4"
+              :icon="
+                chartDetailFullscreen
+                  ? 'lucide:minimize-2'
+                  : 'lucide:maximize-2'
+              "
+            />
           </button>
           <button
             class="flex-center size-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -219,8 +224,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="flex min-w-0 flex-1 flex-col">
-      <!-- 头部区域 - 56px高，底部1px分割线 -->
+    <div v-if="!chartDetailFullscreen" class="flex min-w-0 flex-1 flex-col">
       <div
         class="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4"
       >
@@ -267,7 +271,6 @@ onUnmounted(() => {
         />
       </div>
 
-      <!-- 内容区域 -->
       <div class="min-h-0 flex-1 overflow-auto bg-background p-4">
         <HistoryPanel
           v-if="props.panelMode === 'history'"
@@ -278,8 +281,10 @@ onUnmounted(() => {
           @select-conversation="emit('selectConversation', $event)"
         />
 
-        <!-- eslint-disable-next-line vue/max-attributes-per-line -->
-        <Spin v-else :spinning="Boolean(props.restoring)" class="block w-full">
+        <Spin
+v-else
+:spinning="Boolean(props.restoring)" class="block w-full"
+>
           <div
             v-if="props.restoring"
             aria-hidden="true"
@@ -290,8 +295,10 @@ onUnmounted(() => {
             v-else-if="showAgentRecommendation"
             class="flex items-start gap-3"
           >
-            <img alt="" class="size-8 shrink-0"
-:src="activeAgentIconSrc" />
+            <img
+alt=""
+class="size-8 shrink-0" :src="activeAgentIconSrc"
+/>
             <div class="min-w-0 flex-1">
               <div
                 v-if="props.agentProfileLoading"
@@ -348,7 +355,6 @@ onUnmounted(() => {
         </Spin>
       </div>
 
-      <!-- 底部输入区域：一体胶囊框 44px，发送按钮内嵌在右侧 -->
       <ComposerFooter
         v-if="props.panelMode !== 'history'"
         :pending="props.pending"
@@ -369,55 +375,7 @@ onUnmounted(() => {
       @select-agent="toggleAgent"
     />
   </div>
-
-  <Teleport to="body">
-    <div
-      v-if="chartDetailOpen && chartDetailFullscreen && detailCharts"
-      class="fixed inset-6 z-1100 flex flex-col overflow-hidden rounded-xl border border-border bg-background shadow-[0px_4px_16px_0px_rgba(0,0,0,0.16)]"
-    >
-      <div
-        class="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4"
-      >
-        <div class="truncate text-base font-semibold text-foreground">
-          {{ detailCharts[0]?.chartConfig.title ?? '图表详情' }}
-        </div>
-
-        <div class="flex items-center gap-2">
-          <button
-            class="flex-center size-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-            type="button"
-            aria-label="退出全屏"
-            @click="toggleChartDetailFullscreen"
-          >
-            <IconifyIcon class="size-4" icon="lucide:minimize-2" />
-          </button>
-          <button
-            class="flex-center size-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-            type="button"
-            aria-label="关闭"
-            @click="closeChartDetail"
-          >
-            <IconifyIcon class="size-4" icon="lucide:x" />
-          </button>
-        </div>
-      </div>
-
-      <div class="min-h-0 flex-1 overflow-auto p-4">
-        <div class="rounded-lg border border-border bg-card p-3">
-          <div class="flex flex-col gap-3">
-            <ChartMessage
-              v-for="(chart, idx) in detailCharts"
-              :key="`detail-full-${chartDetailMessageId}-${idx}`"
-              :chart-config="chart.chartConfig"
-              :chart-data="chart.chartData"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  </Teleport>
 </template>
-
 <style>
 /* 隐藏 webkit 浏览器（Chrome, Safari, Edge）的滚动条 */
 .hide-main-scrollbar::-webkit-scrollbar {

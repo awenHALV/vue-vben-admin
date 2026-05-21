@@ -104,7 +104,7 @@ const passwordComplexityRule = z
   .regex(/[a-z]/, $t('system.user.passwordFormat'))
   .regex(/[A-Z]/, $t('system.user.passwordFormat'))
   .regex(/\d/, $t('system.user.passwordFormat'))
-  .regex(/[^A-Za-z0-9]/, $t('system.user.passwordFormat'));
+  .regex(/[^A-Z0-9]/i, $t('system.user.passwordFormat'));
 
 function schemaAccountField(accountDisabled: boolean) {
   return {
@@ -430,9 +430,7 @@ const [VbenModal, modalApi] = useVbenModal({
             pwd: encryptByMd5(values.pwd),
             password2: encryptByMd5(values.password2),
           });
-          message.success(
-            $t('system.user.editPassword') + $t('system.common.addSuccess'),
-          );
+          message.success($t('profile.passwordChangeSuccess'));
 
           break;
         }

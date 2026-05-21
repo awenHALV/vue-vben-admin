@@ -99,6 +99,7 @@ export interface ChatHistoryItemRest {
 export interface PostChatRestoreData {
   history: ChatHistoryItemRest[];
   sessionId: string;
+  agentId: string;
   title: string;
 }
 

@@ -965,7 +965,7 @@ export const useAiAssistantChatStore = defineStore('ai-assistant-chat', () => {
       const res = await postChatRestoreApi(id);
       assistantMetaById.value = {};
       chatMessages.value = [];
-
+      currentAgentId.value = res.agentId;
       for (const h of res.history) {
         if (h.role === 'user') {
           chatMessages.value.push({

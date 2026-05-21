@@ -6,6 +6,7 @@ import { h, ref } from 'vue';
 
 import { Page, VbenButton, VbenInput } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
+import { preferences } from '@vben/preferences';
 
 import { App, Button, message, Space } from 'antdv-next';
 
@@ -92,7 +93,7 @@ const [Grid, gridApi] = useVbenVxeGrid<OrgInfo>({
       },
       {
         title: $t('system.common.operation'),
-        width: 300,
+        width: preferences.app.locale === 'en-US' ? 400 : 280,
         fixed: 'right',
         align: 'center',
         slots: { default: 'action' },

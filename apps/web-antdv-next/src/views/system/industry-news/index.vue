@@ -38,10 +38,10 @@ const categoryOptions = ref<SelectProps['options']>([]);
 const categoryMap = computed<Record<string, { color: string; label: string }>>(
   () => {
     const colorMap: Record<IndustryNewsCategory | string, string> = {
-      news: 'green',
+      industry_news: 'orange',
       other: 'default',
-      policy: 'blue',
-      report: 'orange',
+      policy_release: 'blue',
+      market_report: 'green',
     };
 
     const map: Record<string, { color: string; label: string }> = {};

@@ -41,12 +41,20 @@ const {
   restoreLoading,
   title,
   viewMode,
+  currentAgentId, // 【新增】从 store 引入 currentAgentId
 } = storeToRefs(chatStore);
 
 const launcherBottom = ref(LAUNCHER_DEFAULT_BOTTOM);
 const dragging = ref(false);
 const suppressNextClick = ref(false);
-const activeAgent = ref<string>('');
+// 2. 删掉原来的 const activeAgent = ref<string>('');
+// 改为计算属性，或者直接让 activeAgent 同步 store 的值：
+const activeAgent = computed({
+  get: () => currentAgentId.value,
+  set: (val) => {
+    chatStore.setCurrentAgentId(val);
+  },
+});
 let dragStartClientY = 0;
 let dragStartBottom = 0;
 let dragMoved = false;
