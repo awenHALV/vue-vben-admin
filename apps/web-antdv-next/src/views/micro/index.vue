@@ -151,22 +151,36 @@ async function syncTabTitleWithMenu() {
     return;
   }
 
-  const title = resolveMenuTitle(
-    {
-      title: menu.name,
-      name: menu.name,
-      featureName: menu.featureName,
-      featureNameEn: menu.featureNameEn,
-    },
-    { locale: i18n.global.locale.value, t: (key) => key, te: () => false },
-  );
+  const titleSource = {
+    title: menu.name,
+    name: menu.name,
+    featureName: menu.featureName,
+    featureNameEn: menu.featureNameEn,
+  };
+
+  const title = resolveMenuTitle(titleSource, {
+    locale: i18n.global.locale.value,
+    t: (key) => key,
+    te: () => false,
+  });
+  const titleZh = resolveMenuTitle(titleSource, {
+    locale: 'zh-CN',
+    t: (key) => key,
+    te: () => false,
+  });
+  const titleEn = resolveMenuTitle(titleSource, {
+    locale: 'en-US',
+    t: (key) => key,
+    te: () => false,
+  });
   route.meta.title = title;
   const appName = $te(preferences.app.name)
     ? $t(preferences.app.name)
     : preferences.app.name;
   useTitle(`${title} - ${appName}`);
 
-  await tabbarStore.setTabTitle(tab, title);
+  await tabbarStore.setTabTitle(tab, titleZh);
+  await tabbarStore.setTabTitleEn(tab, titleEn);
   tabbarStore.setUpdateTime();
 }
 
