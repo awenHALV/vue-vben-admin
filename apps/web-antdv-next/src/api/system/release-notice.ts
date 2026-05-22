@@ -8,6 +8,7 @@ export type ReleaseNoticeStatus = 'draft' | 'published';
 export interface ReleaseNoticeApiItem {
   content: string;
   createTime: string;
+  publishTime: string;
   id: number | string;
   status: number;
   summary?: string;
@@ -68,7 +69,7 @@ function normalizeReleaseNoticeItem(
     createTime: item.createTime,
     description: item.summary ?? '',
     id: String(item.id),
-    publishTime: item.createTime,
+    publishTime: item.publishTime,
     status: normalizeReleaseNoticeStatus(item.status),
     title: item.title,
   };
