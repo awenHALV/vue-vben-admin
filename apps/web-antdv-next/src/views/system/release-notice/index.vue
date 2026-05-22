@@ -252,7 +252,9 @@ function handleModalSuccess() {
       </div>
     </div>
 
-    <div class="min-h-0 flex-1 rounded-lg border border-border bg-background">
+    <div
+      class="release-notice-grid min-h-0 flex-1 rounded-lg border border-border bg-background"
+    >
       <Grid class="h-full min-h-0">
         <template #toolbar-actions>
           <div class="flex w-full items-center justify-between p-0 pb-2">
@@ -343,3 +345,11 @@ function handleModalSuccess() {
     <ReleaseNoticeDetail ref="releaseNoticeDetailRef" />
   </Page>
 </template>
+<style scoped>
+.release-notice-grid :deep(.vxe-table--render-wrapper) {
+  min-height: 198px;
+}
+.release-notice-grid :deep(.vxe-table--empty-place-wrapper) {
+  height: 150px !important;
+}
+</style>

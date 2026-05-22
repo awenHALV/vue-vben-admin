@@ -13,8 +13,7 @@ import { useVbenModal } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
 import { $t } from '@vben/locales';
 
-import { DatePicker, Form, FormItem, Input, message, Select } from 'antdv-next';
-import dayjs from 'dayjs';
+import { Form, FormItem, Input, message, Select } from 'antdv-next';
 
 import { getDictOptionsApi } from '#/api/system/dict';
 import {
@@ -38,7 +37,6 @@ const formData = reactive<IndustryNewsItem>({
   category: '',
   source: '',
   url: '',
-  publishTime: dayjs().format('YYYY-MM-DD'),
 });
 
 // ==================== 选项 ====================
@@ -97,13 +95,6 @@ const rules = computed(() => ({
       trigger: 'blur',
     },
   ],
-  publishTime: [
-    {
-      required: true,
-      message: $t('industryNews.validation.publishTimeRequired'),
-      trigger: 'change',
-    },
-  ],
 }));
 
 // ==================== 方法 ====================
@@ -113,7 +104,6 @@ function resetForm() {
   formData.category = '';
   formData.source = '';
   formData.url = '';
-  formData.publishTime = dayjs().format('YYYY-MM-DD');
 }
 
 function setFormData(data: IndustryNewsItem) {
@@ -122,7 +112,6 @@ function setFormData(data: IndustryNewsItem) {
   formData.category = data.category;
   formData.source = data.source;
   formData.url = data.url;
-  formData.publishTime = data.publishTime;
 }
 
 const [VbenModal, modalApi] = useVbenModal({
@@ -200,10 +189,6 @@ defineExpose({ open });
 onMounted(() => {
   void loadCategoryOptions();
 });
-// 不能选择未来时间
-const disabledDate = (current) => {
-  return current && current > dayjs().endOf('day');
-};
 </script>
 
 <template>
@@ -249,19 +234,6 @@ const disabledDate = (current) => {
           <IconifyIcon icon="lucide:info" />
           {{ $t('industryNews.tips.url') }}
         </p>
-      </FormItem>
-
-      <FormItem
-        :label="$t('industryNews.fields.publishTime')"
-        name="publishTime"
-      >
-        <DatePicker
-          v-model:value="formData.publishTime"
-          value-format="YYYY-MM-DD"
-          :disabled-date="disabledDate"
-          :placeholder="$t('industryNews.placeholder.publishTime')"
-          style="width: 100%"
-        />
       </FormItem>
     </Form>
   </VbenModal>

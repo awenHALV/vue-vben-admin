@@ -5,10 +5,15 @@
  */
 import { Page } from '@vben/common-ui';
 
+import { usePageButtonAccess } from '#/composables/use-page-button-access';
+
+import { WORKBENCH_PAGE_BUTTON_CODES } from './button-permissions';
 import CustomAppsModule from './components/CustomAppsModule.vue';
 import InfoModule from './components/InfoModule.vue';
 import TradeCalendarModule from './components/TradeCalendarModule.vue';
 import WeatherModule from './components/WeatherModule.vue';
+
+const { canButton } = usePageButtonAccess();
 </script>
 
 <template>
@@ -16,7 +21,9 @@ import WeatherModule from './components/WeatherModule.vue';
     <WeatherModule />
     <CustomAppsModule />
     <InfoModule />
-    <TradeCalendarModule />
+    <TradeCalendarModule
+      v-if="canButton(WORKBENCH_PAGE_BUTTON_CODES.calendar)"
+    />
   </Page>
 </template>
 

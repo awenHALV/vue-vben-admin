@@ -41,7 +41,8 @@
   },
   "validation": {
     "titleRequired": "Please enter release title",
-    "contentRequired": "Please enter release details"
+    "contentRequired": "Please enter release details",
+    "imageSizeLimit": "Local images cannot exceed 5 MB"
   },
   "tips": {
     "plainText": "Plain text editing is supported",

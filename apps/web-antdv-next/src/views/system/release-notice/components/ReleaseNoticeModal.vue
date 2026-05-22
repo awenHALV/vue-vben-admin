@@ -22,9 +22,13 @@ import {
 
 import { useVbenModal } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
-import { $t } from '@vben/locales';
+import { $t, i18n } from '@vben/locales';
 
-import { createEditor, createToolbar } from '@wangeditor/editor';
+import {
+  createEditor,
+  createToolbar,
+  i18nChangeLanguage,
+} from '@wangeditor/editor';
 import { Form, FormItem, Input, message } from 'antdv-next';
 
 import {
@@ -48,6 +52,7 @@ const editorContainerRef = ref<HTMLElement | null>(null);
 const toolbarContainerRef = ref<HTMLElement | null>(null);
 let toolbar: null | ReturnType<typeof createToolbar> = null;
 let isInitializingEditor = false;
+const MAX_LOCAL_IMAGE_SIZE = 5 * 1024 * 1024;
 
 const formData = reactive<ReleaseNoticeItem>({
   id: '',
@@ -112,6 +117,12 @@ function destroyEditor() {
   isInitializingEditor = false;
 }
 
+function syncWangEditorLanguage() {
+  i18nChangeLanguage(
+    i18n.global.locale.value.startsWith('en') ? 'en' : 'zh-CN',
+  );
+}
+
 function initEditor() {
   if (
     editorRef.value ||
@@ -122,11 +133,17 @@ function initEditor() {
   }
 
   isInitializingEditor = true;
+  syncWangEditorLanguage();
 
   const editorConfig: Partial<IEditorConfig> = {
     MENU_CONF: {
       uploadImage: {
         async customUpload(file: File, insertFn: (url: string) => void) {
+          if (file.size > MAX_LOCAL_IMAGE_SIZE) {
+            message.error($t('releaseNotice.validation.imageSizeLimit'));
+            return;
+          }
+
           insertFn(await fileToDataUrl(file));
         },
       },
@@ -321,18 +338,49 @@ defineExpose({ open });
 
 <style scoped>
 .editor-hint {
+  display: flex;
+  gap: 4px;
+  align-items: center;
   margin-top: 8px;
   font-size: 12px;
   color: #8c8c8c;
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .release-editor {
   overflow: visible;
   border: 1px solid #d9d9d9;
   border-radius: 6px;
+}
+
+.dark .release-editor {
+  border-color: hsl(var(--border));
+}
+
+.dark .release-editor,
+.dark :deep(.w-e-bar),
+.dark :deep(.w-e-text-container),
+.dark :deep(.w-e-drop-panel),
+.dark :deep(.w-e-modal),
+.dark :deep(.w-e-select-list),
+.dark :deep(.w-e-bar-item-group .w-e-bar-item-menus-container) {
+  --w-e-textarea-bg-color: hsl(var(--background));
+  --w-e-textarea-color: hsl(var(--foreground));
+  --w-e-textarea-border-color: hsl(var(--border));
+  --w-e-textarea-slight-border-color: hsl(var(--border));
+  --w-e-textarea-slight-color: hsl(var(--muted-foreground));
+  --w-e-textarea-slight-bg-color: hsl(var(--muted));
+  --w-e-toolbar-color: hsl(var(--foreground));
+  --w-e-toolbar-bg-color: hsl(var(--background));
+  --w-e-toolbar-active-color: hsl(var(--foreground));
+  --w-e-toolbar-active-bg-color: hsl(var(--accent));
+  --w-e-toolbar-disabled-color: hsl(var(--muted-foreground));
+  --w-e-toolbar-border-color: hsl(var(--border));
+  --w-e-modal-button-bg-color: hsl(var(--muted));
+  --w-e-modal-button-border-color: hsl(var(--border));
+}
+
+.light :deep(.w-e-text-container) {
+  --w-e-textarea-bg-color: hsl(var(--background));
 }
 
 /* 强行让顶部的工具栏左上、右上拥有圆角 */
@@ -343,12 +391,16 @@ defineExpose({ open });
 
 /* 强行让底部的编辑器主体左下、右下拥有圆角 */
 .release-editor :deep(.w-e-text-container) {
-  border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
 }
 
 .release-editor__toolbar {
   border-bottom: 1px solid #f0f0f0;
+}
+
+.dark .release-editor__toolbar {
+  border-bottom-color: hsl(var(--border));
 }
 
 .release-editor__content {

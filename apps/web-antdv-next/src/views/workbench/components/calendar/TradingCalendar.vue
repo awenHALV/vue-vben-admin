@@ -26,10 +26,8 @@ import {
   getGridAreaListApi,
   getTradingCalendarListApi,
 } from '#/api/trading-calendar';
-import { usePageButtonAccess } from '#/composables/use-page-button-access';
 import { $t } from '#/locales';
 
-import { WORKBENCH_PAGE_BUTTON_CODES } from '../../button-permissions';
 import { getTradingStatusLabels } from './types';
 import { getTradingStatus } from './utils';
 
@@ -39,7 +37,7 @@ const emit = defineEmits<{
   cancel: [];
   select: [task: TradingCalendarTask];
 }>();
-const { canButton } = usePageButtonAccess();
+
 interface CalendarDayCell {
   date: Dayjs;
   hiddenCount: number;
@@ -454,7 +452,6 @@ defineExpose({ clearSelection });
         }}</span>
         <div class="footer-buttons">
           <VbenButton
-            v-if="canButton(WORKBENCH_PAGE_BUTTON_CODES.cancel)"
             variant="outline"
             class="cursor-pointer"
             @click="handleCancel"
@@ -462,7 +459,6 @@ defineExpose({ clearSelection });
             {{ $t('tradingCalendar.common.cancelSelect') }}
           </VbenButton>
           <VbenButton
-            v-if="canButton(WORKBENCH_PAGE_BUTTON_CODES.apply)"
             :disabled="!selectedTask"
             class="cursor-pointer"
             @click="handleApply"

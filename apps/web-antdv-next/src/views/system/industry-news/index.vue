@@ -355,7 +355,10 @@ onMounted(() => {
   </Page>
 </template>
 
-<style>
+<style scoped>
+.industry-news-grid :deep(.vxe-table--render-wrapper) {
+  min-height: 198px;
+}
 .industry-news-grid :deep(.vxe-table--empty-place-wrapper) {
   height: 150px !important;
 }

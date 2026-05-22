@@ -161,7 +161,7 @@ onUnmounted(() => {
 <template>
   <div
     v-if="props.open"
-    class="fixed inset-y-0 right-[-20px] z-9999 flex overflow-hidden border-l border-border bg-background pr-[20px] shadow-[0px_4px_16px_0px_rgba(0,0,0,0.16)] transition-all duration-300"
+    class="fixed inset-y-0 right-[-20px] z-1000 flex overflow-hidden border-l border-border bg-background pr-[20px] shadow-[0px_4px_16px_0px_rgba(0,0,0,0.16)] transition-all duration-300"
     :class="[
       // 根据详情打开状态及是否全屏，动态计算整个 Drawer 的总宽度
       chartDetailOpen

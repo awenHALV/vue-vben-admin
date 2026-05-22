@@ -120,7 +120,7 @@ onMounted(() => {
 <template>
   <div
     v-if="props.open"
-    class="fixed inset-6 z-9999 flex overflow-hidden rounded-xl bg-background shadow-[0px_4px_16px_0px_rgba(0,0,0,0.16)]"
+    class="fixed inset-6 z-1000 flex overflow-hidden rounded-xl bg-background shadow-[0px_4px_16px_0px_rgba(0,0,0,0.16)]"
   >
     <div
       class="flex w-64 shrink-0 flex-col border-r border-border bg-[#FAFAFA] dark:bg-black"
@@ -152,7 +152,8 @@ onMounted(() => {
             class="size-6 shrink-0"
             :src="LINGXI_AGENT_ICON_URL"
           />
-          <Avatar v-else class="mt-0! size-6!" img-class="size-4" />
+          <Avatar v-else class="mt-0! size-6!"
+img-class="size-4" />
           <span class="text-sm text-foreground">{{ agent.name }}</span>
         </div>
       </div>
@@ -220,7 +221,8 @@ onMounted(() => {
 
           <div v-else class="mx-auto w-[800px] p-4">
             <div v-if="showAgentRecommendation" class="flex items-start gap-3">
-              <img alt="" class="size-8 shrink-0" :src="activeAgentIconSrc" />
+              <img alt="" class="size-8 shrink-0"
+:src="activeAgentIconSrc" />
               <div class="min-w-0 flex-1">
                 <div
                   v-if="props.agentProfileLoading"

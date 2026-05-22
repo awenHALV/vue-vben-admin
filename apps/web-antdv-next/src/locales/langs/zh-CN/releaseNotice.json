@@ -41,7 +41,8 @@
   },
   "validation": {
     "titleRequired": "请输入发版标题",
-    "contentRequired": "请输入发版详情"
+    "contentRequired": "请输入发版详情",
+    "imageSizeLimit": "本地图片不能超过 5M"
   },
   "tips": {
     "plainText": "支持纯文本编辑",
